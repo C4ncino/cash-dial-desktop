@@ -1,0 +1,33 @@
+---
+import Footer from "components/Footer/Footer.astro";
+import Header from "components/Header/Header.astro";
+import Head from "components/SEO/Head.astro";
+import "styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+}
+
+const props = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <Head {...props} />
+  </head>
+  <body>
+    <div class="min-h-dvh flex flex-row bg-white">
+      <aside
+        class="flex flex-col justify-between border-r-2 border-blue-500 p-4"
+      >
+        <Header />
+        <Footer />
+      </aside>
+
+      <slot />
+    </div>
+  </body>
+</html>

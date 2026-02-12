@@ -1,0 +1,17 @@
+---
+import BaseLayout from "layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Home" description="">
+  <main class="flex flex-col flex-1 justify-center bg-red-500/50">
+    <h1>Hola</h1>
+
+    <form class="row" id="greet-form">
+      <input id="greet-input" placeholder="Enter a name..." />
+      <button type="submit">Greet</button>
+    </form>
+    <p id="greet-msg"></p>
+  </main>
+</BaseLayout>
+
+<script src="lib/test"></script>

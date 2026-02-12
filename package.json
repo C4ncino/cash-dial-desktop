@@ -1,0 +1,27 @@
+{
+  "name": "cash-dial-desktop",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/plugin-opener": "^2.5.3",
+    "astro": "^5.16.15",
+    "astro-icon": "^1.1.5",
+    "tailwind-animations": "^1.0.1",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@iconify-json/iconoir": "^1.2.10",
+    "@tauri-apps/cli": "^2.9.6"
+  }
+}
