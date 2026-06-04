@@ -2,12 +2,12 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "cash-dial-desktop",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "cancino.dev",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:4321/",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
   },
   "app": {
     "windows": [

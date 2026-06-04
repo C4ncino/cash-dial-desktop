@@ -7,21 +7,48 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "vitest run src",
+    "test:e2e": "cross-env DB_URL=./test.sqlite vitest run tests/e2e --fileParallelism=false",
+    "test:e2e:fast": "cross-env DB_URL=./test.sqlite SKIP_BUILD=true vitest run tests/e2e --fileParallelism=false",
+    "test:integration": "cross-env DB_URL=./test.sqlite VITE_TEST_MODE=true vitest run tests/integration --fileParallelism=false",
+    "test:integration:fast": "cross-env DB_URL=./test.sqlite SKIP_BUILD=true VITE_TEST_MODE=true vitest run tests/integration --fileParallelism=false"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.0",
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/react": "^5.0.5",
+    "@astrojs/sitemap": "^3.7.3",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/plugin-opener": "^2.5.3",
-    "astro": "^5.16.15",
+    "@tauri-apps/plugin-os": "^2.3.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^6.3.8",
     "astro-icon": "^1.1.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "tailwind-animations": "^1.0.1",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@iconify-json/iconoir": "^1.2.10",
-    "@tauri-apps/cli": "^2.9.6"
+    "@iconify/react": "^6.0.2",
+    "@tauri-apps/cli": "^2.9.6",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/selenium-webdriver": "^4.35.6",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "4.1.8",
+    "cross-env": "^10.1.0",
+    "jsdom": "^29.1.1",
+    "sass": "1.97.3",
+    "selenium-webdriver": "^4.44.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.8",
+    "webcoreui": "1.4.0"
   }
 }
