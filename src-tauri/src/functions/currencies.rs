@@ -1,0 +1,15 @@
+use std::sync::Mutex;
+use tauri::State;
+
+use crate::models::{
+    currencies::Currency,
+    general::AppState
+};
+
+
+#[tauri::command]
+pub fn get_currencies(state: State<'_, Mutex<AppState>>) -> Result<Vec<Currency>, String> {
+    let state = state.lock().unwrap();
+
+    Ok(state.currencies.clone())
+}
