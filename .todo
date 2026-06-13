@@ -1,0 +1,6 @@
+General:
+    ☐ Add CI file
+        ☐ Run tests
+        ☐ Add SonarQube for coverage and bugs
+        ☐ Add checkmarx for vulnerabilities
+        ☐ Add build for release when merge to main
