@@ -1,17 +1,14 @@
 ---
-import BaseLayout from "layouts/BaseLayout.astro";
+import Accounts from "@/components/Accounts/Accounts.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const TEST_MODE = process.env.VITE_TEST_MODE;
+
+console.log(TEST_MODE);
 ---
 
 <BaseLayout title="Home" description="">
-  <main class="flex flex-col flex-1 justify-center bg-red-500/50">
-    <h1>Hola</h1>
-
-    <form class="row" id="greet-form">
-      <input id="greet-input" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p id="greet-msg"></p>
-  </main>
+  <Accounts />
 </BaseLayout>
 
-<script src="lib/test"></script>
+{TEST_MODE && <script src="../lib/test.ts" />}

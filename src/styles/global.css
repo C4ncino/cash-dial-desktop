@@ -1,2 +1,7 @@
 @import "tailwindcss";
-@import 'tailwind-animations';
+@import "tailwind-animations";
+
+@theme {
+  --color-gray-webui: oklch(0.2645 0 0);
+  --color-gray-webui-text: oklch(0.8452 0 0);
+}

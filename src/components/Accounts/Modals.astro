@@ -1,0 +1,31 @@
+---
+import { Modal } from "webcoreui/astro";
+
+import Form from "./Form";
+import { MODAL_ID } from "@/types/enums";
+---
+
+<Modal id={MODAL_ID.ACCOUNT.CREATE} title="Crear Cuenta" className="min-w-md!">
+    <Form client:visible modalId={MODAL_ID.ACCOUNT.CREATE} />
+</Modal>
+
+<Modal id={MODAL_ID.ACCOUNT.EDIT} title="Editar Cuenta" className="min-w-md!">
+    <Form client:visible modalId={MODAL_ID.ACCOUNT.EDIT} />
+</Modal>
+
+<script>
+    import { MODAL_ID } from "@/types/enums";
+    import { modal } from "webcoreui";
+
+    document.addEventListener("astro:page-load", () => {
+        modal({
+            trigger: "#create-account-button",
+            modal: `#${MODAL_ID.ACCOUNT.CREATE}`,
+        });
+
+        modal({
+            trigger: "#edit-account-button",
+            modal: `#${MODAL_ID.ACCOUNT.EDIT}`,
+        });
+    });
+</script>

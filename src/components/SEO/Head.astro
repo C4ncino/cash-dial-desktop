@@ -1,4 +1,6 @@
 ---
+import { ClientRouter } from "astro:transitions";
+
 interface Props {
   title: string;
   description: string;
@@ -38,3 +40,5 @@ const { title, description, image = "/images/dioxmin_logo.png" } = Astro.props;
 <meta property="og:site_name" content="SITENAME" />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="es" />
+
+<ClientRouter />
