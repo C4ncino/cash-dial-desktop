@@ -79,6 +79,7 @@ const mockUseStoreState = ({ types = mockTypes, editState = {} }: any = {}) => {
 
 describe("AccountForm", () => {
   beforeEach(() => {
+    logger.debug("AccountForm test beforeEach: clear mocks and setup store state");
     vi.clearAllMocks();
 
     mockUseStoreState();

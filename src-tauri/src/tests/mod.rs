@@ -7,6 +7,10 @@ use crate::models::{
 const TEST_DB_PATH: &str = "test_db.sqlite";
 
 pub fn mock_state() -> AppState {
+    // ensure logging initialized for tests
+    crate::logging::init_logging().ok();
+    tracing::info!("Initializing mock_state for tests");
+
     AppState {
         account_types: vec![
             AccountType {
@@ -52,12 +56,16 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 pub fn setup_test_db() -> SqliteConnection {
+    // ensure logging initialized for tests
+    crate::logging::init_logging().ok();
+    tracing::info!("Setting up test database: {}", TEST_DB_PATH);
 
     let mut conn = SqliteConnection::establish(TEST_DB_PATH).unwrap();
 
     let migrations_ran = conn.run_pending_migrations(MIGRATIONS).unwrap();
 
     if migrations_ran.len() > 0 {
+        tracing::info!("Migrations ran count={}", migrations_ran.len());
         let seed_sql = std::fs::read_to_string("seeds/test.sql").expect("Cannot read test.sql");
         conn.batch_execute(&seed_sql).expect("Failed to execute seed file");
     }

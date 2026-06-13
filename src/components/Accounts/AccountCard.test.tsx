@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { logger } from "@/lib/logger";
 
 import AccountCard from "@/components/Accounts/AccountCard";
 
@@ -16,6 +17,8 @@ const mockAccount: Account = {
   balance: 1500.5,
   isActive: true,
 };
+
+logger.debug("AccountCard tests starting");
 
 describe("AccountCard", () => {
   it("should render account name", () => {

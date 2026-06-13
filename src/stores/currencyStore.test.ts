@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "@/lib/logger";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -21,6 +22,7 @@ const currency = {
 
 describe("currencyStore", () => {
   beforeEach(() => {
+    logger.debug("Resetting currencyStore state for test");
     currencyStore.setState({
       currencies: [],
     });

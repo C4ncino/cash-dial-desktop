@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
 import AccountsList from "@/components/Accounts/AccountsList";
+import { logger } from "@/lib/logger";
 
 vi.mock("zustand");
 vi.mock("@/components/Accounts/AccountCard", () => ({
@@ -38,7 +39,9 @@ const mockAccounts: Account[] = [
 ];
 
 describe("AccountsList", () => {
+  logger.debug("AccountsList tests starting");
   beforeEach(() => {
+    logger.debug("AccountsList beforeEach: clearing mocks");
     vi.clearAllMocks();
   });
 

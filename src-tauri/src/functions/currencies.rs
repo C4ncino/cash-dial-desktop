@@ -9,6 +9,8 @@ use crate::models::{
 
 #[tauri::command]
 pub fn get_currencies(state: State<'_, Mutex<AppState>>) -> Result<Vec<Currency>, String> {
+    tracing::debug!("Executing command get_accounts");
+
     let state = state.lock().unwrap();
 
     Ok(state.currencies.clone())

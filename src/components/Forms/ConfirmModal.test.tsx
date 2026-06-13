@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { modal } from "webcoreui";
 
 import ConfirmModal from "@/components/Forms/ConfirmModal";
+import { logger } from "@/lib/logger";
 
 describe("ConfirmModal", () => {
   const mockOnConfirm = vi.fn();
@@ -21,6 +22,7 @@ describe("ConfirmModal", () => {
   };
 
   beforeEach(() => {
+    logger.debug("ConfirmModal test beforeEach: clearing mocks");
     vi.clearAllMocks();
     (modal as any).mockReturnValue(mockModalInstance);
   });

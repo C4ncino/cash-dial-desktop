@@ -1,4 +1,5 @@
 import ConfirmModal from "@/components/Forms/ConfirmModal";
+import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { MODAL_ID } from "@/types/enums";
 
@@ -8,14 +9,12 @@ const ActionButtons = () => {
       ? Number(new URLSearchParams(window.location.search).get("id"))
       : null;
 
-  if (!id) return;
-
   return (
     <>
       <li className="text-sm">
         <ConfirmModal
           onConfirm={() => {
-            console.log(id);
+            logger.debug("Deactivate account id:", id);
           }}
           buttonTitle="Desactivar"
           modalId={MODAL_ID.ACCOUNT.DEACTIVATE}

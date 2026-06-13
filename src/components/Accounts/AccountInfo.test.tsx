@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
 import AccountInfo from "@/components/Accounts/AccountInfo";
+import { logger } from "@/lib/logger";
 import { formatNumber } from "@/lib/formatters";
 
 vi.mock("zustand");
@@ -31,6 +32,7 @@ function setSearchParams(search: string) {
 }
 
 describe("AccountInfo", () => {
+  logger.debug("AccountInfo tests starting");
   beforeEach(() => {
     vi.clearAllMocks();
     setSearchParams("?id=1");

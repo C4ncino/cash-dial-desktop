@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
+import { logger } from "@/lib/logger";
+
 export const currencyStore = createStore<
   CurrencyStore & Omit<Actions<Currency>, "add" | "remove" | "update">
 >((set, get) => ({
@@ -8,7 +10,7 @@ export const currencyStore = createStore<
 
   populate: async () => {
     const currencies = (await invoke("get_currencies")) as Currency[];
-    console.log(currencies);
+    logger.debug("Currencies:", currencies);
     return set({ currencies });
   },
 

@@ -5,6 +5,7 @@ import { Input } from "webcoreui/react";
 import { useStore } from "zustand";
 
 import SelectCurrency from "@/components/Forms/SelectCurrencies";
+import { logger } from "@/lib/logger";
 import { accountsStore, createAccountFromData, validate } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID } from "@/types/enums";
@@ -40,8 +41,8 @@ const AccountForm = ({ modalId }: Props) => {
 
     const { valid, errors } = validate(data);
 
-    console.log(data);
-    console.log(errors);
+    logger.debug("Account form data:", data);
+    logger.warn("Account form validation errors:", errors);
 
     if (!valid) {
       setErrors(errors);
@@ -49,6 +50,8 @@ const AccountForm = ({ modalId }: Props) => {
     }
 
     const account = createAccountFromData(data, types.find((t) => t.id === typeId)!);
+
+    console.debug("Is Editing mode:", editState.type === EDIT_TYPES.ACCOUNT);
 
     if (editState.id && editState.type === EDIT_TYPES.ACCOUNT) {
       accountsStore.getState().update(editState.id, account);

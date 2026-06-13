@@ -98,7 +98,7 @@ export function deleteDatabase() {
 
   if (fs.existsSync(dbPath)) {
     fs.unlinkSync(dbPath);
-    console.log(`Deleted database: ${dbPath}`);
+      console.info(`Test driver deleted database: ${dbPath}`);
   }
 }
 

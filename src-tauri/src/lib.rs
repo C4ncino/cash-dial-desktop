@@ -7,6 +7,7 @@ mod functions;
 mod models;
 mod schema;
 mod utils;
+mod logging;
 
 #[cfg(test)]
 mod tests;
@@ -29,6 +30,25 @@ fn get_initialize_state(state: State<'_, Mutex<AppState>>) -> Result<bool, Strin
     let state = state.lock().unwrap();
 
     Ok(state.initialized)
+}
+
+#[tauri::command]
+fn log_frontend_error(level: String, message: String, stack: Option<String>) -> Result<(), String> {
+    match level.as_str() {
+        "error" => tracing::error!(%message, stack = ?stack),
+        "warn" => tracing::warn!(%message, stack = ?stack),
+        _ => tracing::info!(%message, stack = ?stack),
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn export_logs() -> Result<String, String> {
+    match logging::export_logs_zip() {
+        Ok(path) => Ok(path.to_string_lossy().to_string()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 fn create_init_state() -> Result<AppState, String> {
@@ -66,12 +86,21 @@ pub fn run() {
                 )?;
             }
 
+            // initialize logging after plugin so we don't race setting the global logger
+            if let Err(e) = logging::init_logging() {
+                println!("Failed to initialize logging: {}", e);
+            }
+
+            tracing::info!("Application starting");
+
             let state = create_init_state()?;
 
             let lang = tauri_plugin_os::locale();
-            println!("Current locale: {:?}", lang);
+            tracing::info!("Current locale: {:?}", lang);
 
             app.manage(Mutex::new(state));
+
+            tracing::info!("Application initialized");
 
             Ok(())
         })
@@ -83,7 +112,9 @@ pub fn run() {
             functions::accounts::get_accounts,
             functions::accounts::update_account,
             functions::accounts::remove_account,
-            functions::currencies::get_currencies
+            functions::currencies::get_currencies,
+            export_logs,
+            log_frontend_error
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

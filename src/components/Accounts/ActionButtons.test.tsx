@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ActionButtons from "@/components/Accounts/ActionButtons";
 import { accountsStore } from "@/stores/accountsStore";
 import { MODAL_ID } from "@/types/enums";
+import { logger } from "@/lib/logger";
 
 vi.mock("@/components/Forms/ConfirmModal", () => ({
   default: ({ buttonTitle, onConfirm, modalId }: any) => (
@@ -21,6 +22,7 @@ describe("ActionButtons", () => {
   const mockAccountId = 1;
 
   beforeEach(() => {
+    logger.debug("ActionButtons test beforeEach: clearing mocks and setting search params");
     vi.clearAllMocks();
     setSearchParams("?id=1");
   });

@@ -1,10 +1,11 @@
 ---
 import Accounts from "@/components/Accounts/Accounts.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { logger } from "@/lib/logger";
 
 const TEST_MODE = process.env.VITE_TEST_MODE;
 
-console.log(TEST_MODE);
+logger.debug(TEST_MODE);
 ---
 
 <BaseLayout title="Home" description="">

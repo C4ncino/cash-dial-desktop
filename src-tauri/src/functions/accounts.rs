@@ -28,6 +28,8 @@ pub fn get_account_types(state: State<'_, Mutex<AppState>>) -> Result<Vec<Accoun
 
 #[tauri::command]
 pub fn get_accounts(state: State<'_, Mutex<AppState>>) -> Result<Vec<Account>, String> {
+    tracing::debug!("Executing command get_accounts");
+
     let state = state.lock().unwrap();
 
     let account_types = state.account_types.clone();
@@ -41,6 +43,8 @@ fn get_accounts_internal(
     connection: &mut SqliteConnection,
     account_types: &[AccountType],
 ) -> Result<Vec<Account>, String> {
+    tracing::debug!("Loading accounts from db");
+
     use crate::schema::accounts::dsl::*;
     use crate::schema::accounts_credit_info::dsl::*;
 
@@ -48,7 +52,10 @@ fn get_accounts_internal(
         .left_join(accounts_credit_info)
         .select((AccountRow::as_select(), Option::<AccountCreditInfoRow>::as_select()))
         .load::<(AccountRow, Option<AccountCreditInfoRow>)>(connection)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            tracing::error!("Failed loading accounts: {}", e);
+            e.to_string()
+        })?;
 
     Ok(results
         .into_iter()
@@ -83,11 +90,16 @@ pub fn add_account(
     currency_id: u8,
     credit_info: Option<AccountCreditInfo>,
 ) -> Result<Account, String> {
+    tracing::debug!("Executing command add_account name={} type_id={} currency_id={}", name, type_id, currency_id);
+    
     let state = state.lock().unwrap();
 
     let account_types = {
         validate_account(&state, name, balance, type_id, currency_id, &credit_info)
-            .map_err(|e| e.join(", "))?;
+            .map_err(|e| {
+                tracing::warn!("Validation failed for new account: {:?}", e);
+                e.join(", ")
+            })?;
 
         state.account_types.clone()
     };
@@ -116,19 +128,29 @@ fn add_account_internal(
 ) -> Result<Account, String> {
     use crate::schema::accounts::dsl::accounts;
 
+    tracing::debug!("Creating account name={} type_id={} currency_id={}", name, type_id, currency_id);
+
     let new_account = AccountInsert { type_id, currency_id: currency_id as i32, name, balance };
 
     let account_row = diesel::insert_into(accounts)
         .values(&new_account)
         .returning(AccountRow::as_returning())
         .get_result(connection)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            tracing::error!("Failed inserting account: {}", e);
+            e.to_string()
+        })?;
 
     if let Some(info) = &credit_info {
-        upsert_credit_info(connection, account_row.id, info).map_err(|e| e.to_string())?;
+        upsert_credit_info(connection, account_row.id, info).map_err(|e| {
+            tracing::error!("Failed upserting credit info for account {}: {}", account_row.id, e);
+            e.to_string()
+        })?;
     }
 
     let account_type = get_account_type(account_types, type_id);
+
+    tracing::info!("Account created id={} name={}", account_row.id, account_row.name);
 
     Ok(Account {
         id: account_row.id,
@@ -151,11 +173,16 @@ pub fn update_account(
     currency_id: u8,
     _credit_info: Option<AccountCreditInfo>,
 ) -> Result<Account, String> {
+    tracing::debug!("Executing command update_account id={} name={}", id, name);
+
     let state = state.lock().unwrap();
     
     let account_types = {
         validate_account(&state, name, balance, type_id, currency_id, &_credit_info)
-            .map_err(|e| e.join(", "))?;
+            .map_err(|e| {
+                tracing::warn!("Validation failed for update_account id={}: {:?}", id, e);
+                e.join(", ")
+            })?;
 
         state.account_types.clone()
     };
@@ -186,12 +213,20 @@ fn update_account_internal(
 ) -> Result<Account, String> {
     use crate::schema::accounts::dsl::accounts;
 
+    tracing::debug!("Updating account id={}", id);
+
     match &credit_info {
         Some(info) => {
-            upsert_credit_info(connection, id, info).map_err(|e| e.to_string())?;
+            upsert_credit_info(connection, id, info).map_err(|e| {
+                tracing::error!("Failed upserting credit info for update {}: {}", id, e);
+                e.to_string()
+            })?;
         }
         None => {
-            delete_credit_info(connection, id).map_err(|e| e.to_string())?;
+            delete_credit_info(connection, id).map_err(|e| {
+                tracing::error!("Failed deleting credit info for update {}: {}", id, e);
+                e.to_string()
+            })?;
         }
     }
 
@@ -204,9 +239,14 @@ fn update_account_internal(
         ))
         .returning(AccountRow::as_returning())
         .get_result::<AccountRow>(connection)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            tracing::error!("Failed updating account {}: {}", id, e);
+            e.to_string()
+        })?;
 
     let account_type = get_account_type(account_types, account_row.type_id);
+
+    tracing::info!("Account updated id={}", account_row.id);
 
     Ok(Account {
         id: account_row.id,
@@ -221,6 +261,8 @@ fn update_account_internal(
 
 #[tauri::command]
 pub fn remove_account(state: State<'_, Mutex<AppState>>, id: i32) -> Result<usize, String> {
+    tracing::debug!("Executing command remove_account id={}", id);
+
     let state = state.lock().unwrap();
 
     let connection = &mut establish_connection(&state.config.database_url);
@@ -231,12 +273,20 @@ pub fn remove_account(state: State<'_, Mutex<AppState>>, id: i32) -> Result<usiz
 fn remove_account_internal(connection: &mut SqliteConnection, id: i32) -> Result<usize, String> {
     use crate::schema::accounts::dsl::accounts;
 
+    tracing::warn!("Deleting account id={}", id);
+
     let deleted_count =
-        diesel::delete(accounts.find(id)).execute(connection).map_err(|e| e.to_string())?;
+        diesel::delete(accounts.find(id)).execute(connection).map_err(|e| {
+            tracing::error!("Failed deleting account {}: {}", id, e);
+            e.to_string()
+        })?;
 
     if deleted_count == 0 {
+        tracing::warn!("Account id={} not found", id);
         return Err("Account not found".to_string());
     }
+
+    tracing::info!("Account deleted id={} count={}", id, deleted_count);
 
     Ok(deleted_count)
 }

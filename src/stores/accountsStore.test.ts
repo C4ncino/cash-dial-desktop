@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "@/lib/logger";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -28,6 +29,7 @@ const account = {
 
 describe("accountsStore", () => {
   beforeEach(() => {
+    logger.debug("Resetting accountsStore state for test");
     accountsStore.setState({
       accounts: [],
       types: [],

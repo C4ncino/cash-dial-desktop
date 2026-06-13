@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
+import { logger } from "@/lib/logger";
 import { ACCOUNT_FUNCTIONS, ACCOUNT_TYPES } from "@/types/enums";
 
 export const accountsStore = createStore<AccountsStore & Actions<Account>>((set, get) => ({
@@ -10,8 +11,8 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     const types = (await invoke("get_account_types")) as AccountType[];
     const accounts = (await invoke("get_accounts")) as Account[];
 
-    console.log("Accounts: ", accounts);
-    console.log("Account types: ", types);
+    logger.debug("Accounts:", accounts);
+    logger.debug("Account types:", types);
 
     return set({
       accounts,
@@ -27,7 +28,7 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
       creditInfo: account.creditInfo,
     })) as Account;
 
-    console.log(newAccount);
+    logger.info("Account created", newAccount);
 
     return set((state) => ({
       accounts: [...state.accounts, newAccount],
