@@ -1,9 +1,10 @@
 use std::{env, str::FromStr};
 
-use serde::{Serialize};
 use dotenvy::dotenv;
+use serde::Serialize;
 
 use crate::models::accounts::AccountType;
+use crate::models::categories::Category;
 use crate::models::currencies::Currency;
 
 #[derive(Serialize, Default)]
@@ -12,6 +13,7 @@ pub struct AppState {
     pub config: Config,
     pub currencies: Vec<Currency>,
     pub account_types: Vec<AccountType>,
+    pub categories: Vec<Category>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -22,10 +24,7 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Self {
-            database_url: "./db.sqlite".to_string(),
-            environment: Environment::Development,
-        }
+        Self { database_url: "./db.sqlite".to_string(), environment: Environment::Development }
     }
 }
 
@@ -56,8 +55,7 @@ impl Config {
         let default = Self::default();
 
         Ok(Self {
-            database_url: env::var("DATABASE_URL")
-                .unwrap_or(default.database_url),
+            database_url: env::var("DATABASE_URL").unwrap_or(default.database_url),
             environment: env::var("APP_ENV")
                 .ok()
                 .map(|v| v.parse())

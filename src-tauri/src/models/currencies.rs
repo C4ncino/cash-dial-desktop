@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use serde::{Serialize};
+use serde::Serialize;
 
 #[derive(Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::currencies)]

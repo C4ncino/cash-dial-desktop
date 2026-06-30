@@ -2,6 +2,7 @@ use diesel::prelude::*;
 
 use crate::models::{
     accounts::{AccountType, AccountTypeRow, AccountTypeTranslationRow},
+    categories::{Category, CategoryRow, CategoryTranslationRow},
     currencies::{Currency, CurrencyRow, CurrencyTranslationRow},
 };
 
@@ -52,4 +53,26 @@ pub fn get_currencies(
         .collect();
 
     Ok(currencies_results)
+}
+
+pub fn get_categories(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<Category>, String> {
+    use crate::schema::{
+        categories::dsl::categories, categories_translations::dsl::categories_translations,
+        categories_translations::lang as table_lang,
+    };
+
+    let categories_results: Vec<Category> = categories
+        .inner_join(categories_translations)
+        .filter(table_lang.eq(lang))
+        .select((CategoryRow::as_select(), CategoryTranslationRow::as_select()))
+        .load::<(CategoryRow, CategoryTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| Category::from((item, translation)))
+        .collect();
+
+    Ok(categories_results)
 }

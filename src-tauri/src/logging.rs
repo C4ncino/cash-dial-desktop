@@ -42,7 +42,11 @@ pub fn log_dir() -> anyhow::Result<PathBuf> {
         // linux and others
         #[cfg(not(target_os = "macos"))]
         {
-            let p = PathBuf::from(home).join(".local").join("share").join(default_app_name()).join("logs");
+            let p = PathBuf::from(home)
+                .join(".local")
+                .join("share")
+                .join(default_app_name())
+                .join("logs");
             fs::create_dir_all(&p).context("creating linux log dir")?;
             return Ok(p);
         }
@@ -61,8 +65,13 @@ pub fn init_logging() -> anyhow::Result<()> {
     // keep guard alive for process lifetime
     LOG_GUARD.set(guard).ok();
 
-    let level = env::var("LOG_LEVEL")
-        .unwrap_or_else(|_| if cfg!(debug_assertions) { "debug".into() } else { "info".into() });
+    let level = env::var("LOG_LEVEL").unwrap_or_else(|_| {
+        if cfg!(debug_assertions) {
+            "debug".into()
+        } else {
+            "info".into()
+        }
+    });
 
     let env_filter = EnvFilter::try_new(level.clone()).unwrap_or_else(|_| EnvFilter::new("info"));
 
@@ -81,11 +90,7 @@ pub fn init_logging() -> anyhow::Result<()> {
             .try_init()
             .ok();
     } else {
-        tracing_subscriber::registry()
-            .with(env_filter)
-            .with(file_layer)
-            .try_init()
-            .ok();
+        tracing_subscriber::registry().with(env_filter).with(file_layer).try_init().ok();
     }
 
     tracing::info!("Logging initialized");
@@ -114,8 +119,7 @@ pub fn export_logs_zip() -> anyhow::Result<PathBuf> {
     {
         let path = entry.path();
         let name = path.strip_prefix(&log_dir).unwrap().to_string_lossy();
-        zip.start_file(name.replace("\\", "/"), options)
-            .context("starting file in zip")?;
+        zip.start_file(name.replace("\\", "/"), options).context("starting file in zip")?;
         let mut f = File::open(path).context("opening log file")?;
         let mut buffer = Vec::new();
         f.read_to_end(&mut buffer).context("reading log file")?;

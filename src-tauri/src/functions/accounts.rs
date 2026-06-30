@@ -90,16 +90,22 @@ pub fn add_account(
     currency_id: u8,
     credit_info: Option<AccountCreditInfo>,
 ) -> Result<Account, String> {
-    tracing::debug!("Executing command add_account name={} type_id={} currency_id={}", name, type_id, currency_id);
-    
+    tracing::debug!(
+        "Executing command add_account name={} type_id={} currency_id={}",
+        name,
+        type_id,
+        currency_id
+    );
+
     let state = state.lock().unwrap();
 
     let account_types = {
-        validate_account(&state, name, balance, type_id, currency_id, &credit_info)
-            .map_err(|e| {
+        validate_account(&state, name, balance, type_id, currency_id, &credit_info).map_err(
+            |e| {
                 tracing::warn!("Validation failed for new account: {:?}", e);
                 e.join(", ")
-            })?;
+            },
+        )?;
 
         state.account_types.clone()
     };
@@ -128,7 +134,12 @@ fn add_account_internal(
 ) -> Result<Account, String> {
     use crate::schema::accounts::dsl::accounts;
 
-    tracing::debug!("Creating account name={} type_id={} currency_id={}", name, type_id, currency_id);
+    tracing::debug!(
+        "Creating account name={} type_id={} currency_id={}",
+        name,
+        type_id,
+        currency_id
+    );
 
     let new_account = AccountInsert { type_id, currency_id: currency_id as i32, name, balance };
 
@@ -176,13 +187,14 @@ pub fn update_account(
     tracing::debug!("Executing command update_account id={} name={}", id, name);
 
     let state = state.lock().unwrap();
-    
+
     let account_types = {
-        validate_account(&state, name, balance, type_id, currency_id, &_credit_info)
-            .map_err(|e| {
+        validate_account(&state, name, balance, type_id, currency_id, &_credit_info).map_err(
+            |e| {
                 tracing::warn!("Validation failed for update_account id={}: {:?}", id, e);
                 e.join(", ")
-            })?;
+            },
+        )?;
 
         state.account_types.clone()
     };
@@ -275,11 +287,10 @@ fn remove_account_internal(connection: &mut SqliteConnection, id: i32) -> Result
 
     tracing::warn!("Deleting account id={}", id);
 
-    let deleted_count =
-        diesel::delete(accounts.find(id)).execute(connection).map_err(|e| {
-            tracing::error!("Failed deleting account {}: {}", id, e);
-            e.to_string()
-        })?;
+    let deleted_count = diesel::delete(accounts.find(id)).execute(connection).map_err(|e| {
+        tracing::error!("Failed deleting account {}: {}", id, e);
+        e.to_string()
+    })?;
 
     if deleted_count == 0 {
         tracing::warn!("Account id={} not found", id);

@@ -4,15 +4,15 @@ use tauri::{Manager, State};
 
 mod db;
 mod functions;
+mod logging;
 mod models;
 mod schema;
 mod utils;
-mod logging;
 
 #[cfg(test)]
 mod tests;
 
-use crate::db::query::{get_account_types, get_currencies};
+use crate::db::query::{get_account_types, get_categories, get_currencies};
 use crate::models::general::AppState;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -68,9 +68,13 @@ fn create_init_state() -> Result<AppState, String> {
 
     state.currencies = currencies_results.clone();
 
-    let accounts_types_results = get_account_types(connection, lang)?;
+    let accounts_types_results = get_account_types(connection, lang.clone())?;
 
     state.account_types = accounts_types_results.clone();
+
+    let categories_results = get_categories(connection, lang)?;
+
+    state.categories = categories_results.clone();
 
     Ok(state)
 }
@@ -113,6 +117,7 @@ pub fn run() {
             functions::accounts::update_account,
             functions::accounts::remove_account,
             functions::currencies::get_currencies,
+            functions::categories::get_categories,
             export_logs,
             log_frontend_error
         ])

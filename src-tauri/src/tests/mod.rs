@@ -1,6 +1,6 @@
 use crate::models::{
-    currencies::Currency,
     accounts::AccountType,
+    currencies::Currency,
     general::{AppState, Config, Environment},
 };
 
@@ -40,10 +40,7 @@ pub fn mock_state() -> AppState {
             code: "MXN".to_string(),
         }],
 
-        config: Config{
-            environment: Environment::Test,
-            database_url: TEST_DB_PATH.to_string(),
-        },
+        config: Config { environment: Environment::Test, database_url: TEST_DB_PATH.to_string() },
 
         ..Default::default()
     }

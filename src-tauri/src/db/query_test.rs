@@ -75,4 +75,41 @@ pub mod integration {
 
         assert!(result.is_empty());
     }
+
+    #[test]
+    fn returns_categories_in_spanish() {
+        let conn = &mut setup_test_db();
+
+        let result = get_categories(conn, "es".to_string()).unwrap();
+
+        // There are a total of 88 categories inserted by migration
+        assert_eq!(result.len(), 88);
+
+        // Category with id 1 is 'food' and translated to 'Comida y Bebida'
+        let food_cat = result.iter().find(|c| c.id == 1).unwrap();
+        assert_eq!(food_cat.name, "Comida y Bebida");
+        assert_eq!(food_cat.icon, "apple");
+        assert_eq!(food_cat.color, "#00a63e");
+    }
+
+    #[test]
+    fn returns_categories_in_english() {
+        let conn = &mut setup_test_db();
+
+        let result = get_categories(conn, "en".to_string()).unwrap();
+
+        assert_eq!(result.len(), 88);
+
+        let food_cat = result.iter().find(|c| c.id == 1).unwrap();
+        assert_eq!(food_cat.name, "Food & Drink");
+    }
+
+    #[test]
+    fn returns_empty_categories_list_when_language_not_found() {
+        let conn = &mut setup_test_db();
+
+        let result = get_categories(conn, "fr".to_string()).unwrap();
+
+        assert!(result.is_empty());
+    }
 }
