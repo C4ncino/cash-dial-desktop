@@ -6,8 +6,14 @@ type Category = {
   color: string;
 };
 
+type CategoryStore = {
+  categories: Category[];
+};
+
 type CategoryNode = {
   id: number;
   name: string;
+  icon: string;
+  color: string;
   children: CategoryNode[];
 };

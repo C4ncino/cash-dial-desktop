@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 import { logger, setupGlobalErrorHandlers } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
+import { categoryStore } from "@/stores/categoryStore";
 import { currencyStore } from "@/stores/currencyStore";
 
 setupGlobalErrorHandlers();
@@ -17,7 +18,9 @@ export async function initStores() {
 
   logger.info("Initializing stores...");
 
-  await currencyStore.getState().populate();
-
-  await accountsStore.getState().populate();
+  await Promise.all([
+    currencyStore.getState().populate(),
+    accountsStore.getState().populate(),
+    categoryStore.getState().populate(),
+  ]);
 }

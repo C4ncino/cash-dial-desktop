@@ -15,6 +15,10 @@ export enum CURRENCY_FUNCTIONS {
   get = "get_currencies",
 }
 
+export enum CATEGORY_FUNCTIONS {
+  get = "get_categories",
+}
+
 export enum MOVEMENT_TYPES {
   EXPENSE,
   INCOME,
