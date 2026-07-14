@@ -6,6 +6,7 @@ use serde::Serialize;
 use crate::models::accounts::AccountType;
 use crate::models::categories::Category;
 use crate::models::currencies::Currency;
+use crate::models::movements::MovementType;
 
 #[derive(Serialize, Default)]
 pub struct AppState {
@@ -14,6 +15,7 @@ pub struct AppState {
     pub currencies: Vec<Currency>,
     pub account_types: Vec<AccountType>,
     pub categories: Vec<Category>,
+    pub movement_types: Vec<MovementType>,
 }
 
 #[derive(Debug, Clone, Serialize)]

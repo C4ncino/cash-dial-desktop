@@ -1,10 +1,7 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::models::{
-    categories::Category,
-    general::AppState
-};
+use crate::models::{categories::Category, general::AppState};
 
 #[tauri::command]
 pub fn get_categories(state: State<'_, Mutex<AppState>>) -> Result<Vec<Category>, String> {

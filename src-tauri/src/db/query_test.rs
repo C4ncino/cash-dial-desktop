@@ -112,4 +112,40 @@ pub mod integration {
 
         assert!(result.is_empty());
     }
+
+    #[test]
+    fn returns_movement_types_in_spanish() {
+        let conn = &mut setup_test_db();
+
+        let result = get_movement_types(conn, "es".to_string()).unwrap();
+
+        assert_eq!(result.len(), 3);
+
+        assert_eq!(result[0].key, "in");
+        assert_eq!(result[0].name, "Ingreso");
+        assert_eq!(result[1].name, "Gasto");
+        assert_eq!(result[2].name, "Transferencia");
+    }
+
+    #[test]
+    fn returns_movement_types_in_english() {
+        let conn = &mut setup_test_db();
+
+        let result = get_movement_types(conn, "en".to_string()).unwrap();
+
+        assert_eq!(result.len(), 3);
+
+        assert_eq!(result[0].name, "Income");
+        assert_eq!(result[1].name, "Expense");
+        assert_eq!(result[2].name, "Transfer");
+    }
+
+    #[test]
+    fn returns_empty_movement_types_list_when_language_not_found() {
+        let conn = &mut setup_test_db();
+
+        let result = get_movement_types(conn, "fr".to_string()).unwrap();
+
+        assert!(result.is_empty());
+    }
 }

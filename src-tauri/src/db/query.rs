@@ -4,6 +4,7 @@ use crate::models::{
     accounts::{AccountType, AccountTypeRow, AccountTypeTranslationRow},
     categories::{Category, CategoryRow, CategoryTranslationRow},
     currencies::{Currency, CurrencyRow, CurrencyTranslationRow},
+    movements::{MovementType, MovementTypeRow, MovementTypeTranslationRow},
 };
 
 #[cfg(test)]
@@ -75,4 +76,27 @@ pub fn get_categories(
         .collect();
 
     Ok(categories_results)
+}
+
+pub fn get_movement_types(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<MovementType>, String> {
+    use crate::schema::{
+        movement_types::dsl::movement_types,
+        movement_types_translations::dsl::movement_types_translations,
+        movement_types_translations::lang as table_lang,
+    };
+
+    let movement_types_results: Vec<MovementType> = movement_types
+        .inner_join(movement_types_translations)
+        .filter(table_lang.eq(lang))
+        .select((MovementTypeRow::as_select(), MovementTypeTranslationRow::as_select()))
+        .load::<(MovementTypeRow, MovementTypeTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| MovementType::from((item, translation)))
+        .collect();
+
+    Ok(movement_types_results)
 }

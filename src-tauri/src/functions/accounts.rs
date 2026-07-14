@@ -302,6 +302,32 @@ fn remove_account_internal(connection: &mut SqliteConnection, id: i32) -> Result
     Ok(deleted_count)
 }
 
+#[tauri::command]
+pub fn get_account_balance(state: State<'_, Mutex<AppState>>, id: i32) -> Result<f64, String> {
+    tracing::debug!("Executing command get_account_balance id={}", id);
+
+    let state = state.lock().unwrap();
+    let connection = &mut establish_connection(&state.config.database_url);
+
+    get_account_balance_internal(connection, id)
+}
+
+fn get_account_balance_internal(
+    connection: &mut SqliteConnection,
+    account_id: i32,
+) -> Result<f64, String> {
+    use crate::schema::accounts::dsl::{accounts, balance};
+
+    accounts
+        .find(account_id)
+        .select(balance)
+        .first::<f64>(connection)
+        .map_err(|e| {
+            tracing::error!("Failed getting account balance for id {}: {}", account_id, e);
+            e.to_string()
+        })
+}
+
 fn get_account_type(account_types: &[AccountType], type_id: i32) -> AccountType {
     account_types.iter().find(|t| t.id == type_id).unwrap().clone()
 }

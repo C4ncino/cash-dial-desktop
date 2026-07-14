@@ -401,4 +401,15 @@ pub mod integration {
 
         assert!(row.is_none());
     }
+
+    #[test]
+    fn test_get_account_balance() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+
+        // from test.sql seed
+        let account_id = 1;
+        let balance = get_account_balance_internal(connection, account_id).unwrap();
+        assert!(balance >= 0.0);
+    }
 }

@@ -37,3 +37,4 @@ playwright/.auth/
 
 # vitest cache
 .vitest/
+*logs/

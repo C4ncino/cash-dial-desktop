@@ -1,3 +1,4 @@
 pub mod accounts;
-pub mod currencies;
 pub mod categories;
+pub mod currencies;
+pub mod movements;

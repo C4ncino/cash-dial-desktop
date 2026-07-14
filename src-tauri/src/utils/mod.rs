@@ -1,3 +1,5 @@
+pub mod date;
+
 pub const SUPPORTED_LANGUAGES: &[&str] = &["es", "en"];
 
 pub fn preferred_lang() -> String {

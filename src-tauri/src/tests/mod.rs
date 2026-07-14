@@ -1,14 +1,32 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use crate::models::{
     accounts::AccountType,
+    categories::Category,
     currencies::Currency,
     general::{AppState, Config, Environment},
+    movements::MovementType,
 };
 
-const TEST_DB_PATH: &str = "test_db.sqlite";
+const TEST_DB_PATH: &str = "test-integration.sqlite";
+const TEST_LOG_DIR: &str = "test-logs";
+static TEST_DB_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+fn prepare_test_environment() {
+    std::env::set_var("LOG_DIR", TEST_LOG_DIR);
+    crate::logging::init_logging().ok();
+}
+
+fn next_test_db_path() -> String {
+    let id = TEST_DB_COUNTER.fetch_add(1, Ordering::SeqCst);
+    let path =
+        std::env::temp_dir().join(format!("cash-dial-test-{}-{id}.sqlite", std::process::id()));
+
+    path.to_string_lossy().to_string()
+}
 
 pub fn mock_state() -> AppState {
-    // ensure logging initialized for tests
-    crate::logging::init_logging().ok();
+    prepare_test_environment();
     tracing::info!("Initializing mock_state for tests");
 
     AppState {
@@ -40,38 +58,59 @@ pub fn mock_state() -> AppState {
             code: "MXN".to_string(),
         }],
 
+        categories: vec![
+            Category {
+                id: 1,
+                father_id: None,
+                name: "Food & Drink".to_string(),
+                icon: "apple".to_string(),
+                color: "#00a63e".to_string(),
+            },
+            Category {
+                id: 88,
+                father_id: None,
+                name: "Transfer".to_string(),
+                icon: "data-transfer-up".to_string(),
+                color: "#84cc16".to_string(),
+            },
+        ],
+
+        movement_types: vec![
+            MovementType { id: 1, key: "in".to_string(), name: "Income".to_string() },
+            MovementType { id: 2, key: "out".to_string(), name: "Expense".to_string() },
+            MovementType { id: 3, key: "transfer".to_string(), name: "Transfer".to_string() },
+        ],
+
         config: Config { environment: Environment::Test, database_url: TEST_DB_PATH.to_string() },
 
         ..Default::default()
     }
 }
 
-use diesel::sqlite::SqliteConnection;
-use diesel::{connection::SimpleConnection, prelude::*};
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use diesel::prelude::*;
 
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+pub fn setup_test_db() -> diesel::SqliteConnection {
+    let database_url = TEST_DB_PATH.to_string();
+    prepare_test_environment();
+    tracing::info!("Setting up test database: {}", database_url);
 
-pub fn setup_test_db() -> SqliteConnection {
-    // ensure logging initialized for tests
-    crate::logging::init_logging().ok();
-    tracing::info!("Setting up test database: {}", TEST_DB_PATH);
+    crate::db::run_migrations(&database_url, &Environment::Test)
+        .expect("Test migrations + seeding failed");
 
-    let mut conn = SqliteConnection::establish(TEST_DB_PATH).unwrap();
-
-    let migrations_ran = conn.run_pending_migrations(MIGRATIONS).unwrap();
-
-    if migrations_ran.len() > 0 {
-        tracing::info!("Migrations ran count={}", migrations_ran.len());
-        let seed_sql = std::fs::read_to_string("seeds/test.sql").expect("Cannot read test.sql");
-        conn.batch_execute(&seed_sql).expect("Failed to execute seed file");
-    }
-
-    conn
+    diesel::SqliteConnection::establish(&database_url)
+        .expect("Failed to connect to test database")
 }
 
 pub fn setup() -> AppState {
-    let _ = setup_test_db();
+    let database_url = next_test_db_path();
+    prepare_test_environment();
 
-    mock_state()
+    let mut state = mock_state();
+    state.config.database_url = database_url;
+
+    crate::db::run_migrations(&state.config.database_url, &state.config.environment)
+        .expect("Test migrations + seeding failed");
+    
+
+    state
 }

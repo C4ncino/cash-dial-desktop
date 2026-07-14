@@ -12,7 +12,7 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-use crate::db::query::{get_account_types, get_categories, get_currencies};
+use crate::db::query::{get_account_types, get_categories, get_currencies, get_movement_types};
 use crate::models::general::AppState;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -62,7 +62,7 @@ fn create_init_state() -> Result<AppState, String> {
 
     let connection = &mut db::connect::establish_connection(&state.config.database_url);
 
-    run_migrations(&state.config.database_url)?;
+    run_migrations(&state.config.database_url, &state.config.environment)?;
 
     let currencies_results = get_currencies(connection, lang.clone())?;
 
@@ -72,9 +72,13 @@ fn create_init_state() -> Result<AppState, String> {
 
     state.account_types = accounts_types_results.clone();
 
-    let categories_results = get_categories(connection, lang)?;
+    let categories_results = get_categories(connection, lang.clone())?;
 
     state.categories = categories_results.clone();
+
+    let movement_types_results = get_movement_types(connection, lang)?;
+
+    state.movement_types = movement_types_results.clone();
 
     Ok(state)
 }
@@ -116,8 +120,15 @@ pub fn run() {
             functions::accounts::get_accounts,
             functions::accounts::update_account,
             functions::accounts::remove_account,
+            functions::accounts::get_account_balance,
             functions::currencies::get_currencies,
             functions::categories::get_categories,
+            functions::movements::add_movement,
+            functions::movements::get_movement_types,
+            functions::movements::get_movements,
+            functions::movements::update_movement,
+            functions::movements::remove_movement,
+            functions::movements::get_movement_installments,
             export_logs,
             log_frontend_error
         ])
