@@ -9,10 +9,11 @@
     "astro": "astro",
     "tauri": "tauri",
     "test": "vitest run src",
-    "test:e2e": "cross-env DB_URL=./test.sqlite vitest run tests/e2e --fileParallelism=false",
-    "test:e2e:fast": "cross-env DB_URL=./test.sqlite SKIP_BUILD=true vitest run tests/e2e --fileParallelism=false",
-    "test:integration": "cross-env DB_URL=./test.sqlite VITE_TEST_MODE=true vitest run tests/integration --fileParallelism=false",
-    "test:integration:fast": "cross-env DB_URL=./test.sqlite SKIP_BUILD=true VITE_TEST_MODE=true vitest run tests/integration --fileParallelism=false"
+    "build:test": "pnpm tauri build --debug --no-bundle",
+    "test:e2e": "pnpm run build:test && cross-env DATABASE_URL=./e2e-test.sqlite vitest run tests/e2e --fileParallelism=false",
+    "test:e2e:fast": "cross-env DATABASE_URL=./e2e-test.sqlite vitest run tests/e2e --fileParallelism=false",
+    "test:integration": "cross-env-shell VITE_TEST_MODE=true pnpm run build:test && cross-env DATABASE_URL=./integration-tests-front.sqlite vitest run tests/integration --fileParallelism=false",
+    "test:integration:fast": "cross-env DATABASE_URL=./integration-tests-front.sqlite vitest run tests/integration --fileParallelism=false"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",

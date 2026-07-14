@@ -22,4 +22,5 @@ type CreditCardInfo = {
 type AccountsStore = {
   accounts: Account[];
   types: AccountType[];
+  updateBalance: (id1: number, id2?: number) => Promise<number | [number, number]>;
 };

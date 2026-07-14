@@ -1,5 +1,9 @@
 ---
 import Accounts from "@/components/Accounts/Accounts.astro";
+import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
+import MovementsLanding from "@/components/Movements/MovementsLanding";
+import MovementModals from "@/components/Movements/Modals.astro";
+import MovementToasts from "@/components/Movements/Toasts.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { logger } from "@/lib/logger";
 
@@ -10,6 +14,11 @@ logger.debug(TEST_MODE);
 
 <BaseLayout title="Home" description="">
   <Accounts />
+  <MovementsLanding client:load />
+
+  <CreateSpeedDial />
+  <MovementModals />
+  <MovementToasts />
 </BaseLayout>
 
 {TEST_MODE && <script src="../lib/test.ts" />}

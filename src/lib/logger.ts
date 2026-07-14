@@ -15,7 +15,7 @@ export const logger = {
     if (shouldLog("trace")) console.trace(...args);
   },
   debug: (...args: any[]) => {
-    if (shouldLog("debug")) console.debug(...args);
+    if (shouldLog("debug")) console.info(...args);
   },
   info: (...args: any[]) => {
     if (shouldLog("info")) console.info(...args);

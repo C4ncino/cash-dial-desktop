@@ -1,6 +1,6 @@
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
+import { closeTauriDriver, createDriver, deleteDatabase, driver } from "@test/driver";
 import { By, until } from "selenium-webdriver";
-import { createDriver, closeTauriDriver, driver, deleteDatabase } from "@test/driver";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 describe("Tauri - Account creation", () => {
   beforeAll(async () => {
@@ -13,7 +13,7 @@ describe("Tauri - Account creation", () => {
   });
 
   it("creates a cash account", async () => {
-    // wait app UI    
+    // wait app UI
     await driver.wait(until.elementLocated(By.css("body")), 10000);
 
     // open-form
@@ -28,25 +28,19 @@ describe("Tauri - Account creation", () => {
     await balance.sendKeys("1000");
 
     // select type
-    const cashType = await driver.findElement(
-      By.xpath("//label[contains(., 'Efectivo')]")
-    );
+    const cashType = await driver.findElement(By.xpath("//label[contains(., 'Efectivo')]"));
     await cashType.click();
 
     // submit
-    const submit = await driver.findElement(
-      By.css('button[type="submit"]')
-    );
-    
+    const submit = await driver.findElement(By.css('button[type="submit"]'));
+
     await submit.click();
 
     await driver.sleep(200);
 
-    const accountLink = await driver.findElement(
-      By.css('a[href="/accounts?id=1"]')
-    );
+    const accountLink = await driver.findElement(By.css('a[href="/account?id=5"]'));
     await accountLink.click();
-    
+
     await driver.wait(until.elementLocated(By.css("body")), 10000);
 
     const bodyText = await driver.findElement(By.css("body")).getText();

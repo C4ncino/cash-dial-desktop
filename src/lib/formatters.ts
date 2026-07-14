@@ -1,4 +1,4 @@
-const lang = navigator.language;
+export const lang = navigator.language;
 export const clockFormat12 = true;
 
 export function formatNumber(value: number, top?: number) {

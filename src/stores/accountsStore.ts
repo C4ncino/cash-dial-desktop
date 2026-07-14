@@ -59,6 +59,34 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
       types: state.types,
     }));
   },
+  updateBalance: async (accountId: number, toAccountId?: number) => {
+    const balance1 = (await invoke(ACCOUNT_FUNCTIONS.getBalance, { id: accountId })) as number;
+    let balance2: number | undefined;
+    if (toAccountId !== undefined) {
+      balance2 = (await invoke(ACCOUNT_FUNCTIONS.getBalance, { id: toAccountId })) as number;
+    }
+
+    set((state) => {
+      const updatedAccounts = state.accounts.map((acc) => {
+        if (acc.id === accountId) {
+          return { ...acc, balance: balance1 };
+        }
+        if (toAccountId !== undefined && acc.id === toAccountId) {
+          return { ...acc, balance: balance2 as number };
+        }
+        return acc;
+      });
+      return {
+        ...state,
+        accounts: updatedAccounts,
+      };
+    });
+
+    if (balance2 !== undefined) {
+      return [balance1, balance2];
+    }
+    return balance1;
+  },
 }));
 
 export function validate(data: { [k: string]: FormDataEntryValue }): {

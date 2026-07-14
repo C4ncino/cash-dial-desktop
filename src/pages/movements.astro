@@ -1,0 +1,16 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import GlobalMovements from "@/components/Movements/GlobalMovements";
+import MovementModals from "@/components/Movements/Modals.astro";
+import MovementToasts from "@/components/Movements/Toasts.astro";
+---
+
+<BaseLayout title="Movimientos" description="Historial de todos los movimientos de cuentas">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 dark:text-white">Movimientos</h1>
+    <GlobalMovements client:load />
+  </div>
+
+  <MovementModals />
+  <MovementToasts />
+</BaseLayout>

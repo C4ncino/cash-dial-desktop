@@ -1,8 +1,9 @@
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
-import { createDriver, closeTauriDriver, deleteDatabase, seedDatabase, invokeCommand } from "@test/driver";
+import { closeTauriDriver, createDriver, deleteDatabase, invokeCommand } from "@test/driver";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
 import { CURRENCY_FUNCTIONS } from "@/types/enums";
 
-export function expectCurrency(value: unknown) {
+function expectCurrency(value: unknown) {
   expect(value).toEqual(
     expect.objectContaining({
       id: expect.any(Number),
@@ -13,17 +14,15 @@ export function expectCurrency(value: unknown) {
   );
 }
 
-export function expectCurrencies(value: unknown) {
+function expectCurrencies(value: unknown) {
   expect(Array.isArray(value)).toBe(true);
 
   (value as unknown[]).forEach(expectCurrency);
 }
 
-
 describe("Currency Commands", () => {
   beforeAll(async () => {
     await createDriver();
-    seedDatabase();
   });
 
   afterAll(async () => {
@@ -32,17 +31,13 @@ describe("Currency Commands", () => {
   });
 
   it("get_currencies returns Currency[]", async () => {
-    const result = await invokeCommand<unknown>(
-      CURRENCY_FUNCTIONS.get,
-    );
+    const result = await invokeCommand<unknown>(CURRENCY_FUNCTIONS.get);
 
     expectCurrencies(result);
   });
 
   it("currencies contain values", async () => {
-    const currencies = await invokeCommand<Currency[]>(
-      CURRENCY_FUNCTIONS.get,
-    );
+    const currencies = await invokeCommand<Currency[]>(CURRENCY_FUNCTIONS.get);
 
     expect(currencies.length).toBeGreaterThan(0);
   });

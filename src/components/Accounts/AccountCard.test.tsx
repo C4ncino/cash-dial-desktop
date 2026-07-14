@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { logger } from "@/lib/logger";
 
 import AccountCard from "@/components/Accounts/AccountCard";
+import { logger } from "@/lib/logger";
 
 const mockAccount: Account = {
   id: 1,
@@ -56,7 +56,7 @@ describe("AccountCard", () => {
 
     const link = screen.getByRole("link");
 
-    expect(link).toHaveAttribute("href", "/accounts?id=1");
+    expect(link).toHaveAttribute("href", "/account?id=1");
   });
 
   it("should apply red text color when balance is negative", () => {

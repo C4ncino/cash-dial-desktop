@@ -1,0 +1,7 @@
+@use "webcoreui/styles" as *;
+
+@include setup((
+    includeTooltip: true,
+    includeUtilities: false,
+    includeResets: false,
+));

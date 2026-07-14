@@ -5,3 +5,22 @@
   --color-gray-webui: oklch(0.2645 0 0);
   --color-gray-webui-text: oklch(0.8452 0 0);
 }
+
+html body {
+  --w-tooltip-background: #FFF;
+  --w-tooltip-color: #000;
+}
+
+.gradient-bg {
+  background-color: #0b0e14;
+  background-image:
+    radial-gradient(at 20% 20%, rgba(0, 229, 255, 0.25) 0px, transparent 50%),
+    radial-gradient(at 80% 40%, rgba(138, 43, 226, 0.3) 0px, transparent 50%),
+    radial-gradient(at 40% 80%, rgba(255, 0, 128, 0.25) 0px, transparent 60%),
+    radial-gradient(at 90% 10%, rgba(0, 255, 128, 0.15) 0px, transparent 40%);
+  background-size: cover;
+}
+
+.breadcrumb-category>li {
+  flex-shrink: 0;
+}

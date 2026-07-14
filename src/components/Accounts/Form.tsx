@@ -4,6 +4,8 @@ import { closeModal, toast } from "webcoreui";
 import { Input } from "webcoreui/react";
 import { useStore } from "zustand";
 
+import FormActions from "@/components/Forms/FormActions";
+import FormErrors from "@/components/Forms/FormErrors";
 import SelectCurrency from "@/components/Forms/SelectCurrencies";
 import { logger } from "@/lib/logger";
 import { accountsStore, createAccountFromData, validate } from "@/stores/accountsStore";
@@ -79,7 +81,7 @@ const AccountForm = ({ modalId }: Props) => {
           name="name"
           label="Nombre"
           required
-          defaultValue={account ? account.name : ""}
+          value={account ? account.name : ""}
           maxLength={25}
           autoComplete="on"
         />
@@ -93,7 +95,7 @@ const AccountForm = ({ modalId }: Props) => {
             name="balance"
             id="balance"
             required
-            defaultValue={account ? account.balance : "0.00"}
+            value={account ? account.balance : "0.00"}
             step={0.01}
           />
           <SelectCurrency currencyId={account ? account.currencyId : undefined} />
@@ -132,7 +134,7 @@ const AccountForm = ({ modalId }: Props) => {
             name="creditLimit"
             label="Límite de Crédito"
             required
-            defaultValue={account?.creditInfo?.creditLimit ?? "0.00"}
+            value={account?.creditInfo?.creditLimit ?? "0.00"}
             min={0}
             step={0.01}
           />
@@ -143,7 +145,7 @@ const AccountForm = ({ modalId }: Props) => {
               name="cutoffDay"
               label="Día de Corte"
               required
-              defaultValue={account?.creditInfo?.cutoffDay ?? "1"}
+              value={account?.creditInfo?.cutoffDay ?? "1"}
               min={1}
               max={31}
               step={1}
@@ -153,7 +155,7 @@ const AccountForm = ({ modalId }: Props) => {
               name="daysToPay"
               label="Días para pagar"
               required
-              defaultValue={account?.creditInfo?.daysToPay ?? "1"}
+              value={account?.creditInfo?.daysToPay ?? "1"}
               min={1}
               max={35}
               step={1}
@@ -162,30 +164,8 @@ const AccountForm = ({ modalId }: Props) => {
         </fieldset>
       )}
 
-      <p className="text-red-500 text-sm">
-        {errors.map((error) => (
-          <span key={error}>{error}</span>
-        ))}
-      </p>
-
-      <menu className="flex justify-end gap-3">
-        <li>
-          <button
-            type="reset"
-            className="border-2 border-zinc-200 text-zinc-200 hover:text-black py-2 px-4 rounded hover:bg-zinc-200 hover:cursor-pointer"
-          >
-            Restaurar
-          </button>
-        </li>
-        <li>
-          <button
-            type="submit"
-            className="border-2 border-green-600 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 hover:border-green-700 hover:cursor-pointer"
-          >
-            Guardar
-          </button>
-        </li>
-      </menu>
+      <FormErrors errors={errors} />
+      <FormActions />
     </form>
   );
 };

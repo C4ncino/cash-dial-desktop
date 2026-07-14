@@ -1,9 +1,10 @@
-import os from "os";
-import { spawn, spawnSync } from "child_process";
-import { Builder, Capabilities, type WebDriver  } from "selenium-webdriver";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { Builder, Capabilities, type WebDriver } from "selenium-webdriver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,52 +15,46 @@ const application = path.resolve(
   "..",
   "src-tauri",
   "target",
-  "release",
-   process.platform === "win32"
-    ? "cash-dial-desktop.exe"
-    : "cash-dial-desktop",
+  "debug",
+  process.platform === "win32" ? "cash-dial-desktop.exe" : "cash-dial-desktop",
 );
 
-// keep track of the webdriver instance we create 
+// keep track of the webdriver instance we create
 export let driver: WebDriver;
+
+process.env.RUST_BACKTRACE = "1";
 
 // keep track of the tauri-driver process we start
 let tauriDriver: any;
-let exit = false;
 
-const SKIP_BUILD = Boolean(process.env.SKIP_BUILD);
+export async function createDriver() {
+  if (!fs.existsSync(application)) {
+    throw new Error(`Application not found at ${application}. Did you run pnpm build:test?`);
+  }
 
-export async function createDriver () {
-  const appExists = fs.existsSync(application);
-  
-  if (!SKIP_BUILD && !appExists) {
-    spawnSync("pnpm", ["tauri", "build", "--no-bundle"], {
-      cwd: path.resolve(__dirname, ".."),
-      stdio: "inherit",
-      shell: true,
+  try {
+    tauriDriver = spawn(path.resolve(os.homedir(), ".cargo", "bin", "tauri-driver"), [], {
+      stdio: [null, process.stdout, process.stderr],
+      env: { ...process.env, APP_ENV: "test" },
     });
+
+    const capabilities = new Capabilities();
+    capabilities.set("tauri:options", { application });
+    capabilities.setBrowserName("wry");
+
+    // start the webdriver client
+    driver = await new Builder()
+      .withCapabilities(capabilities)
+      .usingServer("http://localhost:4444/")
+      .build();
+  } catch (error) {
+    console.error(error);
   }
 
   // start tauri-driver
-  tauriDriver = spawn(
-    path.resolve(os.homedir(), ".cargo", "bin", "tauri-driver"),
-    [],
-    { stdio: [null, process.stdout, process.stderr] }
-  );
-
-  const capabilities = new Capabilities();
-  capabilities.set("tauri:options", { application });
-  capabilities.setBrowserName("wry");
-
-  // start the webdriver client
-  driver = await new Builder()
-    .withCapabilities(capabilities)
-    .usingServer("http://localhost:4444/")
-    .build();
-};
+}
 
 export async function closeTauriDriver() {
-  exit = true;
   // stop the webdriver session
   await driver.quit();
 
@@ -88,47 +83,22 @@ onShutdown(() => {
 });
 
 export function deleteDatabase() {
-  const DB_FILE = String(process.env.DB_URL);
+  const DB_FILE = String(process.env.DATABASE_URL);
 
-  const dbPath = path.resolve(
-    __dirname,
-    "..",
-    DB_FILE,
-  );
+  const dbPath = path.resolve(__dirname, "..", DB_FILE);
 
   if (fs.existsSync(dbPath)) {
+    const parsed = path.parse(dbPath);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+    const backupPath = path.join(parsed.dir, `${parsed.name}-${timestamp}.backup${parsed.ext}`);
+
+    fs.copyFileSync(dbPath, backupPath);
+    console.info(`Test driver created database backup: ${backupPath}`);
+
     fs.unlinkSync(dbPath);
-      console.info(`Test driver deleted database: ${dbPath}`);
+    console.info(`Test driver deleted database: ${dbPath}`);
   }
-}
-
-export function seedDatabase() {
-  const DB_FILE = String(process.env.DB_URL);
-
-  const dbPath = path.resolve(
-    __dirname,
-    "..",
-    DB_FILE,
-  );
-
-  const seedPath = path.resolve(
-    __dirname,
-    "..",
-    "src-tauri",
-    "seeds",
-    "test.sql",
-  );
-
-  spawnSync(
-    "sqlite3",
-    [dbPath],
-    {
-      input: `.read "${seedPath.replace(/\\/g, "/")}"\n`,
-      shell: true,
-      encoding: "utf8",
-      stdio: "pipe",
-    }
-  );
 }
 
 export async function invokeCommand<T>(
@@ -150,16 +120,8 @@ export async function invokeCommand<T>(
     args ?? {},
   );
 
-  if (
-    result &&
-    typeof result === "object" &&
-    "__error" in (result as Record<string, unknown>)
-  ) {
-    throw new Error(
-      String(
-        (result as Record<string, unknown>).__error,
-      ),
-    );
+  if (result && typeof result === "object" && "__error" in (result as Record<string, unknown>)) {
+    throw new Error(String((result as Record<string, unknown>).__error));
   }
 
   return result as T;

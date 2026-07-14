@@ -101,6 +101,36 @@ describe("accountsStore", () => {
 
     expect(accountsStore.getState().accounts[0].name).toBe("Updated");
   });
+
+  it("updateBalance updates balance for single account and returns it", async () => {
+    accountsStore.setState({
+      accounts: [account],
+      types: [],
+    });
+
+    mockInvoke.mockResolvedValueOnce(150);
+
+    const balance = await accountsStore.getState().updateBalance(account.id);
+
+    expect(balance).toBe(150);
+    expect(accountsStore.getState().accounts[0].balance).toBe(150);
+  });
+
+  it("updateBalance updates balance for two accounts and returns array", async () => {
+    const account2 = { ...account, id: 2, balance: 200 };
+    accountsStore.setState({
+      accounts: [account, account2],
+      types: [],
+    });
+
+    mockInvoke.mockResolvedValueOnce(300).mockResolvedValueOnce(400);
+
+    const balances = await accountsStore.getState().updateBalance(account.id, account2.id);
+
+    expect(balances).toEqual([300, 400]);
+    expect(accountsStore.getState().accounts[0].balance).toBe(300);
+    expect(accountsStore.getState().accounts[1].balance).toBe(400);
+  });
 });
 
 import { validate } from "@/stores/accountsStore";

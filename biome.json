@@ -9,7 +9,7 @@
     "ignoreUnknown": false,
     "includes": [
       "src/**/*.{js,ts,jsx,tsx,vue,svelte}",
-      "test/**/*.{js,ts,jsx,tsx,vue,svelte}",
+      "tests/**/*.{js,ts,jsx,tsx,vue,svelte}",
       "!**/*.min.js"
     ]
   },
@@ -59,9 +59,15 @@
           "level": "on",
           "options": {
             "groups": [
-              [":PACKAGE:", ":PACKAGE_WITH_PROTOCOL:", "!@/**"],
+              [
+                ":PACKAGE:",
+                ":PACKAGE_WITH_PROTOCOL:",
+                "!@/**"
+              ],
               ":BLANK_LINE:",
-              ["@/**"],
+              [
+                "@/**"
+              ],
               ":BLANK_LINE:"
             ]
           }

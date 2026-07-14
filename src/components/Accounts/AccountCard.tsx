@@ -8,7 +8,7 @@ export default function AccountCard(account: Account) {
   return (
     <a
       className="h-28 w-48 bg-zinc-100 dark:bg-zinc-950 rounded-md p-2 px-3 shadow-lg account-card cursor-pointer"
-      href={`/accounts?id=${account.id}`}
+      href={`/account?id=${account.id}`}
     >
       <hgroup className="flex flex-row gap-2 mb-1">
         <SquareIcon

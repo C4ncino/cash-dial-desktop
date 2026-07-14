@@ -2,9 +2,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ActionButtons from "@/components/Accounts/ActionButtons";
+import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { MODAL_ID } from "@/types/enums";
-import { logger } from "@/lib/logger";
 
 vi.mock("@/components/Forms/ConfirmModal", () => ({
   default: ({ buttonTitle, onConfirm, modalId }: any) => (
@@ -15,7 +15,7 @@ vi.mock("@/components/Forms/ConfirmModal", () => ({
 }));
 
 function setSearchParams(search: string) {
-  window.history.pushState({}, "", `/accounts${search}`);
+  window.history.pushState({}, "", `/account${search}`);
 }
 
 describe("ActionButtons", () => {
@@ -52,7 +52,7 @@ describe("ActionButtons", () => {
   });
 
   it("should call onConfirm with correct modalId for delete", () => {
-    const { container } = render(<ActionButtons />);
+    render(<ActionButtons />);
 
     const deleteBtn = screen.getByTestId(`confirm-modal-${MODAL_ID.ACCOUNT.DELETE}`);
 

@@ -1,9 +1,9 @@
-import { describe, it, beforeAll, afterAll, expect } from "vitest";
-import { createDriver, closeTauriDriver, deleteDatabase, seedDatabase, invokeCommand } from "@test/driver";
+import { closeTauriDriver, createDriver, deleteDatabase, invokeCommand } from "@test/driver";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
 import { ACCOUNT_FUNCTIONS } from "@/types/enums";
 
-
-export function expectCreditCardInfo(value: unknown) {
+function expectCreditCardInfo(value: unknown) {
   expect(value).toEqual(
     expect.objectContaining({
       creditLimit: expect.any(Number),
@@ -13,7 +13,7 @@ export function expectCreditCardInfo(value: unknown) {
   );
 }
 
-export function expectAccountType(value: unknown) {
+function expectAccountType(value: unknown) {
   expect(value).toEqual(
     expect.objectContaining({
       id: expect.any(Number),
@@ -24,7 +24,7 @@ export function expectAccountType(value: unknown) {
   );
 }
 
-export function expectAccount(value: unknown) {
+function expectAccount(value: unknown) {
   expect(value).toEqual(
     expect.objectContaining({
       id: expect.any(Number),
@@ -45,17 +45,19 @@ export function expectAccount(value: unknown) {
   }
 }
 
-export function expectAccounts(value: unknown) {
-  expect(Array.isArray(value)).toBe(true);
+function expectAccounts(value: unknown) {
+  const accounts = value as Account[];
 
-  (value as unknown[]).forEach(expectAccount);
+  expect(Array.isArray(accounts)).toBe(true);
+
+  expect(accounts.length).toBeGreaterThan(0);
+
+  accounts.forEach(expectAccount);
 }
-
 
 describe("Tauri - Account creation", () => {
   beforeAll(async () => {
     await createDriver();
-    seedDatabase();
   });
 
   afterAll(async () => {
@@ -64,24 +66,19 @@ describe("Tauri - Account creation", () => {
   });
 
   it("get_accounts returns Account[]", async () => {
-    const result = await invokeCommand<unknown>(
-      ACCOUNT_FUNCTIONS.get,
-    );
+    const result = await invokeCommand<unknown>(ACCOUNT_FUNCTIONS.get);
 
     expectAccounts(result);
   });
 
   it("add_account returns Account", async () => {
-    const result = await invokeCommand<unknown>(
-      ACCOUNT_FUNCTIONS.add,
-      {
-        name: "Test Account",
-        balance: 100,
-        typeId: 1,
-        currencyId: 1,
-        creditInfo: null,
-      },
-    );
+    const result = await invokeCommand<unknown>(ACCOUNT_FUNCTIONS.add, {
+      name: "Test Account",
+      balance: 100,
+      typeId: 1,
+      currencyId: 1,
+      creditInfo: null,
+    });
 
     expectAccount(result);
 
@@ -93,17 +90,14 @@ describe("Tauri - Account creation", () => {
   });
 
   it("update_account returns updated Account", async () => {
-    const result = await invokeCommand<unknown>(
-      ACCOUNT_FUNCTIONS.update,
-      {
-        id: 1,
-        name: "Updated Account",
-        balance: 200,
-        typeId: 1,
-        currencyId: 1,
-        creditInfo: null,
-      },
-    );
+    const result = await invokeCommand<unknown>(ACCOUNT_FUNCTIONS.update, {
+      id: 1,
+      name: "Updated Account",
+      balance: 200,
+      typeId: 1,
+      currencyId: 1,
+      creditInfo: null,
+    });
 
     expectAccount(result);
 
@@ -114,13 +108,16 @@ describe("Tauri - Account creation", () => {
     expect(account.balance).toBe(200);
   });
 
+  it("get_balance returns Account balance", async () => {
+    const result = await invokeCommand<unknown>(ACCOUNT_FUNCTIONS.getBalance, { id: 1 });
+
+    console.log("Balance result:", result);
+
+    expect(result).toEqual(expect.any(Number));
+  });
+
   it("remove_account returns deleted rows count", async () => {
-    const result = await invokeCommand<unknown>(
-      ACCOUNT_FUNCTIONS.remove,
-      {
-        id: 1,
-      },
-    );
+    const result = await invokeCommand<unknown>(ACCOUNT_FUNCTIONS.remove, { id: 4 });
 
     expect(result).toEqual(expect.any(Number));
 
@@ -130,21 +127,19 @@ describe("Tauri - Account creation", () => {
   });
 
   it("credit card accounts contain valid creditInfo schema", async () => {
-    const result = await invokeCommand<unknown>(
-      ACCOUNT_FUNCTIONS.get,
-    );
+    const result = await invokeCommand<unknown>(ACCOUNT_FUNCTIONS.get);
 
     expectAccounts(result);
 
     const accounts = result as Account[];
 
-    const creditCard = accounts.find(
-      (account) => account.creditInfo !== null,
-    );
+    const creditCard = accounts.find((account) => account.creditInfo !== null);
 
     expect(creditCard).toBeDefined();
 
-    expect(creditCard!.creditInfo).toEqual(
+    if (!creditCard) return new Error("No credit card account found for testing.");
+
+    expect(creditCard.creditInfo).toEqual(
       expect.objectContaining({
         creditLimit: expect.any(Number),
         cutoffDay: expect.any(Number),

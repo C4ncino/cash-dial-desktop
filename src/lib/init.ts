@@ -4,6 +4,7 @@ import { logger, setupGlobalErrorHandlers } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { categoryStore } from "@/stores/categoryStore";
 import { currencyStore } from "@/stores/currencyStore";
+import { movementsStore } from "@/stores/movementsStore";
 
 setupGlobalErrorHandlers();
 
@@ -22,5 +23,8 @@ export async function initStores() {
     currencyStore.getState().populate(),
     accountsStore.getState().populate(),
     categoryStore.getState().populate(),
+    movementsStore.getState().populate(),
   ]);
+
+  logger.info("Stores ready...");
 }

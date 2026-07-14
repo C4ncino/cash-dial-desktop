@@ -9,6 +9,7 @@ export enum ACCOUNT_FUNCTIONS {
   remove = "remove_account",
   get = "get_accounts",
   update = "update_account",
+  getBalance = "get_account_balance",
 }
 
 export enum CURRENCY_FUNCTIONS {
@@ -19,10 +20,19 @@ export enum CATEGORY_FUNCTIONS {
   get = "get_categories",
 }
 
+export enum MOVEMENT_FUNCTIONS {
+  get = "get_movements",
+  getTypes = "get_movement_types",
+  add = "add_movement",
+  update = "update_movement",
+  remove = "remove_movement",
+  getInstallments = "get_movement_installments",
+}
+
 export enum MOVEMENT_TYPES {
-  EXPENSE,
-  INCOME,
-  TRANSFER,
+  INCOME = 1,
+  EXPENSE = 2,
+  TRANSFER = 3,
 }
 
 export enum BUDGET_TYPES {
@@ -52,10 +62,30 @@ export const MODAL_ID = {
     DELETE: "delete-account-dialog",
     DEACTIVATE: "deactivate-account-dialog",
   },
+  MOVEMENT: {
+    INCOME: {
+      CREATE: "create-income-dialog",
+      EDIT: "edit-income-dialog",
+      DELETE: "delete-income-dialog",
+    },
+    EXPENSE: {
+      CREATE: "create-expense-dialog",
+      EDIT: "edit-expense-dialog",
+      DELETE: "delete-expense-dialog",
+    },
+    TRANSFER: {
+      CREATE: "create-transfer-dialog",
+      EDIT: "edit-transfer-dialog",
+      DELETE: "delete-transfer-dialog",
+    },
+  },
 };
 
 export enum EDIT_TYPES {
   ACCOUNT,
+  INCOME,
+  EXPENSE,
+  TRANSFER,
 }
 
 export const DAYS = [

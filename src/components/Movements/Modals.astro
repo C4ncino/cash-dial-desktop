@@ -1,0 +1,115 @@
+---
+import { Modal } from "webcoreui/astro";
+
+import MovementForm from "./MovementForm";
+import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
+---
+
+<Modal
+    id={MODAL_ID.MOVEMENT.INCOME.CREATE}
+    title="Crear Ingreso"
+    className="min-w-md!"
+>
+    <MovementForm
+        client:visible
+        modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
+        movementType={MOVEMENT_TYPES.INCOME}
+    />
+</Modal>
+
+<Modal
+    id={MODAL_ID.MOVEMENT.INCOME.EDIT}
+    title="Editar Ingreso"
+    className="min-w-md!"
+>
+    <MovementForm
+        client:visible
+        modalId={MODAL_ID.MOVEMENT.INCOME.EDIT}
+        movementType={MOVEMENT_TYPES.INCOME}
+    />
+</Modal>
+
+<Modal
+    id={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+    title="Crear Gasto"
+    className="min-w-md!"
+>
+    <MovementForm
+        client:visible
+        modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+        movementType={MOVEMENT_TYPES.EXPENSE}
+    />
+</Modal>
+
+<Modal
+    id={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
+    title="Editar Gasto"
+    className="min-w-md!"
+>
+    <MovementForm
+        client:visible
+        modalId={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
+        movementType={MOVEMENT_TYPES.EXPENSE}
+    />
+</Modal>
+
+<Modal
+    id={MODAL_ID.MOVEMENT.TRANSFER.CREATE}
+    title="Crear Transferencia"
+    className="min-w-md!"
+>
+    <MovementForm
+        client:visible
+        modalId={MODAL_ID.MOVEMENT.TRANSFER.CREATE}
+        movementType={MOVEMENT_TYPES.TRANSFER}
+    />
+</Modal>
+
+<Modal
+    id={MODAL_ID.MOVEMENT.TRANSFER.EDIT}
+    title="Editar Transferencia"
+    className="min-w-md!"
+>
+    <MovementForm
+        client:visible
+        modalId={MODAL_ID.MOVEMENT.TRANSFER.EDIT}
+        movementType={MOVEMENT_TYPES.TRANSFER}
+    />
+</Modal>
+
+<script>
+    import { MODAL_ID } from "@/types/enums";
+    import { modal } from "webcoreui";
+
+    document.addEventListener("astro:page-load", () => {
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.INCOME.CREATE}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.INCOME.CREATE}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.INCOME.EDIT}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.INCOME.EDIT}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.EXPENSE.EDIT}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.EXPENSE.EDIT}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.TRANSFER.EDIT}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.TRANSFER.EDIT}`,
+        });
+    });
+</script>
