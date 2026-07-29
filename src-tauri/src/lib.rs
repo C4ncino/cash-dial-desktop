@@ -12,7 +12,9 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-use crate::db::query::{get_account_types, get_categories, get_currencies, get_movement_types};
+use crate::db::query::{
+    get_account_types, get_budget_period_types, get_categories, get_currencies, get_movement_types,
+};
 use crate::models::general::AppState;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -76,9 +78,13 @@ fn create_init_state() -> Result<AppState, String> {
 
     state.categories = categories_results.clone();
 
-    let movement_types_results = get_movement_types(connection, lang)?;
+    let movement_types_results = get_movement_types(connection, lang.clone())?;
 
     state.movement_types = movement_types_results.clone();
+
+    let budget_period_types_results = get_budget_period_types(connection, lang)?;
+
+    state.budget_period_types = budget_period_types_results.clone();
 
     Ok(state)
 }
@@ -129,6 +135,14 @@ pub fn run() {
             functions::movements::update_movement,
             functions::movements::remove_movement,
             functions::movements::get_movement_installments,
+            functions::budgets::get_budget_period_types,
+            functions::budgets::get_all_budgets,
+            functions::budgets::get_budget,
+            functions::budgets::create_budget,
+            functions::budgets::delete_budget,
+            functions::budgets::update_budget_amount,
+            functions::budgets::update_budget_name,
+            functions::budgets::get_affected_budget_ids,
             export_logs,
             log_frontend_error
         ])

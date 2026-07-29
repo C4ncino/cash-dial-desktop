@@ -58,7 +58,7 @@ pub fn calculate_credit_payment_date_for_installment(
     payment_utc.timestamp_millis()
 }
 
-fn last_day_of_month_or_clamp(year: i32, month: u32, day: u32) -> NaiveDate {
+pub fn last_day_of_month_or_clamp(year: i32, month: u32, day: u32) -> NaiveDate {
     let next_month_year = if month == 12 { year + 1 } else { year };
     let next_month = if month == 12 { 1 } else { month + 1 };
     

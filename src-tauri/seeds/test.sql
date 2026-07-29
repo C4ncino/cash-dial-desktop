@@ -82,3 +82,14 @@ VALUES
 (6, 4, 6, 300.00, 1759622400, 0, NULL),
 (6, 5, 6, 300.00, 1762300800, 0, NULL),
 (6, 6, 6, 300.00, 1764892800, 0, NULL);
+
+-- Budgets seed data
+INSERT INTO budgets (budget_period_type_id, category_id, currency_id, name)
+VALUES
+    (2, 1, 1, 'Monthly Food'),
+    (2, 13, 1, 'Groceries');
+
+INSERT INTO budget_history (budget_id, amount_limit, start_date, end_date)
+VALUES
+    ((SELECT id FROM budgets WHERE name = 'Monthly Food'), 500.00, 1780531200000, 9223372036854775807),
+    ((SELECT id FROM budgets WHERE name = 'Groceries'), 300.00, 1782864000000, 9223372036854775807);

@@ -38,6 +38,41 @@ diesel::table! {
 }
 
 diesel::table! {
+    budget_history (id) {
+        id -> Integer,
+        budget_id -> Integer,
+        amount_limit -> Double,
+        start_date -> BigInt,
+        end_date -> BigInt,
+    }
+}
+
+diesel::table! {
+    budget_period_types (id) {
+        id -> Integer,
+        key -> Text,
+    }
+}
+
+diesel::table! {
+    budget_period_types_translations (budget_period_type_id, lang) {
+        budget_period_type_id -> Integer,
+        lang -> Text,
+        name -> Text,
+    }
+}
+
+diesel::table! {
+    budgets (id) {
+        id -> Integer,
+        budget_period_type_id -> Integer,
+        category_id -> Integer,
+        currency_id -> Integer,
+        name -> Text,
+    }
+}
+
+diesel::table! {
     categories (id) {
         id -> Integer,
         key -> Text,
@@ -120,6 +155,11 @@ diesel::joinable!(account_types_translations -> account_types (account_type_id))
 diesel::joinable!(accounts -> account_types (type_id));
 diesel::joinable!(accounts -> currencies (currency_id));
 diesel::joinable!(accounts_credit_info -> accounts (account_id));
+diesel::joinable!(budget_history -> budgets (budget_id));
+diesel::joinable!(budget_period_types_translations -> budget_period_types (budget_period_type_id));
+diesel::joinable!(budgets -> budget_period_types (budget_period_type_id));
+diesel::joinable!(budgets -> categories (category_id));
+diesel::joinable!(budgets -> currencies (currency_id));
 diesel::joinable!(categories_translations -> categories (category_id));
 diesel::joinable!(currencies_translations -> currencies (currency_id));
 diesel::joinable!(movement_installments -> movements (movement_id));
@@ -133,6 +173,10 @@ diesel::allow_tables_to_appear_in_same_query!(
     account_types_translations,
     accounts,
     accounts_credit_info,
+    budget_history,
+    budget_period_types,
+    budget_period_types_translations,
+    budgets,
     categories,
     categories_translations,
     currencies,

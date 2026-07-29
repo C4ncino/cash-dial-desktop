@@ -148,4 +148,44 @@ pub mod integration {
 
         assert!(result.is_empty());
     }
+
+    #[test]
+    fn returns_budget_period_types_in_spanish() {
+        let conn = &mut setup_test_db();
+
+        let result = get_budget_period_types(conn, "es".to_string()).unwrap();
+
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].key, "weekly");
+        assert_eq!(result[0].name, "Semanal");
+        assert_eq!(result[1].key, "monthly");
+        assert_eq!(result[1].name, "Mensual");
+        assert_eq!(result[2].key, "yearly");
+        assert_eq!(result[2].name, "Anual");
+    }
+
+    #[test]
+    fn returns_budget_period_types_in_english() {
+        let conn = &mut setup_test_db();
+
+        let result = get_budget_period_types(conn, "en".to_string()).unwrap();
+
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].key, "weekly");
+        assert_eq!(result[0].name, "Weekly");
+        assert_eq!(result[1].key, "monthly");
+        assert_eq!(result[1].name, "Monthly");
+        assert_eq!(result[2].key, "yearly");
+        assert_eq!(result[2].name, "Yearly");
+    }
+
+    #[test]
+    fn returns_empty_budget_period_types_list_when_language_not_found() {
+        let conn = &mut setup_test_db();
+
+        let result = get_budget_period_types(conn, "fr".to_string()).unwrap();
+
+        assert!(result.is_empty());
+    }
 }
+

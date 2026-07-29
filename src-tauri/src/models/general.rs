@@ -4,6 +4,7 @@ use dotenvy::dotenv;
 use serde::Serialize;
 
 use crate::models::accounts::AccountType;
+use crate::models::budgets::BudgetPeriodType;
 use crate::models::categories::Category;
 use crate::models::currencies::Currency;
 use crate::models::movements::MovementType;
@@ -16,6 +17,7 @@ pub struct AppState {
     pub account_types: Vec<AccountType>,
     pub categories: Vec<Category>,
     pub movement_types: Vec<MovementType>,
+    pub budget_period_types: Vec<BudgetPeriodType>,
 }
 
 #[derive(Debug, Clone, Serialize)]

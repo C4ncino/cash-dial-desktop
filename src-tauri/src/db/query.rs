@@ -2,6 +2,7 @@ use diesel::prelude::*;
 
 use crate::models::{
     accounts::{AccountType, AccountTypeRow, AccountTypeTranslationRow},
+    budgets::{BudgetPeriodType, BudgetPeriodTypeRow, BudgetPeriodTypeTranslationRow},
     categories::{Category, CategoryRow, CategoryTranslationRow},
     currencies::{Currency, CurrencyRow, CurrencyTranslationRow},
     movements::{MovementType, MovementTypeRow, MovementTypeTranslationRow},
@@ -99,4 +100,27 @@ pub fn get_movement_types(
         .collect();
 
     Ok(movement_types_results)
+}
+
+pub fn get_budget_period_types(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<BudgetPeriodType>, String> {
+    use crate::schema::{
+        budget_period_types::dsl::budget_period_types,
+        budget_period_types_translations::dsl::budget_period_types_translations,
+        budget_period_types_translations::lang as table_lang,
+    };
+
+    let budget_period_types_results: Vec<BudgetPeriodType> = budget_period_types
+        .inner_join(budget_period_types_translations)
+        .filter(table_lang.eq(lang))
+        .select((BudgetPeriodTypeRow::as_select(), BudgetPeriodTypeTranslationRow::as_select()))
+        .load::<(BudgetPeriodTypeRow, BudgetPeriodTypeTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| BudgetPeriodType::from((item, translation)))
+        .collect();
+
+    Ok(budget_period_types_results)
 }

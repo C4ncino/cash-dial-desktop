@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::models::{
     accounts::AccountType,
+    budgets::BudgetPeriodType,
     categories::Category,
     currencies::Currency,
     general::{AppState, Config, Environment},
@@ -79,6 +80,12 @@ pub fn mock_state() -> AppState {
             MovementType { id: 1, key: "in".to_string(), name: "Income".to_string() },
             MovementType { id: 2, key: "out".to_string(), name: "Expense".to_string() },
             MovementType { id: 3, key: "transfer".to_string(), name: "Transfer".to_string() },
+        ],
+
+        budget_period_types: vec![
+            BudgetPeriodType { id: 1, key: "weekly".to_string(), name: "Weekly".to_string() },
+            BudgetPeriodType { id: 2, key: "monthly".to_string(), name: "Monthly".to_string() },
+            BudgetPeriodType { id: 3, key: "yearly".to_string(), name: "Yearly".to_string() },
         ],
 
         config: Config { environment: Environment::Test, database_url: TEST_DB_PATH.to_string() },
