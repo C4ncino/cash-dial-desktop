@@ -1,4 +1,3 @@
-import { Icon } from "@iconify/react";
 import { useMemo, useState } from "react";
 import { closeModal, toast } from "webcoreui";
 import { Input } from "webcoreui/react";
@@ -6,6 +5,7 @@ import { useStore } from "zustand";
 
 import FormActions from "@/components/Forms/FormActions";
 import FormErrors from "@/components/Forms/FormErrors";
+import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCurrency from "@/components/Forms/SelectCurrencies";
 import { logger } from "@/lib/logger";
 import { accountsStore, createAccountFromData, validate } from "@/stores/accountsStore";
@@ -51,7 +51,16 @@ const AccountForm = ({ modalId }: Props) => {
       return;
     }
 
-    const account = createAccountFromData(data, types.find((t) => t.id === typeId)!);
+    const type = types.find((t) => t.id === typeId);
+
+    if (!type) {
+      setErrors(["Ocurrió un error al crear la cuenta"]);
+      logger.error(`Account type ${typeId} not found`);
+
+      return;
+    }
+
+    const account = createAccountFromData(data, type);
 
     console.debug("Is Editing mode:", editState.type === EDIT_TYPES.ACCOUNT);
 
@@ -80,10 +89,10 @@ const AccountForm = ({ modalId }: Props) => {
         <Input
           name="name"
           label="Nombre"
-          required
           value={account ? account.name : ""}
           maxLength={25}
           autoComplete="on"
+          required
         />
 
         <label htmlFor="balance" className="text-gray-webui-text">
@@ -102,30 +111,7 @@ const AccountForm = ({ modalId }: Props) => {
         </div>
       </fieldset>
 
-      <fieldset
-        className="flex border border-gray-webui rounded"
-        key={typeId === null ? "true" : "false"}
-      >
-        {types.map((t) => (
-          <label
-            className="first:rounded-l last:rounded-r border-r last:border-0 border-gray-webui select-none cursor-pointer flex items-center justify-center gap-2 py-2 w-full has-checked:bg-blue-600"
-            htmlFor={`${t.name}-${modalId}`}
-            key={t.id}
-          >
-            <Icon icon={`iconoir:${t.icon}`} className="text-white" />
-            {t.name}
-            <input
-              className="hidden"
-              type="radio"
-              name="type"
-              id={`${t.name}-${modalId}`}
-              value={t.id}
-              defaultChecked={t.id === typeId}
-              onChange={(e) => setTypeId(Number(e.target.value))}
-            />
-          </label>
-        ))}
-      </fieldset>
+      <SegmentedControl items={types} modalId={modalId} value={typeId} onChange={setTypeId} />
 
       {typeId === ACCOUNT_TYPES.CREDIT && (
         <fieldset id="credit-fields" className="space-y-4">

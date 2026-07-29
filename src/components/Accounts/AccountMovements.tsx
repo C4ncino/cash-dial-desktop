@@ -1,4 +1,4 @@
-import { useStore } from "zustand/react";
+import { useStore } from "zustand";
 
 import MovementList from "@/components/Movements/MovementList";
 import { movementsStore } from "@/stores/movementsStore";
@@ -9,13 +9,7 @@ const AccountMovements = () => {
       ? Number(new URLSearchParams(window.location.search).get("id"))
       : null;
 
-  const byAccount = useStore(movementsStore, (state) => state.byAccount);
-
-  if (accountId === null || Number.isNaN(accountId)) {
-    return null;
-  }
-
-  const movementIds = byAccount[accountId] ?? [];
+  const movementIds = useStore(movementsStore, (s) => s.byAccount[accountId as number]);
 
   return (
     <section className="mt-6">

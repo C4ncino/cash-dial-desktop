@@ -10,6 +10,7 @@ import SelectCategories from "@/components/Forms/SelectCategories";
 import SelectCurrency from "@/components/Forms/SelectCurrencies";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
+import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";
 import { createMovementFromData, movementsStore, validateMovement } from "@/stores/movementsStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
@@ -124,9 +125,15 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
     if (editState.id && editState.type === config.editType) {
       movementsStore.getState().update(editState.id, movementData);
+
+      budgetStore.getState().refreshAffected(movementData.categoryId);
+
       toast(config.toastUpdated);
     } else {
       movementsStore.getState().add(movementData);
+
+      budgetStore.getState().refreshAffected(movementData.categoryId, movement?.categoryId);
+
       toast(config.toastCreated);
     }
 

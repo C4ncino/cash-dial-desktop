@@ -45,7 +45,7 @@ vi.mock('webcoreui/react', () => ({
       'data-testid': 'progress',
       style: { width: `${value}%` },
     }),
-  Input: ({ label, name, ...props }: any) => React.createElement(
+  Input: ({ label, name, value,...props }: any) => React.createElement(
       "div",
       {},
       [
@@ -63,8 +63,59 @@ vi.mock('webcoreui/react', () => ({
           id: name,
           name,
           ...props,
+          defaultValue: value
         }),
       ].filter(Boolean),
+    ),
+    Radio: ({ items, name, onChange }: any) => React.createElement(
+      "div",
+      {},
+      items.map((item: any) =>
+        React.createElement(
+          "div",
+          { key: item.value },
+          [
+            React.createElement(
+              "label",
+              {
+                key: "label",
+                htmlFor: `${name}-${item.value}`,
+              },
+              item.label,
+            ),
+            React.createElement("input", {
+              key: "input",
+              id: `${name}-${item.value}`,
+              type: "radio",
+              name,
+              value: item.value,
+              onChange,
+            }),
+          ],
+        ),
+      ),
+    ),
+    Accordion: ({ items }: any) => React.createElement(
+      "div",
+      {},
+      items.map((item: any) =>
+        React.createElement(
+          "div",
+          { key: item.title },
+          [
+            React.createElement(
+              "h3",
+              { key: "title" },
+              item.title,
+            ),
+            React.createElement(
+              "p",
+              { key: "content" },
+              item.content,
+            ),
+          ],
+        ),
+      ),
     ),
 }));
 

@@ -10,6 +10,15 @@ import { editStore } from "@/stores/editStore";
 import { createMovementFromData, validateMovement } from "@/stores/movementsStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
+vi.mock("@/stores/budgetStore", () => ({
+  budgetStore: {
+    getState: () => ({
+      refreshAffected: vi.fn().mockResolvedValue(undefined),
+    }),
+    subscribe: vi.fn(),
+  },
+}));
+
 vi.mock("@/components/Forms/SelectCurrencies", () => ({
   default: () => (
     <select name="currency" data-testid="currency-select">

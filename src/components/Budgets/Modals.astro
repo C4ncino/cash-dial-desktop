@@ -1,0 +1,39 @@
+---
+import { Modal } from "webcoreui/astro";
+
+import Form from "./Form";
+import { MODAL_ID } from "@/types/enums";
+---
+
+<Modal
+  id={MODAL_ID.BUDGET.CREATE}
+  title="Crear Presupuesto"
+  className="min-w-md!"
+>
+  <Form client:visible modalId={MODAL_ID.BUDGET.CREATE} />
+</Modal>
+
+<Modal
+  id={MODAL_ID.BUDGET.EDIT}
+  title="Editar Presupuesto"
+  className="min-w-md!"
+>
+  <Form client:visible modalId={MODAL_ID.BUDGET.EDIT} />
+</Modal>
+
+<script>
+  import { MODAL_ID } from "@/types/enums";
+  import { modal } from "webcoreui";
+
+  document.addEventListener("astro:page-load", () => {
+    modal({
+      trigger: "#create-budget-button",
+      modal: `#${MODAL_ID.BUDGET.CREATE}`,
+    });
+
+    modal({
+      trigger: "#edit-budget-button",
+      modal: `#${MODAL_ID.BUDGET.EDIT}`,
+    });
+  });
+</script>

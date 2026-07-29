@@ -10,7 +10,8 @@
     "includes": [
       "src/**/*.{js,ts,jsx,tsx,vue,svelte}",
       "tests/**/*.{js,ts,jsx,tsx,vue,svelte}",
-      "!**/*.min.js"
+      "!**/*.min.js",
+      "vitest.setup.ts"
     ]
   },
   "formatter": {
@@ -25,7 +26,12 @@
     "bracketSpacing": true
   },
   "linter": {
-    "enabled": true
+    "enabled": true,
+    "rules": {
+      "correctness": {
+        "useExhaustiveDependencies": "warn"
+      }
+    }
   },
   "javascript": {
     "formatter": {

@@ -5,11 +5,21 @@ import { useStore } from "zustand";
 
 import ActionButtons from "@/components/Movements/ActionButtons";
 import { accountsStore } from "@/stores/accountsStore";
+import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";
 import { movementsStore } from "@/stores/movementsStore";
 import { EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 const toastMock = vi.mocked(toast);
+
+vi.mock("@/stores/budgetStore", () => ({
+  budgetStore: {
+    getState: () => ({
+      refreshAffected: vi.fn().mockResolvedValue(undefined),
+    }),
+    subscribe: vi.fn(),
+  },
+}));
 
 vi.mock("@/components/Forms/ConfirmModal", () => ({
   default: ({ buttonTitle, onConfirm, modalId }: any) => (

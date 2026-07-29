@@ -1,12 +1,13 @@
+import type { SelectHTMLAttributes } from "react";
 import { useStore } from "zustand";
 
 import { currencyStore } from "@/stores/currencyStore";
 
-interface Props {
+interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
   currencyId?: number;
 }
 
-const SelectCurrency = ({ currencyId }: Props) => {
+const SelectCurrency = ({ currencyId, ...selectProps }: Props) => {
   const currencies = useStore(currencyStore, (state) => state.currencies);
 
   return (
@@ -16,6 +17,7 @@ const SelectCurrency = ({ currencyId }: Props) => {
       required
       className="border border-[#252525] border-l-0 w-24 px-2"
       defaultValue={currencyId}
+      {...selectProps}
     >
       {currencies.map((currency) => (
         <option key={currency.id} value={currency.id} className="bg-black">

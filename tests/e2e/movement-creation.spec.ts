@@ -154,7 +154,7 @@ describe("Movement E2E", () => {
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
     const finalBalance = await getAccountBalance(1);
-    expect(finalBalance).toBeCloseTo(initialBalance + 150.00, 2);
+    expect(finalBalance).toBeCloseTo(initialBalance + 150.0, 2);
   });
 
   it("creates an expense movement and verifies its rendering and details", async () => {
@@ -254,7 +254,7 @@ describe("Movement E2E", () => {
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
     const finalBalance = await getAccountBalance(1);
-    expect(finalBalance).toBeCloseTo(initialBalance - 45.50, 2);
+    expect(finalBalance).toBeCloseTo(initialBalance - 45.5, 2);
   });
 
   it("creates a transfer movement and verifies its rendering and details", async () => {
@@ -352,7 +352,7 @@ describe("Movement E2E", () => {
 
     const finalSourceBalance = await getAccountBalance(1);
     const finalDestBalance = await getAccountBalance(2);
-    expect(finalSourceBalance).toBeCloseTo(initialSourceBalance - 100.00, 2);
-    expect(finalDestBalance).toBeCloseTo(initialDestBalance + 100.00, 2);
+    expect(finalSourceBalance).toBeCloseTo(initialSourceBalance - 100.0, 2);
+    expect(finalDestBalance).toBeCloseTo(initialDestBalance + 100.0, 2);
   });
 });

@@ -1,0 +1,29 @@
+---
+import colors from "tailwindcss/colors";
+import { Icon } from "astro-icon/components";
+
+import BudgetModals from "./Modals.astro";
+import BudgetsList from "./BudgetsList";
+import BudgetsToasts from "./Toasts.astro";
+---
+
+<section class="flex flex-row flex-wrap justify-center gap-3">
+    <BudgetsList client:load />
+
+    <button
+        class="h-28 w-48 bg-zinc-100 dark:bg-zinc-950 rounded-md p-3 font-medium text-lg dark:text-white cursor-pointer"
+        id="create-budget-button"
+    >
+        <Icon
+            name="iconoir:plus-circle-solid"
+            width={40}
+            height={40}
+            class="mx-auto"
+            color={colors.green[500]}
+        />
+        Añadir presupuesto
+    </button>
+</section>
+
+<BudgetModals />
+<BudgetsToasts />

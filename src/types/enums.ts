@@ -36,9 +36,26 @@ export enum MOVEMENT_TYPES {
 }
 
 export enum BUDGET_TYPES {
-  WEEKLY,
-  MONTHLY,
-  YEARLY,
+  WEEKLY = 1,
+  MONTHLY = 2,
+  YEARLY = 3,
+}
+
+export enum BUDGET_FUNCTIONS {
+  getAll = "get_all_budgets",
+  get = "get_budget",
+  getPeriodTypes = "get_budget_period_types",
+  create = "create_budget",
+  delete = "delete_budget",
+  updateAmount = "update_budget_amount",
+  updateName = "update_budget_name",
+  getAffectedBudgetIds = "get_affected_budget_ids",
+}
+
+export enum BUDGET_UPDATE_TYPES {
+  CORRECT = "correct",
+  TODAY = "today",
+  NEXT_PERIOD = "next_period",
 }
 
 export enum PLANNINGS_RECURRING_TYPES {
@@ -79,10 +96,15 @@ export const MODAL_ID = {
       DELETE: "delete-transfer-dialog",
     },
   },
+  BUDGET: {
+    CREATE: "create-budget-dialog",
+    EDIT: "edit-budget-dialog",
+  },
 };
 
 export enum EDIT_TYPES {
   ACCOUNT,
+  BUDGET,
   INCOME,
   EXPENSE,
   TRANSFER,

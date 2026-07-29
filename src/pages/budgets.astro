@@ -1,0 +1,22 @@
+---
+import Budgets from "@/components/Budgets/Budgets.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { budgetStore } from "@/stores/budgetStore";
+
+// populate budgets client-side
+---
+
+<BaseLayout title="Presupuestos" description="Lista de presupuestos">
+  <Budgets />
+</BaseLayout>
+
+<script>
+  import { budgetStore } from "@/stores/budgetStore";
+  document.addEventListener("astro:page-load", async () => {
+    try {
+      await budgetStore.getState().populate();
+    } catch (err) {
+      // ignore
+    }
+  });
+</script>

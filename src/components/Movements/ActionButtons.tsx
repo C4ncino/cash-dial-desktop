@@ -3,6 +3,7 @@ import { useStore } from "zustand";
 
 import ConfirmModal from "@/components/Forms/ConfirmModal";
 import { accountsStore } from "@/stores/accountsStore";
+import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";
 import { movementsStore } from "@/stores/movementsStore";
 import { EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
@@ -58,6 +59,7 @@ const ActionButtons = () => {
   const handleConfirmDelete = async () => {
     await movementsStore.getState().remove(movement.id);
 
+    budgetStore.getState().refreshAffected(movement.categoryId);
     // Also update account balance(s)
     accountsStore.getState().updateBalance(movement.accountId, movement.toAccountId);
 

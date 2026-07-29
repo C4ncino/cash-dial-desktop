@@ -1,0 +1,49 @@
+---
+import DetailLayout from "@/layouts/DetailLayout.astro";
+import BudgetInfo from "@/components/Budgets/BudgetInfo";
+import BudgetPeriods from "@/components/Budgets/BudgetPeriods";
+import BudgetModals from "@/components/Budgets/Modals.astro";
+import BudgetsToasts from "@/components/Budgets/Toasts.astro";
+
+import BudgetActions from "@/components/Budgets/BudgetActions";
+---
+
+<DetailLayout title="Detalles de Presupuesto" description="">
+  <div class="flex justify-between mx-auto max-w-2xl">
+    <article class="flex-1 pr-4 max-w-xl">
+      <BudgetInfo client:load />
+      <BudgetPeriods client:load />
+    </article>
+
+    <menu class="flex flex-col gap-3">
+      <li class="text-sm">
+        <button id="edit-budget-button" class="edit-button cursor-pointer"
+          >Editar</button
+        >
+      </li>
+      <BudgetActions client:load />
+    </menu>
+  </div>
+</DetailLayout>
+
+<BudgetModals />
+<BudgetsToasts />
+
+<script>
+  import { EDIT_TYPES } from "@/types/enums";
+  import { editStore } from "@/stores/editStore";
+
+  document.addEventListener("astro:page-load", () => {
+    const btn = document.getElementById("edit-budget-button");
+
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      const id = new URLSearchParams(window.location.search).get("id");
+
+      if (!id) throw new Error("Budget ID not found");
+
+      editStore.getState().setId(Number(id), EDIT_TYPES.BUDGET);
+    });
+  });
+</script>

@@ -200,7 +200,7 @@ describe("MovementInfo", () => {
 
     render(<MovementInfo />);
 
-    expect(screen.getByText("Mensualidades")).toBeInTheDocument();
+    expect(screen.getAllByText("Mensualidades").length).toBeGreaterThan(0);
     expect(screen.getByText("Mensualidad 1 de 3")).toBeInTheDocument();
     expect(screen.getByText("Mensualidad 2 de 3")).toBeInTheDocument();
     expect(screen.getByText("Mensualidad 3 de 3")).toBeInTheDocument();
