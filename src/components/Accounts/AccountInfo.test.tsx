@@ -3,10 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
 import AccountInfo from "@/components/Accounts/AccountInfo";
-import { logger } from "@/lib/logger";
 import { formatNumber } from "@/lib/formatters";
+import { logger } from "@/lib/logger";
 
 vi.mock("zustand");
+vi.mock("@/components/Accounts/AccountNextPayment", () => ({
+  default: () => <div data-testid="next-payment" />,
+}));
 
 const mockAccount: Account = {
   id: 1,
@@ -94,7 +97,7 @@ describe("AccountInfo", () => {
 
     const progress = screen.getByTestId("progress");
 
-    const expectedPercentage = (1200.75 / 5000) * 100;
+    const expectedPercentage = ((5000 - 1200.75) / 5000) * 100;
 
     expect(progress).toHaveStyle(`width: ${expectedPercentage}%`);
   });
@@ -129,5 +132,23 @@ describe("AccountInfo", () => {
     const heading = screen.getByRole("heading", { level: 1 });
 
     expect(heading).toHaveTextContent("My Credit Card");
+  });
+
+  it("should render AccountNextPayment for credit cards", () => {
+    (useStore as any).mockImplementation(() => mockAccount);
+
+    render(<AccountInfo />);
+
+    expect(screen.getByTestId("next-payment")).toBeInTheDocument();
+  });
+
+  it("should not render AccountNextPayment for non-credit cards", () => {
+    const regularAccount = { ...mockAccount, creditInfo: undefined };
+
+    (useStore as any).mockImplementation(() => regularAccount);
+
+    render(<AccountInfo />);
+
+    expect(screen.queryByTestId("next-payment")).not.toBeInTheDocument();
   });
 });

@@ -304,6 +304,25 @@ describe("Movement Commands", () => {
     });
   });
 
+  describe("get_movement", () => {
+    it("returns a single movement by id", async () => {
+      const movements = await invokeCommand<Movement[]>(MOVEMENT_FUNCTIONS.get);
+      expect(movements.length).toBeGreaterThanOrEqual(1);
+
+      const targetMovement = movements[0];
+      const result = await invokeCommand<unknown>(MOVEMENT_FUNCTIONS.getById, {
+        movementId: targetMovement.id,
+      });
+
+      expectMovement(result);
+
+      const movement = result as Movement;
+      expect(movement.id).toBe(targetMovement.id);
+      expect(movement.typeId).toBe(targetMovement.typeId);
+      expect(movement.accountId).toBe(targetMovement.accountId);
+    });
+  });
+
   describe("get_movement_installments", () => {
     it("returns installments for a movement with installments", async () => {
       const movements = await invokeCommand<Movement[]>(MOVEMENT_FUNCTIONS.get);
@@ -399,6 +418,46 @@ describe("Movement Commands", () => {
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(0);
+    });
+  });
+
+  describe("mark_installments_as_paid", () => {
+    it("returns movement ids for the paid installments", async () => {
+      const movement = await invokeCommand<Movement>(MOVEMENT_FUNCTIONS.add, {
+        typeId: 2,
+        accountId: 1,
+        toAccountId: null,
+        categoryId: 1,
+        currencyId: 1,
+        originalAmount: 300.0,
+        accountAmount: 300.0,
+        installments: 3,
+        timestamp: 1719705600,
+        description: "Credit card installment test",
+      });
+
+      const installments = await invokeCommand<MovementInstallment[]>(MOVEMENT_FUNCTIONS.getInstallments, {
+        movementId: movement.id,
+      });
+
+      const installmentIds = installments
+        .map((installment) => installment.id)
+        .filter((id): id is number => id !== null && id !== undefined);
+
+      const result = await invokeCommand<number[]>(MOVEMENT_FUNCTIONS.markInstallmentsPaid, {
+        installmentIds,
+      });
+
+      expect(result).toEqual([movement.id]);
+
+      const updatedInstallments = await invokeCommand<MovementInstallment[]>(
+        MOVEMENT_FUNCTIONS.getInstallments,
+        { movementId: movement.id },
+      );
+
+      updatedInstallments.forEach((installment) => {
+        expect(installment.paid).toBe(true);
+      });
     });
   });
 

@@ -7,15 +7,21 @@ interface Props {
   label: string;
   accountId?: number;
   excludeId?: number;
+  excludeCredit?: boolean;
   onChange?: (id: number) => void;
 }
 
-const SelectAccounts = ({ name, label, accountId, excludeId, onChange }: Props) => {
+const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, onChange }: Props) => {
   const accounts = useStore(accountsStore, (state) => state.accounts);
 
-  const activeAccounts = accounts.filter(
-    (account) => account.isActive && account.id !== excludeId,
-  );
+  console.log(accounts);
+
+  const activeAccounts = accounts.filter((account) => {
+    if (!account.isActive) return false;
+    if (account.id === excludeId) return false;
+    if (excludeCredit && account.creditInfo !== null) return false;
+    return true;
+  });
 
   return (
     <fieldset className="space-y-1">

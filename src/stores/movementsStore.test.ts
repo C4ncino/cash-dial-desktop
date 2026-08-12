@@ -185,6 +185,45 @@ describe("movementsStore", () => {
     expect(movementsStore.getState().getById(1)).toEqual(movement);
   });
 
+  it("refresh updates stored movements and rebuilds indexes", async () => {
+    const original = { ...movement, id: 1, accountId: 1, description: "Old description", installments: undefined };
+    movementsStore.setState({
+      byId: { 1: original },
+      allIds: [1],
+      byAccount: { 1: [1] },
+      types: [],
+    });
+
+    const refreshedMovement = { ...original, accountId: 2, description: "Updated description", installments: undefined };
+    mockInvoke.mockResolvedValueOnce(refreshedMovement);
+
+    await movementsStore.getState().refresh([1]);
+
+    const state = movementsStore.getState();
+    expect(state.byId[1]).toEqual(refreshedMovement);
+    expect(state.byAccount[1]).toBeUndefined();
+    expect(state.byAccount[2]).toEqual([1]);
+  });
+
+  it("refresh adds new movement ids when they are not already present", async () => {
+    const newMovement = { ...movement, id: 10, accountId: 3, description: "New movement", installments: undefined };
+    movementsStore.setState({
+      byId: {},
+      allIds: [],
+      byAccount: {},
+      types: [],
+    });
+
+    mockInvoke.mockResolvedValueOnce(newMovement);
+
+    await movementsStore.getState().refresh([10]);
+
+    const state = movementsStore.getState();
+    expect(state.byId[10]).toEqual(newMovement);
+    expect(state.allIds).toEqual([10]);
+    expect(state.byAccount[3]).toEqual([10]);
+  });
+
   it("returns undefined for missing movement", () => {
     expect(movementsStore.getState().getById(999)).toBeUndefined();
   });

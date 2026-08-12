@@ -1,5 +1,4 @@
 import { Icon } from "@iconify/react";
-import { Fragment } from "react";
 
 import MoneyText from "@/components/General/MoneyText";
 
@@ -9,6 +8,8 @@ interface Props {
 }
 
 const Installments = ({ installmentsData, movementCurrency }: Props) => {
+  console.log("installmentsData", installmentsData);
+
   return (
     <section className="space-y-3 mt-3">
       <h2 className="text-lg font-semibold text-zinc-300">Mensualidades</h2>

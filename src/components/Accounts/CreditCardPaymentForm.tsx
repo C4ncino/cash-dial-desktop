@@ -1,0 +1,264 @@
+import { Icon } from "@iconify/react";
+import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
+import { Input } from "webcoreui/react";
+
+import FormErrors from "@/components/Forms/FormErrors";
+import SelectAccounts from "@/components/Forms/SelectAccounts";
+import MoneyText from "@/components/General/MoneyText";
+import { formatAmount } from "@/lib/formatters";
+import { logger } from "@/lib/logger";
+import { accountsStore } from "@/stores/accountsStore";
+import { movementsStore } from "@/stores/movementsStore";
+import { MOVEMENT_FUNCTIONS } from "@/types/enums";
+
+interface PaymentSourceRow {
+  key: number;
+  accountId: number | null;
+  amount: string;
+}
+
+interface Props {
+  creditAccountId: number;
+  totalAmount: number;
+  installmentIds: number[];
+  currency: Currency;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+let nextKey = 0;
+
+function createRow(): PaymentSourceRow {
+  return { key: nextKey++, accountId: null, amount: "" };
+}
+
+const CreditCardPaymentForm = ({
+  creditAccountId,
+  totalAmount,
+  installmentIds,
+  currency,
+  onSuccess,
+  onCancel,
+}: Props) => {
+  const [rows, setRows] = useState<PaymentSourceRow[]>([createRow()]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const amountCovered = rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  const remaining = Math.max(0, totalAmount - amountCovered);
+  const isExactlyCovered = Math.abs(totalAmount - amountCovered) < 0.005;
+  const isOverfunded = amountCovered > totalAmount + 0.005;
+
+  const selectedAccountIds = rows.map((r) => r.accountId).filter((id): id is number => id !== null);
+
+  const handleAccountChange = (key: number, accountId: number) => {
+    setRows((prev) => prev.map((row) => (row.key === key ? { ...row, accountId } : row)));
+  };
+
+  const handleAmountChange = (key: number, value: string) => {
+    setRows((prev) => prev.map((row) => (row.key === key ? { ...row, amount: value } : row)));
+  };
+
+  const addRow = () => {
+    setRows((prev) => [...prev, createRow()]);
+  };
+
+  const removeRow = (key: number) => {
+    setRows((prev) => prev.filter((row) => row.key !== key));
+  };
+
+  const validate = (): string[] => {
+    const errs: string[] = [];
+
+    if (rows.length === 0) {
+      errs.push("Agrega al menos una cuenta de origen");
+      return errs;
+    }
+
+    for (const row of rows) {
+      if (row.accountId === null) {
+        errs.push("Selecciona una cuenta de origen para cada fila");
+        break;
+      }
+    }
+
+    for (const row of rows) {
+      const amount = Number(row.amount);
+      if (!row.amount || Number.isNaN(amount) || amount <= 0) {
+        errs.push("Cada monto debe ser mayor a 0");
+        break;
+      }
+    }
+
+    const seen = new Set<number>();
+    for (const row of rows) {
+      if (row.accountId !== null) {
+        if (seen.has(row.accountId)) {
+          errs.push("No puedes seleccionar la misma cuenta dos veces");
+          break;
+        }
+        seen.add(row.accountId);
+      }
+    }
+
+    if (isOverfunded) {
+      errs.push("El monto total excede el pago requerido");
+    }
+
+    if (!isExactlyCovered && !isOverfunded) {
+      errs.push("El monto total debe cubrir el pago completo");
+    }
+
+    return errs;
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validationErrors = validate();
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setErrors([]);
+    setSubmitting(true);
+
+    const payments: CreditCardPaymentRequest[] = rows.map((row) => ({
+      fromAccountId: row.accountId as number,
+      amount: Number(row.amount),
+    }));
+
+    console.log(payments);
+    console.log(installmentIds);
+
+    try {
+      const transferMovementIds = await accountsStore
+        .getState()
+        .payCreditCard(creditAccountId, payments);
+
+      const movementIds = (await invoke<number[]>(MOVEMENT_FUNCTIONS.markInstallmentsPaid, {
+        installmentIds,
+      })) as number[];
+
+      movementsStore.getState().refresh([...transferMovementIds, ...movementIds]);
+
+      logger.info("Credit card payment completed", {
+        transferMovementIds,
+        installmentIds,
+        movementIds,
+      });
+
+      onSuccess();
+    } catch (error) {
+      logger.error("Payment failed", error);
+      setErrors([String(error)]);
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form className="bg-zinc-900 border-t border-zinc-700 p-4 space-y-4" onSubmit={onSubmit}>
+      <h3 className="text-base font-semibold text-zinc-100">Pagar tarjeta</h3>
+
+      {rows.map((row) => (
+        <div key={row.key} className="flex items-end gap-2">
+          <div className="flex-1">
+            <SelectAccounts
+              name={`source-account-${row.key}`}
+              label="Cuenta origen"
+              accountId={row.accountId ?? undefined}
+              excludeId={creditAccountId}
+              excludeCredit
+              onChange={(id) => handleAccountChange(row.key, id)}
+            />
+          </div>
+          <div className="flex-1">
+            <fieldset className="space-y-1">
+              <label htmlFor={`amount-${row.key}`} className="text-gray-webui-text">
+                Monto
+              </label>
+              <Input
+                type="number"
+                name={`amount-${row.key}`}
+                id={`amount-${row.key}`}
+                value={row.amount}
+                min={0.01}
+                step={0.01}
+                required
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleAmountChange(row.key, e.target.value)
+                }
+              />
+            </fieldset>
+          </div>
+          {rows.length > 1 && (
+            <button
+              type="button"
+              onClick={() => removeRow(row.key)}
+              className="mb-1 p-2 text-red-400 hover:text-red-300"
+              aria-label="Eliminar cuenta de origen"
+            >
+              <Icon icon="iconoir:trash" className="text-xl" />
+            </button>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addRow}
+        className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
+      >
+        <Icon icon="iconoir:plus" />
+        Agregar cuenta
+      </button>
+
+      <div className="border-t border-zinc-700 pt-3 space-y-1 text-sm">
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Próximo pago:</span>
+          <MoneyText amount={totalAmount} currency={currency} className="text-zinc-200" />
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Monto cubierto:</span>
+          <span className={`font-medium ${isExactlyCovered ? "text-green-400" : "text-zinc-200"}`}>
+            {formatAmount(amountCovered, currency)}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Restante:</span>
+          <span className={`font-medium ${remaining === 0 ? "text-green-400" : "text-yellow-400"}`}>
+            {formatAmount(remaining, currency)}
+          </span>
+        </div>
+      </div>
+
+      <FormErrors errors={errors} />
+
+      <menu className="flex justify-end gap-3">
+        <li>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="border-2 border-zinc-200 text-zinc-200 hover:text-black py-2 px-4 rounded hover:bg-zinc-200 hover:cursor-pointer disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        </li>
+        <li>
+          <button
+            type="submit"
+            disabled={submitting || !isExactlyCovered}
+            className="border-2 border-green-600 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 hover:border-green-700 hover:cursor-pointer disabled:opacity-50"
+          >
+            {submitting ? "Pagando..." : "Pagar"}
+          </button>
+        </li>
+      </menu>
+    </form>
+  );
+};
+
+export default CreditCardPaymentForm;

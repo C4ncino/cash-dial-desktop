@@ -87,6 +87,30 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     }
     return balance1;
   },
+  getNextPayment: async (accountId: number) => {
+    try {
+      const response = (await invoke(ACCOUNT_FUNCTIONS.getNextPayment, {
+        accountId,
+      })) as CreditCardNextPayment;
+      return response;
+    } catch (error) {
+      logger.error("Failed to get next payment", error);
+      throw error;
+    }
+  },
+  payCreditCard: async (creditAccountId: number, payments: CreditCardPaymentRequest[]) => {
+    try {
+      const transferMovementIds = (await invoke(ACCOUNT_FUNCTIONS.payCreditCard, {
+        creditAccountId,
+        payments,
+      })) as number[];
+      await get().populate();
+      return transferMovementIds;
+    } catch (error) {
+      logger.error("Failed to pay credit card", error);
+      throw error;
+    }
+  },
 }));
 
 export function validate(data: { [k: string]: FormDataEntryValue }): {

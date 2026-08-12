@@ -131,6 +131,48 @@ describe("accountsStore", () => {
     expect(accountsStore.getState().accounts[0].balance).toBe(300);
     expect(accountsStore.getState().accounts[1].balance).toBe(400);
   });
+
+  it("getNextPayment returns next payment data", async () => {
+    const nextPayment = { accountId: 1, totalAmount: 100, paymentDate: 123, movements: [] };
+    mockInvoke.mockResolvedValueOnce(nextPayment);
+
+    const result = await accountsStore.getState().getNextPayment(1);
+
+    expect(result).toEqual(nextPayment);
+    expect(mockInvoke).toHaveBeenCalledWith("get_credit_cards_next_payment", { accountId: 1 });
+  });
+
+  it("getNextPayment handles error", async () => {
+    mockInvoke.mockRejectedValueOnce(new Error("Failed"));
+
+    await expect(accountsStore.getState().getNextPayment(1)).rejects.toThrow("Failed");
+  });
+
+  it("payCreditCard invokes Tauri command and populates store", async () => {
+    const payments = [{ fromAccountId: 2, amount: 50.0 }];
+    mockInvoke
+      .mockResolvedValueOnce([42])
+      .mockResolvedValueOnce([accountType])
+      .mockResolvedValueOnce([account]);
+
+    const transferMovementIds = await accountsStore.getState().payCreditCard(1, payments);
+
+    expect(transferMovementIds).toEqual([42]);
+    expect(mockInvoke).toHaveBeenNthCalledWith(1, "pay_credit_card", {
+      creditAccountId: 1,
+      payments,
+    });
+    expect(mockInvoke).toHaveBeenNthCalledWith(2, "get_account_types");
+    expect(mockInvoke).toHaveBeenNthCalledWith(3, "get_accounts");
+  });
+
+  it("payCreditCard handles error and propagates it", async () => {
+    mockInvoke.mockRejectedValueOnce(new Error("Payment Failed"));
+
+    await expect(
+      accountsStore.getState().payCreditCard(1, [{ fromAccountId: 2, amount: 50 }])
+    ).rejects.toThrow("Payment Failed");
+  });
 });
 
 import { validate } from "@/stores/accountsStore";

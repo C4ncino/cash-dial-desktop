@@ -2,6 +2,7 @@ import colors from "tailwindcss/colors";
 import { Progress } from "webcoreui/react";
 import { useStore } from "zustand";
 
+import AccountNextPayment from "@/components/Accounts/AccountNextPayment";
 import MoneyText from "@/components/General/MoneyText";
 import SquareIcon from "@/components/General/SquareIcon";
 import { formatNumber } from "@/lib/formatters";
@@ -52,21 +53,24 @@ const AccountInfo = () => {
             </thead>
             <tbody>
               <tr>
-                <td>{formatNumber(account.balance, 999_999)}</td>
-                <td className="text-right">
-                  {formatNumber(account.creditInfo.creditLimit - account.balance, 999_999)}
-                </td>
+                <td>{formatNumber(account.creditInfo.creditLimit - account.balance, 999_999)}</td>
+                <td className="text-right">{formatNumber(account.balance, 999_999)}</td>
               </tr>
             </tbody>
           </table>
           <Progress
-            value={(account.balance / account.creditInfo.creditLimit) * 100}
+            value={
+              ((account.creditInfo.creditLimit - account.balance) /
+                account.creditInfo.creditLimit) *
+              100
+            }
             color={colors.red[500]}
             background={colors.green[600]}
             className="mt-2"
           />
         </section>
       )}
+      {account.creditInfo && <AccountNextPayment accountId={account.id} />}
     </>
   );
 };

@@ -10,6 +10,8 @@ export enum ACCOUNT_FUNCTIONS {
   get = "get_accounts",
   update = "update_account",
   getBalance = "get_account_balance",
+  getNextPayment = "get_credit_cards_next_payment",
+  payCreditCard = "pay_credit_card",
 }
 
 export enum CURRENCY_FUNCTIONS {
@@ -22,11 +24,13 @@ export enum CATEGORY_FUNCTIONS {
 
 export enum MOVEMENT_FUNCTIONS {
   get = "get_movements",
+  getById = "get_movement",
   getTypes = "get_movement_types",
   add = "add_movement",
   update = "update_movement",
   remove = "remove_movement",
   getInstallments = "get_movement_installments",
+  markInstallmentsPaid = "mark_installments_as_paid",
 }
 
 export enum MOVEMENT_TYPES {

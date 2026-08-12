@@ -4,7 +4,43 @@ import { createStore } from "zustand/vanilla";
 import { logger } from "@/lib/logger";
 import { MOVEMENT_FUNCTIONS, MOVEMENT_TYPES } from "@/types/enums";
 
-export const movementsStore = createStore<MovementsStore & Actions<Movement>>((set, get) => ({
+function buildByAccountIndex(movements: Movement[]): Record<number, number[]> {
+  const byAccount: Record<number, number[]> = {};
+
+  for (const movement of movements) {
+    if (!movement) continue;
+
+    const addAccount = (accountId: number) => {
+      if (!byAccount[accountId]) byAccount[accountId] = [];
+
+      byAccount[accountId].push(movement.id);
+    };
+
+    addAccount(movement.accountId);
+
+    if (movement.toAccountId) addAccount(movement.toAccountId);
+  }
+
+  return byAccount;
+}
+
+async function attachInstallmentsIfNeeded(movement: Movement): Promise<Movement> {
+  if (movement.installments)
+    movement.installmentsData = (await invoke(MOVEMENT_FUNCTIONS.getInstallments, {
+      movementId: movement.id,
+    })) as MovementInstallment[];
+  else delete movement.installmentsData;
+
+  return movement;
+}
+
+interface MovementsStoreActions {
+  refresh: (movementIds: number[]) => Promise<void>;
+}
+
+export const movementsStore = createStore<
+  MovementsStore & Actions<Movement> & MovementsStoreActions
+>((set, get) => ({
   byId: {} as Record<number, Movement>,
   allIds: [] as number[],
   byAccount: {} as Record<number, number[]>,
@@ -17,38 +53,56 @@ export const movementsStore = createStore<MovementsStore & Actions<Movement>>((s
     logger.debug("Movements:", movements);
     logger.debug("Movement types:", types);
 
-    const byId: Record<number, Movement> = {};
-    const allIds: number[] = [];
-    const byAccount: Record<number, number[]> = {};
+    const finalMovements = await Promise.all(movements.map(attachInstallmentsIfNeeded));
 
-    for (const m of movements) {
-      if (m.installments) {
-        m.installmentsData = (await invoke(MOVEMENT_FUNCTIONS.getInstallments, {
-          movementId: m.id,
-        })) as MovementInstallment[];
-      }
+    const byId = finalMovements.reduce<Record<number, Movement>>((acc, movement) => {
+      acc[movement.id] = movement;
+      return acc;
+    }, {});
 
-      byId[m.id] = m;
-      allIds.push(m.id);
+    const allIds = finalMovements.map((movement) => movement.id);
 
-      if (!byAccount[m.accountId]) {
-        byAccount[m.accountId] = [];
-      }
-      byAccount[m.accountId].push(m.id);
-
-      if (m.toAccountId) {
-        if (!byAccount[m.toAccountId]) {
-          byAccount[m.toAccountId] = [];
-        }
-        byAccount[m.toAccountId].push(m.id);
-      }
-    }
+    const byAccount = buildByAccountIndex(finalMovements);
 
     return set({
       byId,
       allIds,
       byAccount,
       types,
+    });
+  },
+
+  refresh: async (movementIds: number[]) => {
+    const uniqueMovementIds = Array.from(new Set(movementIds));
+
+    if (uniqueMovementIds.length === 0) return;
+
+    const refreshedMovements = await Promise.all(
+      uniqueMovementIds.map(async (id) => {
+        const movement = (await invoke(MOVEMENT_FUNCTIONS.getById, {
+          movementId: id,
+        })) as Movement;
+        return attachInstallmentsIfNeeded(movement);
+      }),
+    );
+
+    set((state) => {
+      const byId = { ...state.byId };
+      const allIds = [...state.allIds];
+
+      for (const movement of refreshedMovements) {
+        byId[movement.id] = movement;
+
+        if (!allIds.includes(movement.id)) allIds.unshift(movement.id);
+      }
+
+      const byAccount = buildByAccountIndex(allIds.map((id) => byId[id]));
+
+      return {
+        byId,
+        allIds,
+        byAccount,
+      };
     });
   },
 
@@ -103,24 +157,7 @@ export const movementsStore = createStore<MovementsStore & Actions<Movement>>((s
       delete byId[id];
 
       const allIds = state.allIds.filter((mId) => mId !== id);
-
-      const byAccount: Record<number, number[]> = {};
-      for (const mId of allIds) {
-        const m = byId[mId];
-        if (!m) continue;
-
-        if (!byAccount[m.accountId]) {
-          byAccount[m.accountId] = [];
-        }
-        byAccount[m.accountId].push(m.id);
-
-        if (m.toAccountId) {
-          if (!byAccount[m.toAccountId]) {
-            byAccount[m.toAccountId] = [];
-          }
-          byAccount[m.toAccountId].push(m.id);
-        }
-      }
+      const byAccount = buildByAccountIndex(allIds.map((mId) => byId[mId]).filter(Boolean));
 
       return {
         byId,
@@ -155,24 +192,9 @@ export const movementsStore = createStore<MovementsStore & Actions<Movement>>((s
 
     return set((state) => {
       const byId = { ...state.byId, [id]: updatedMovement };
-
-      const byAccount: Record<number, number[]> = {};
-      for (const mId of state.allIds) {
-        const m = mId === id ? updatedMovement : state.byId[mId];
-        if (!m) continue;
-
-        if (!byAccount[m.accountId]) {
-          byAccount[m.accountId] = [];
-        }
-        byAccount[m.accountId].push(m.id);
-
-        if (m.toAccountId) {
-          if (!byAccount[m.toAccountId]) {
-            byAccount[m.toAccountId] = [];
-          }
-          byAccount[m.toAccountId].push(m.id);
-        }
-      }
+      const byAccount = buildByAccountIndex(
+        state.allIds.map((mId) => (mId === id ? updatedMovement : byId[mId])).filter(Boolean),
+      );
 
       return {
         byId,

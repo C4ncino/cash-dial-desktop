@@ -95,7 +95,7 @@ const SelectCategories = ({ categoryId, onChange }: Props) => {
         Categoría
       </label>
 
-      <input type="hidden" id="categoryId" name="categoryId" value={selectedId ?? ""} />
+      <input hidden id="categoryId" name="categoryId" value={selectedId ?? ""} />
 
       <button
         type="button"
