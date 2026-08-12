@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, NaiveDate, TimeZone, Utc};
+use chrono::{Datelike, Duration, NaiveDate, TimeZone, Local};
 
 /// Calculates the next payment date for a credit card given a transaction timestamp,
 /// the cutoff day of the month, and the number of days to pay after cutoff.
@@ -18,7 +18,7 @@ pub fn calculate_credit_payment_date_for_installment(
     installment_number: i32,
 ) -> i64 {
     // Convert ms timestamp to Utc date
-    let datetime = Utc.timestamp_millis_opt(timestamp_ms).unwrap();
+    let datetime = Local.timestamp_millis_opt(timestamp_ms).unwrap();
     let naive_date = datetime.date_naive();
     
     let year = naive_date.year();
@@ -54,8 +54,11 @@ pub fn calculate_credit_payment_date_for_installment(
     
     // Convert back to start of day timestamp in milliseconds (in UTC)
     let payment_datetime = payment_date.and_hms_opt(0, 0, 0).unwrap();
-    let payment_utc = Utc.from_utc_datetime(&payment_datetime);
-    payment_utc.timestamp_millis()
+    
+    Local.from_local_datetime(&payment_datetime)
+    .single()
+    .unwrap()
+    .timestamp_millis()
 }
 
 pub fn last_day_of_month_or_clamp(year: i32, month: u32, day: u32) -> NaiveDate {
@@ -77,9 +80,9 @@ mod tests {
     fn test_calculate_credit_payment_date_before_cutoff() {
         // Transaction: June 15, 2026. Cutoff: 20, Days to pay: 20.
         // Payment date should be July 10, 2026.
-        let tx_time = Utc.with_ymd_and_hms(2026, 6, 15, 12, 0, 0).unwrap().timestamp_millis();
+        let tx_time = Local.with_ymd_and_hms(2026, 6, 15, 12, 0, 0).unwrap().timestamp_millis();
         let pay_time = calculate_credit_payment_date(tx_time, 20, 20);
-        let pay_date = Utc.timestamp_millis_opt(pay_time).unwrap().date_naive();
+        let pay_date = Local.timestamp_millis_opt(pay_time).unwrap().date_naive();
         assert_eq!(pay_date, NaiveDate::from_ymd_opt(2026, 7, 10).unwrap());
     }
 
@@ -87,26 +90,26 @@ mod tests {
     fn test_calculate_credit_payment_date_after_cutoff() {
         // Transaction: June 25, 2026. Cutoff: 20, Days to pay: 20.
         // Payment date should be August 9, 2026.
-        let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
+        let tx_time = Local.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
         let pay_time = calculate_credit_payment_date(tx_time, 20, 20);
-        let pay_date = Utc.timestamp_millis_opt(pay_time).unwrap().date_naive();
+        let pay_date = Local.timestamp_millis_opt(pay_time).unwrap().date_naive();
         assert_eq!(pay_date, NaiveDate::from_ymd_opt(2026, 8, 9).unwrap());
     }
 
     #[test]
     fn test_calculate_installment_dates() {
-        let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
+        let tx_time = Local.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
         
         let pay_time_1 = calculate_credit_payment_date_for_installment(tx_time, 20, 20, 1);
-        let pay_date_1 = Utc.timestamp_millis_opt(pay_time_1).unwrap().date_naive();
+        let pay_date_1 = Local.timestamp_millis_opt(pay_time_1).unwrap().date_naive();
         assert_eq!(pay_date_1, NaiveDate::from_ymd_opt(2026, 8, 9).unwrap());
 
         let pay_time_2 = calculate_credit_payment_date_for_installment(tx_time, 20, 20, 2);
-        let pay_date_2 = Utc.timestamp_millis_opt(pay_time_2).unwrap().date_naive();
+        let pay_date_2 = Local.timestamp_millis_opt(pay_time_2).unwrap().date_naive();
         assert_eq!(pay_date_2, NaiveDate::from_ymd_opt(2026, 9, 9).unwrap());
 
         let pay_time_3 = calculate_credit_payment_date_for_installment(tx_time, 20, 20, 3);
-        let pay_date_3 = Utc.timestamp_millis_opt(pay_time_3).unwrap().date_naive();
+        let pay_date_3 = Local.timestamp_millis_opt(pay_time_3).unwrap().date_naive();
         assert_eq!(pay_date_3, NaiveDate::from_ymd_opt(2026, 10, 10).unwrap()); // September has 30 days, September 20 + 20 days is October 10.
     }
 }

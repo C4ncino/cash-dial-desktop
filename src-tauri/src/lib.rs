@@ -132,6 +132,7 @@ pub fn run() {
             functions::movements::add_movement,
             functions::movements::get_movement_types,
             functions::movements::get_movements,
+            functions::movements::get_movement,
             functions::movements::update_movement,
             functions::movements::remove_movement,
             functions::movements::get_movement_installments,
@@ -143,6 +144,9 @@ pub fn run() {
             functions::budgets::update_budget_amount,
             functions::budgets::update_budget_name,
             functions::budgets::get_affected_budget_ids,
+            functions::accounts::get_credit_cards_next_payment,
+            functions::accounts::pay_credit_card,
+            functions::movements::mark_installments_as_paid,
             export_logs,
             log_frontend_error
         ])

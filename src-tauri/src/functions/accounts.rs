@@ -437,3 +437,226 @@ fn delete_credit_info(connection: &mut SqliteConnection, account_id: i32) -> Que
 
     Ok(())
 }
+
+#[tauri::command]
+pub fn get_credit_cards_next_payment(
+    state: State<'_, Mutex<AppState>>,
+    account_id: i32,
+) -> Result<crate::models::accounts::CreditCardNextPayment, String> {
+    let state = state.lock().unwrap();
+    let connection = &mut establish_connection(&state.config.database_url);
+
+    get_credit_card_next_payment_internal(connection, account_id)
+}
+
+pub fn get_credit_card_next_payment_internal(
+    connection: &mut SqliteConnection,
+    account_id_val: i32,
+) -> Result<crate::models::accounts::CreditCardNextPayment, String> {
+    use crate::schema::accounts::dsl::{accounts, id as acc_id};
+    use crate::schema::accounts_credit_info::dsl::{accounts_credit_info, account_id as info_acc_id};
+
+    let (_account_row, credit_info_row) = accounts
+        .left_join(accounts_credit_info)
+        .filter(acc_id.eq(account_id_val))
+        .select((AccountRow::as_select(), Option::<AccountCreditInfoRow>::as_select()))
+        .first::<(AccountRow, Option<AccountCreditInfoRow>)>(connection)
+        .map_err(|e| format!("Account with ID {} not found: {}", account_id_val, e))?;
+
+    let credit_info = credit_info_row.ok_or_else(|| {
+        format!("Account with ID {} is not a credit card or lacks credit info", account_id_val)
+    })?;
+
+    use crate::schema::movements::dsl::{movements, account_id as mov_account_id};
+    use crate::schema::movement_installments::dsl::{movement_installments, paid, due_timestamp};
+    use crate::models::movements::MovementInstallmentRow;
+
+    let unpaid_installments = movement_installments
+        .inner_join(movements)
+        .filter(mov_account_id.eq(account_id_val))
+        .filter(paid.eq(false))
+        .select(MovementInstallmentRow::as_select())
+        .load::<MovementInstallmentRow>(connection)
+        .map_err(|e| format!("Failed to load installments: {}", e))?;
+
+    if unpaid_installments.is_empty() {
+        let now_ms = chrono::Local::now().timestamp_millis();
+        let payment_date = crate::utils::date::calculate_credit_payment_date(
+            now_ms,
+            credit_info.cutoff_day as u32,
+            credit_info.days_to_pay as u32,
+        );
+        return Ok(crate::models::accounts::CreditCardNextPayment {
+            account_id: account_id_val,
+            payment_date,
+            total_amount: 0.0,
+            movements: Vec::new(),
+        });
+    }
+
+    let min_due = unpaid_installments
+        .iter()
+        .map(|inst| inst.due_timestamp)
+        .min()
+        .unwrap();
+
+    let cycle_installments: Vec<&MovementInstallmentRow> = unpaid_installments
+        .iter()
+        .filter(|inst| inst.due_timestamp == min_due)
+        .collect();
+
+    use std::collections::HashMap;
+    let mut movements_map: HashMap<i32, (Vec<i32>, f64)> = HashMap::new();
+    for inst in cycle_installments {
+        let inst_id = inst.id.unwrap_or(0);
+        let entry = movements_map.entry(inst.movement_id).or_insert((Vec::new(), 0.0));
+        entry.0.push(inst_id);
+        entry.1 += inst.amount;
+    }
+
+    let mut movements_list = movements_map
+        .into_iter()
+        .map(|(mov_id, (ids, amt))| crate::models::accounts::CreditCardPaymentMovement {
+            movement_id: mov_id,
+            installment_ids: ids,
+            amount: amt,
+        })
+        .collect::<Vec<_>>();
+
+    movements_list.sort_by_key(|m| m.movement_id);
+
+    let total_amount: f64 = movements_list.iter().map(|m| m.amount).sum();
+
+    Ok(crate::models::accounts::CreditCardNextPayment {
+        account_id: account_id_val,
+        payment_date: min_due,
+        total_amount,
+        movements: movements_list,
+    })
+}
+
+#[derive(Debug)]
+enum CreditCardPaymentError {
+    Db(diesel::result::Error),
+    Validation(String),
+}
+
+impl From<diesel::result::Error> for CreditCardPaymentError {
+    fn from(error: diesel::result::Error) -> Self {
+        CreditCardPaymentError::Db(error)
+    }
+}
+
+impl std::fmt::Display for CreditCardPaymentError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CreditCardPaymentError::Db(e) => write!(f, "Error de base de datos: {}", e),
+            CreditCardPaymentError::Validation(msg) => write!(f, "{}", msg),
+        }
+    }
+}
+
+#[tauri::command]
+pub fn pay_credit_card(
+    state: State<'_, Mutex<AppState>>,
+    credit_account_id: i32,
+    payments: Vec<crate::models::accounts::CreditCardPaymentRequest>,
+) -> Result<Vec<i32>, String> {
+    let state = state.lock().unwrap();
+    let connection = &mut establish_connection(&state.config.database_url);
+
+    pay_credit_card_internal(connection, credit_account_id, payments)
+}
+
+pub fn pay_credit_card_internal(
+    connection: &mut SqliteConnection,
+    credit_account_id_val: i32,
+    payments: Vec<crate::models::accounts::CreditCardPaymentRequest>,
+) -> Result<Vec<i32>, String> {
+    if payments.is_empty() {
+        return Ok(vec![]);
+    }
+
+    connection
+        .transaction::<Vec<i32>, CreditCardPaymentError, _>(|connection| {
+            use crate::schema::accounts::dsl::{accounts, id as acc_id, currency_id as acc_currency_id};
+            use crate::schema::accounts_credit_info::dsl::{accounts_credit_info, account_id as info_acc_id};
+
+            // 1. Validate credit card account exists and is a credit card
+            let has_credit_info = accounts_credit_info
+                .filter(info_acc_id.eq(credit_account_id_val))
+                .count()
+                .get_result::<i64>(connection)?;
+
+            if has_credit_info == 0 {
+                let account_count = accounts
+                    .filter(acc_id.eq(credit_account_id_val))
+                    .count()
+                    .get_result::<i64>(connection)?;
+
+                if account_count == 0 {
+                    return Err(CreditCardPaymentError::Validation(format!(
+                        "La cuenta con ID {} no existe",
+                        credit_account_id_val
+                    )));
+                } else {
+                    return Err(CreditCardPaymentError::Validation(format!(
+                        "La cuenta con ID {} no es una tarjeta de crédito",
+                        credit_account_id_val
+                    )));
+                }
+            }
+
+            let mut transfer_movement_ids = Vec::new();
+
+            for payment in &payments {
+                // 2. Validate payment amount
+                if payment.amount <= 0.0 {
+                    return Err(CreditCardPaymentError::Validation(
+                        "El monto del pago debe ser mayor a 0".to_string(),
+                    ));
+                }
+
+                // 3. Validate source account exists
+                let source_exists = accounts
+                    .filter(acc_id.eq(payment.from_account_id))
+                    .count()
+                    .get_result::<i64>(connection)?;
+
+                if source_exists == 0 {
+                    return Err(CreditCardPaymentError::Validation(format!(
+                        "La cuenta de origen con ID {} no existe",
+                        payment.from_account_id
+                    )));
+                }
+
+                // 4. Create transfer movement
+                let source_currency_id = accounts
+                    .filter(acc_id.eq(payment.from_account_id))
+                    .select(acc_currency_id)
+                    .first::<i32>(connection)?;
+
+                let created_movement = crate::functions::movements::add_movement_internal(
+                    connection,
+                    3, // MOVEMENT_TRANSFER_ID
+                    payment.from_account_id,
+                    Some(credit_account_id_val),
+                    4, // TRANSFER_CATEGORY_ID
+                    source_currency_id,
+                    payment.amount,
+                    payment.amount,
+                    None,
+                    chrono::Local::now().timestamp_millis(),
+                    Some("Pago de tarjeta de crédito"),
+                )
+                .map_err(CreditCardPaymentError::Validation)?;
+
+                transfer_movement_ids.push(created_movement.id);
+            }
+
+            Ok(transfer_movement_ids)
+        })
+        .map_err(|e| e.to_string())
+}
+
+

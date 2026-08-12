@@ -85,3 +85,28 @@ pub struct Account {
     pub credit_info: Option<AccountCreditInfo>,
     pub is_active: bool,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CreditCardPaymentMovement {
+    pub movement_id: i32,
+    pub installment_ids: Vec<i32>,
+    pub amount: f64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CreditCardNextPayment {
+    pub account_id: i32,
+    pub payment_date: i64,
+    pub total_amount: f64,
+    pub movements: Vec<CreditCardPaymentMovement>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CreditCardPaymentRequest {
+    pub from_account_id: i32,
+    pub amount: f64,
+}
+

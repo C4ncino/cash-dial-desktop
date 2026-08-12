@@ -34,6 +34,30 @@ pub fn get_movements(state: State<'_, Mutex<AppState>>) -> Result<Vec<Movement>,
     get_movements_internal(connection)
 }
 
+#[tauri::command]
+pub fn get_movement(state: State<'_, Mutex<AppState>>, movement_id: i32) -> Result<Movement, String> {
+    tracing::debug!("Executing command get_movement id={}", movement_id);
+
+    let state = state.lock().unwrap();
+    let connection = &mut establish_connection(&state.config.database_url);
+
+    get_movement_internal(connection, movement_id)
+}
+
+fn get_movement_internal(connection: &mut SqliteConnection, movement_id_val: i32) -> Result<Movement, String> {
+    use crate::schema::movements::dsl::movements;
+
+    movements
+        .find(movement_id_val)
+        .select(MovementRow::as_select())
+        .first::<MovementRow>(connection)
+        .map(Movement::from)
+        .map_err(|e| {
+            tracing::error!("Failed loading movement {}: {}", movement_id_val, e);
+            e.to_string()
+        })
+}
+
 fn get_movements_internal(connection: &mut SqliteConnection) -> Result<Vec<Movement>, String> {
     use crate::schema::movements::dsl::{movements, timestamp};
 
@@ -126,7 +150,7 @@ pub fn add_movement(
     )
 }
 
-fn add_movement_internal(
+pub(crate) fn add_movement_internal(
     connection: &mut SqliteConnection,
     type_id: i32,
     account_id: i32,
@@ -474,7 +498,7 @@ fn ensure_account_exists(connection: &mut SqliteConnection, id: i32) -> QueryRes
     Ok(())
 }
 
-fn add_to_account_balance(
+pub(crate) fn add_to_account_balance(
     connection: &mut SqliteConnection,
     account_id: i32,
     delta: f64,
@@ -544,3 +568,75 @@ fn create_installments_if_credit(
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn mark_installments_as_paid(
+    state: State<'_, Mutex<AppState>>,
+    installment_ids: Vec<i32>,
+) -> Result<Vec<i32>, String> {
+    let state = state.lock().unwrap();
+    let connection = &mut establish_connection(&state.config.database_url);
+
+    mark_installments_as_paid_internal(connection, installment_ids)
+}
+
+pub(crate) fn mark_installments_as_paid_internal(
+    connection: &mut SqliteConnection,
+    installment_ids: Vec<i32>,
+) -> Result<Vec<i32>, String> {
+    if installment_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut unique_ids = installment_ids;
+    unique_ids.sort();
+    unique_ids.dedup();
+
+    let unique_options: Vec<Option<i32>> = unique_ids.iter().map(|&x| Some(x)).collect();
+
+    connection
+        .transaction::<Vec<i32>, diesel::result::Error, _>(|connection| {
+            use crate::schema::movement_installments::dsl::{
+                id,
+                movement_id,
+                movement_installments,
+                paid,
+                paid_timestamp,
+            };
+
+            let count: i64 = movement_installments
+                .filter(id.eq_any(&unique_options))
+                .count()
+                .get_result(connection)?;
+
+            if count != unique_ids.len() as i64 {
+                return Err(diesel::result::Error::NotFound);
+            }
+
+            let now_ms = chrono::Local::now().timestamp_millis();
+            diesel::update(movement_installments.filter(id.eq_any(&unique_options)))
+                .set((
+                    paid.eq(true),
+                    paid_timestamp.eq(Some(now_ms)),
+                ))
+                .execute(connection)?;
+
+            let mut movement_ids = movement_installments
+                .filter(id.eq_any(&unique_options))
+                .select(movement_id)
+                .load::<i32>(connection)?;
+
+            movement_ids.sort();
+            movement_ids.dedup();
+
+            Ok(movement_ids)
+        })
+        .map_err(|e| {
+            if matches!(e, diesel::result::Error::NotFound) {
+                "Uno o más IDs de mensualidades no existen".to_string()
+            } else {
+                e.to_string()
+            }
+        })
+}
+

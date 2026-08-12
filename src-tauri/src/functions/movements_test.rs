@@ -559,6 +559,46 @@ pub mod integration {
     }
 
     #[test]
+    fn get_movement_internal_returns_created_movement() {
+        let _state = setup();
+        let connection = &mut establish_connection(&_state.config.database_url);
+        let account_id = insert_account(connection, "Movement account", 100.0);
+
+        let movement = add_movement_internal(
+          connection,
+          1,
+          account_id,
+          None,
+          1,
+          1,
+          150.0,
+          150.0,
+          None,
+          1_788_000_000,
+          Some("Test movement"),
+        )
+        .unwrap();
+
+        let result = get_movement_internal(connection, movement.id);
+
+        assert!(result.is_ok());
+        let found = result.unwrap();
+        assert_eq!(found.id, movement.id);
+        assert_eq!(found.type_id, movement.type_id);
+        assert_eq!(found.account_id, movement.account_id);
+    }
+
+    #[test]
+    fn get_movement_internal_returns_error_for_missing_movement() {
+        let _state = setup();
+        let connection = &mut establish_connection(&_state.config.database_url);
+
+        let result = get_movement_internal(connection, 999_999);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn get_installments_returns_correct_order() {
         let state = setup();
         let connection = &mut establish_connection(&state.config.database_url);
@@ -594,6 +634,152 @@ pub mod integration {
         for window in installments.windows(2) {
             assert!(window[0].due_timestamp < window[1].due_timestamp);
         }
+    }
+
+    #[test]
+    fn mark_installments_paid_single() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let account_id = insert_account(connection, "CC Mark Paid", 1000.0);
+        insert_credit_info(connection, account_id, 10000.0, 20, 20);
+
+        let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
+        let movement = add_movement_internal(
+            connection,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            300.0,
+            300.0,
+            Some(3),
+            tx_time,
+            None,
+        )
+        .unwrap();
+
+        let installments = get_installments(connection, movement.id);
+        let inst_id = installments[0].id.unwrap();
+
+        // Initially unpaid
+        assert!(!installments[0].paid);
+        assert!(installments[0].paid_timestamp.is_none());
+
+        let movement_ids = mark_installments_as_paid_internal(connection, vec![inst_id]).unwrap();
+        assert_eq!(movement_ids, vec![movement.id]);
+
+        let updated = get_installments(connection, movement.id);
+        assert!(updated[0].paid);
+        assert!(updated[0].paid_timestamp.is_some());
+    }
+
+    #[test]
+    fn mark_installments_paid_multiple() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let account_id = insert_account(connection, "CC Mark Paid Mult", 1000.0);
+        insert_credit_info(connection, account_id, 10000.0, 20, 20);
+
+        let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
+        let movement = add_movement_internal(
+            connection,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            300.0,
+            300.0,
+            Some(3),
+            tx_time,
+            None,
+        )
+        .unwrap();
+
+        let installments = get_installments(connection, movement.id);
+        let ids = vec![installments[0].id.unwrap(), installments[1].id.unwrap()];
+
+        let movement_ids = mark_installments_as_paid_internal(connection, ids.clone()).unwrap();
+        assert_eq!(movement_ids, vec![movement.id]);
+
+        let updated = get_installments(connection, movement.id);
+        assert!(updated[0].paid);
+        assert!(updated[1].paid);
+        assert!(!updated[2].paid);
+    }
+
+    #[test]
+    fn mark_installments_paid_nonexistent_causes_rollback() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let account_id = insert_account(connection, "CC Mark Paid Fail", 1000.0);
+        insert_credit_info(connection, account_id, 10000.0, 20, 20);
+
+        let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
+        let movement = add_movement_internal(
+            connection,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            300.0,
+            300.0,
+            Some(3),
+            tx_time,
+            None,
+        )
+        .unwrap();
+
+        let installments = get_installments(connection, movement.id);
+        let valid_id = installments[0].id.unwrap();
+        let invalid_id = 99999;
+
+        // Try marking both a valid and invalid ID
+        let res = mark_installments_as_paid_internal(connection, vec![valid_id, invalid_id]);
+        assert!(res.is_err());
+        assert_eq!(res.err().unwrap(), "Uno o más IDs de mensualidades no existen");
+
+        // Verify rollback: the valid installment should STILL be unpaid
+        let current = get_installments(connection, movement.id);
+        assert!(!current[0].paid);
+    }
+
+    #[test]
+    fn mark_installments_paid_already_paid() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let account_id = insert_account(connection, "CC Mark Paid Prev", 1000.0);
+        insert_credit_info(connection, account_id, 10000.0, 20, 20);
+
+        let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
+        let movement = add_movement_internal(
+            connection,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            300.0,
+            300.0,
+            Some(3),
+            tx_time,
+            None,
+        )
+        .unwrap();
+
+        let installments = get_installments(connection, movement.id);
+        let inst_id = installments[0].id.unwrap();
+
+        // Mark it paid first
+        let first_result = mark_installments_as_paid_internal(connection, vec![inst_id]).unwrap();
+        assert_eq!(first_result, vec![movement.id]);
+
+        // Mark it paid again
+        let res = mark_installments_as_paid_internal(connection, vec![inst_id]);
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), vec![movement.id]);
     }
 }
 
