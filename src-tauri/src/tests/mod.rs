@@ -104,8 +104,7 @@ pub fn setup_test_db() -> diesel::SqliteConnection {
     crate::db::run_migrations(&database_url, &Environment::Test)
         .expect("Test migrations + seeding failed");
 
-    diesel::SqliteConnection::establish(&database_url)
-        .expect("Failed to connect to test database")
+    diesel::SqliteConnection::establish(&database_url).expect("Failed to connect to test database")
 }
 
 pub fn setup() -> AppState {
@@ -117,7 +116,6 @@ pub fn setup() -> AppState {
 
     crate::db::run_migrations(&state.config.database_url, &state.config.environment)
         .expect("Test migrations + seeding failed");
-    
 
     state
 }

@@ -1,5 +1,5 @@
 use super::*;
-use chrono::{Utc, TimeZone};
+use chrono::{TimeZone, Utc};
 
 pub mod unit {
     use super::*;
@@ -310,8 +310,11 @@ pub mod integration {
         paid_timestamp: Option<i64>,
     }
 
-    fn get_installments(connection: &mut SqliteConnection, movement_id_val: i32) -> Vec<MovementInstallmentRow> {
-        use crate::schema::movement_installments::dsl::{movement_installments, movement_id};
+    fn get_installments(
+        connection: &mut SqliteConnection,
+        movement_id_val: i32,
+    ) -> Vec<MovementInstallmentRow> {
+        use crate::schema::movement_installments::dsl::{movement_id, movement_installments};
         movement_installments
             .filter(movement_id.eq(movement_id_val))
             .select(MovementInstallmentRow::as_select())
@@ -326,16 +329,11 @@ pub mod integration {
         cutoff_day: i32,
         days_to_pay: i32,
     ) {
-        use crate::schema::accounts_credit_info::dsl::accounts_credit_info;
         use crate::models::accounts::AccountCreditInfoRow;
+        use crate::schema::accounts_credit_info::dsl::accounts_credit_info;
 
         diesel::insert_into(accounts_credit_info)
-            .values(&AccountCreditInfoRow {
-                account_id,
-                credit_limit,
-                cutoff_day,
-                days_to_pay,
-            })
+            .values(&AccountCreditInfoRow { account_id, credit_limit, cutoff_day, days_to_pay })
             .execute(connection)
             .unwrap();
     }
@@ -371,11 +369,13 @@ pub mod integration {
 
         assert_eq!(installments[0].installment_number, 1);
         assert_eq!(installments[0].amount, 100.0);
-        
-        let due_date_1 = Utc.timestamp_millis_opt(installments[0].due_timestamp).unwrap().date_naive();
+
+        let due_date_1 =
+            Utc.timestamp_millis_opt(installments[0].due_timestamp).unwrap().date_naive();
         assert_eq!(due_date_1, chrono::NaiveDate::from_ymd_opt(2026, 8, 9).unwrap());
 
-        let due_date_3 = Utc.timestamp_millis_opt(installments[2].due_timestamp).unwrap().date_naive();
+        let due_date_3 =
+            Utc.timestamp_millis_opt(installments[2].due_timestamp).unwrap().date_naive();
         assert_eq!(due_date_3, chrono::NaiveDate::from_ymd_opt(2026, 10, 10).unwrap());
     }
 
@@ -529,17 +529,8 @@ pub mod integration {
         let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
 
         let movement = add_movement_internal(
-            connection,
-            1, // Income — no installments
-            account_id,
-            None,
-            1,
-            1,
-            500.0,
-            500.0,
-            None,
-            tx_time,
-            None,
+            connection, 1, // Income — no installments
+            account_id, None, 1, 1, 500.0, 500.0, None, tx_time, None,
         )
         .unwrap();
 
@@ -565,17 +556,17 @@ pub mod integration {
         let account_id = insert_account(connection, "Movement account", 100.0);
 
         let movement = add_movement_internal(
-          connection,
-          1,
-          account_id,
-          None,
-          1,
-          1,
-          150.0,
-          150.0,
-          None,
-          1_788_000_000,
-          Some("Test movement"),
+            connection,
+            1,
+            account_id,
+            None,
+            1,
+            1,
+            150.0,
+            150.0,
+            None,
+            1_788_000_000,
+            Some("Test movement"),
         )
         .unwrap();
 
@@ -782,4 +773,3 @@ pub mod integration {
         assert_eq!(res.unwrap(), vec![movement.id]);
     }
 }
-

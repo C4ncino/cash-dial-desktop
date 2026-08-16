@@ -414,13 +414,22 @@ pub mod integration {
         assert!(balance >= 0.0);
     }
 
-
     #[test]
     fn test_next_payment_no_installments() {
         let state = setup();
         let connection = &mut establish_connection(&state.config.database_url);
-        let credit_info = AccountCreditInfo { credit_limit: 5000.0, cutoff_day: 15, days_to_pay: 20 };
-        let cc = add_account_internal(connection, &state.account_types, "Visa", 0.0, 3, 1, Some(credit_info)).unwrap();
+        let credit_info =
+            AccountCreditInfo { credit_limit: 5000.0, cutoff_day: 15, days_to_pay: 20 };
+        let cc = add_account_internal(
+            connection,
+            &state.account_types,
+            "Visa",
+            0.0,
+            3,
+            1,
+            Some(credit_info),
+        )
+        .unwrap();
 
         let next_payment = get_credit_card_next_payment_internal(connection, cc.id).unwrap();
         assert_eq!(next_payment.account_id, cc.id);
@@ -434,8 +443,18 @@ pub mod integration {
         use chrono::{Local, TimeZone};
         let state = setup();
         let connection = &mut establish_connection(&state.config.database_url);
-        let credit_info = AccountCreditInfo { credit_limit: 10000.0, cutoff_day: 15, days_to_pay: 20 };
-        let cc = add_account_internal(connection, &state.account_types, "Visa", 0.0, 3, 1, Some(credit_info)).unwrap();
+        let credit_info =
+            AccountCreditInfo { credit_limit: 10000.0, cutoff_day: 15, days_to_pay: 20 };
+        let cc = add_account_internal(
+            connection,
+            &state.account_types,
+            "Visa",
+            0.0,
+            3,
+            1,
+            Some(credit_info),
+        )
+        .unwrap();
 
         let tx_time = Local.with_ymd_and_hms(2026, 6, 10, 12, 0, 0).unwrap().timestamp_millis();
         let mov_a = crate::functions::movements::add_movement_internal(
@@ -481,7 +500,8 @@ pub mod integration {
         assert_eq!(m_b.installment_ids.len(), 1);
 
         let july_inst_ids = vec![m_a.installment_ids[0], m_b.installment_ids[0]];
-        crate::functions::movements::mark_installments_as_paid_internal(connection, july_inst_ids).unwrap();
+        crate::functions::movements::mark_installments_as_paid_internal(connection, july_inst_ids)
+            .unwrap();
 
         let next_payment_2 = get_credit_card_next_payment_internal(connection, cc.id).unwrap();
         assert_eq!(next_payment_2.total_amount, 100.0);
@@ -494,12 +514,25 @@ pub mod integration {
     fn test_pay_credit_card_success() {
         let state = setup();
         let connection = &mut establish_connection(&state.config.database_url);
-        
-        let debit_account = add_account_internal(connection, &state.account_types, "My Debit", 500.0, 2, 1, None).unwrap();
-        let credit_info = AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 };
-        let cc = add_account_internal(connection, &state.account_types, "My Visa", 1000.0, 3, 1, Some(credit_info)).unwrap();
 
-        let reqs = vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 200.0 }];
+        let debit_account =
+            add_account_internal(connection, &state.account_types, "My Debit", 500.0, 2, 1, None)
+                .unwrap();
+        let credit_info =
+            AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 };
+        let cc = add_account_internal(
+            connection,
+            &state.account_types,
+            "My Visa",
+            1000.0,
+            3,
+            1,
+            Some(credit_info),
+        )
+        .unwrap();
+
+        let reqs =
+            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 200.0 }];
         let transfer_ids = pay_credit_card_internal(connection, cc.id, reqs).unwrap();
         assert_eq!(transfer_ids.len(), 1);
         assert!(transfer_ids[0] > 0);
@@ -511,8 +544,8 @@ pub mod integration {
         assert_eq!(cc_bal, 1200.0);
 
         // Verify that the transfer movement was created in the database
-        use crate::schema::movements::dsl::{movements, account_id, to_account_id};
         use crate::models::movements::MovementRow;
+        use crate::schema::movements::dsl::{account_id, movements, to_account_id};
 
         let payment_movements = movements
             .filter(account_id.eq(debit_account.id))
@@ -525,7 +558,10 @@ pub mod integration {
         assert_eq!(payment_movements[0].id, transfer_ids[0]);
         assert_eq!(payment_movements[0].original_amount, 200.0);
         assert_eq!(payment_movements[0].type_id, 3); // TRANSFER
-        assert_eq!(payment_movements[0].description, Some("Pago de tarjeta de crédito".to_string()));
+        assert_eq!(
+            payment_movements[0].description,
+            Some("Pago de tarjeta de crédito".to_string())
+        );
     }
 
     #[test]
@@ -533,31 +569,63 @@ pub mod integration {
         let state = setup();
         let connection = &mut establish_connection(&state.config.database_url);
 
-        let debit_account = add_account_internal(connection, &state.account_types, "My Debit", 500.0, 2, 1, None).unwrap();
-        let credit_info = AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 };
-        let cc = add_account_internal(connection, &state.account_types, "My Visa", 1000.0, 3, 1, Some(credit_info)).unwrap();
+        let debit_account =
+            add_account_internal(connection, &state.account_types, "My Debit", 500.0, 2, 1, None)
+                .unwrap();
+        let credit_info =
+            AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 };
+        let cc = add_account_internal(
+            connection,
+            &state.account_types,
+            "My Visa",
+            1000.0,
+            3,
+            1,
+            Some(credit_info),
+        )
+        .unwrap();
 
         // 1. Invalid credit card account
-        let res1 = pay_credit_card_internal(connection, 9999, vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 100.0 }]);
+        let res1 = pay_credit_card_internal(
+            connection,
+            9999,
+            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 100.0 }],
+        );
         assert!(res1.is_err());
         assert!(res1.unwrap_err().contains("no existe"));
 
         // 2. Non-credit card destination account
-        let res2 = pay_credit_card_internal(connection, debit_account.id, vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 100.0 }]);
+        let res2 = pay_credit_card_internal(
+            connection,
+            debit_account.id,
+            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 100.0 }],
+        );
         assert!(res2.is_err());
         assert!(res2.unwrap_err().contains("no es una tarjeta de crédito"));
 
         // 3. Zero or negative payment amount
-        let res3 = pay_credit_card_internal(connection, cc.id, vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 0.0 }]);
+        let res3 = pay_credit_card_internal(
+            connection,
+            cc.id,
+            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 0.0 }],
+        );
         assert!(res3.is_err());
         assert!(res3.unwrap_err().contains("mayor a 0"));
 
-        let res4 = pay_credit_card_internal(connection, cc.id, vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: -50.0 }]);
+        let res4 = pay_credit_card_internal(
+            connection,
+            cc.id,
+            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: -50.0 }],
+        );
         assert!(res4.is_err());
         assert!(res4.unwrap_err().contains("mayor a 0"));
 
         // 4. Nonexistent source account
-        let res5 = pay_credit_card_internal(connection, cc.id, vec![CreditCardPaymentRequest { from_account_id: 9999, amount: 100.0 }]);
+        let res5 = pay_credit_card_internal(
+            connection,
+            cc.id,
+            vec![CreditCardPaymentRequest { from_account_id: 9999, amount: 100.0 }],
+        );
         assert!(res5.is_err());
         assert!(res5.unwrap_err().contains("cuenta de origen con ID 9999 no existe"));
     }
@@ -567,13 +635,25 @@ pub mod integration {
         let state = setup();
         let connection = &mut establish_connection(&state.config.database_url);
 
-        let debit_account = add_account_internal(connection, &state.account_types, "My Debit", 500.0, 2, 1, None).unwrap();
-        let credit_info = AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 };
-        let cc = add_account_internal(connection, &state.account_types, "My Visa", 1000.0, 3, 1, Some(credit_info)).unwrap();
+        let debit_account =
+            add_account_internal(connection, &state.account_types, "My Debit", 500.0, 2, 1, None)
+                .unwrap();
+        let credit_info =
+            AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 };
+        let cc = add_account_internal(
+            connection,
+            &state.account_types,
+            "My Visa",
+            1000.0,
+            3,
+            1,
+            Some(credit_info),
+        )
+        .unwrap();
 
         let reqs = vec![
             CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 200.0 },
-            CreditCardPaymentRequest { from_account_id: 9999, amount: 100.0 }
+            CreditCardPaymentRequest { from_account_id: 9999, amount: 100.0 },
         ];
 
         let res = pay_credit_card_internal(connection, cc.id, reqs);

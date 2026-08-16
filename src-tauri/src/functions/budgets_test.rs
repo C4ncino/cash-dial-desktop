@@ -33,11 +33,11 @@ pub mod unit {
     #[test]
     fn test_unit_exact_category_match_and_ancestors() {
         let categories = vec![
-            (1, None),          // Food (Root)
-            (2, Some(1)),       // Restaurants
-            (3, Some(2)),       // Fast Food (Deep child)
-            (4, Some(2)),       // Fine Dining
-            (5, Some(1)),       // Groceries
+            (1, None),    // Food (Root)
+            (2, Some(1)), // Restaurants
+            (3, Some(2)), // Fast Food (Deep child)
+            (4, Some(2)), // Fine Dining
+            (5, Some(1)), // Groceries
         ];
 
         // Root category (Food)
@@ -55,28 +55,20 @@ pub mod unit {
 
     #[test]
     fn test_unit_category_with_no_parent() {
-        let categories = vec![
-            (10, None),
-        ];
+        let categories = vec![(10, None)];
         assert_eq!(get_ancestor_category_ids(10, &categories), vec![10]);
     }
 
     #[test]
     fn test_unit_nonexistent_category() {
-        let categories = vec![
-            (1, None),
-        ];
+        let categories = vec![(1, None)];
         assert_eq!(get_ancestor_category_ids(999, &categories), Vec::<i32>::new());
     }
 
     #[test]
     fn test_unit_cycle_prevention() {
         // Cycle: 1 -> 2 -> 3 -> 1
-        let categories = vec![
-            (1, Some(2)),
-            (2, Some(3)),
-            (3, Some(1)),
-        ];
+        let categories = vec![(1, Some(2)), (2, Some(3)), (3, Some(1))];
         let ancestors = get_ancestor_category_ids(1, &categories);
         assert_eq!(ancestors, vec![1, 2, 3]);
     }
@@ -89,7 +81,9 @@ pub mod integration {
         connection: &mut SqliteConnection,
         budget_id_val: i32,
     ) -> Vec<BudgetHistory> {
-        use crate::schema::budget_history::dsl::{budget_history, budget_id as bh_budget_id, start_date};
+        use crate::schema::budget_history::dsl::{
+            budget_history, budget_id as bh_budget_id, start_date,
+        };
         budget_history
             .filter(bh_budget_id.eq(budget_id_val))
             .order(start_date.asc())
@@ -165,20 +159,13 @@ pub mod integration {
 
         let start_date_val =
             Local.with_ymd_and_hms(2026, 6, 4, 0, 0, 0).unwrap().timestamp_millis();
-        let budget = create_budget_internal(
-            connection,
-            2,
-            1,
-            1,
-            "Monthly Food",
-            500.0,
-            start_date_val,
-        )
-        .unwrap();
+        let budget =
+            create_budget_internal(connection, 2, 1, 1, "Monthly Food", 500.0, start_date_val)
+                .unwrap();
 
         // Change the budget effective today (2026-07-14)
         let today_val = Local.with_ymd_and_hms(2026, 7, 14, 0, 0, 0).unwrap().timestamp_millis();
-        
+
         change_budget_from_today_internal(connection, budget.id, 600.0, today_val).unwrap();
 
         // Verify history records
@@ -218,7 +205,7 @@ pub mod integration {
         // The monthly period started on 2026-06-04.
         // The next monthly period starts on 2026-08-04.
         let today_val = Local.with_ymd_and_hms(2026, 7, 14, 0, 0, 0).unwrap().timestamp_millis();
-        
+
         change_budget_next_period_internal(connection, budget.id, 600.0, today_val).unwrap();
 
         // Verify history records
@@ -270,8 +257,13 @@ pub mod integration {
 
         // Verify budget history is updated in-place (no new records)
 
-        let budget_detail = get_budget_internal(connection, budget.id, get_ms_from_naive(Local::now().date_naive())).unwrap();
-        
+        let budget_detail = get_budget_internal(
+            connection,
+            budget.id,
+            get_ms_from_naive(Local::now().date_naive()),
+        )
+        .unwrap();
+
         assert_eq!(budget_detail.budget.name, "New Monthly Food");
     }
 
@@ -282,16 +274,9 @@ pub mod integration {
 
         let start_date_val =
             Local.with_ymd_and_hms(2026, 6, 4, 0, 0, 0).unwrap().timestamp_millis();
-        let budget = create_budget_internal(
-            connection,
-            2,
-            1,
-            1,
-            "Monthly Food",
-            500.0,
-            start_date_val,
-        )
-        .unwrap();
+        let budget =
+            create_budget_internal(connection, 2, 1, 1, "Monthly Food", 500.0, start_date_val)
+                .unwrap();
 
         // Verify history exists
         let history_before = get_budget_history(connection, budget.id);
@@ -361,7 +346,10 @@ pub mod integration {
                 original_amount: 50.0,
                 account_amount: 50.0,
                 installments: None,
-                timestamp: Local.with_ymd_and_hms(2026, 6, 10, 12, 0, 0).unwrap().timestamp_millis(),
+                timestamp: Local
+                    .with_ymd_and_hms(2026, 6, 10, 12, 0, 0)
+                    .unwrap()
+                    .timestamp_millis(),
                 description: None,
             })
             .returning(MovementRow::as_returning())
@@ -379,7 +367,10 @@ pub mod integration {
                 original_amount: 100.0,
                 account_amount: 100.0,
                 installments: None,
-                timestamp: Local.with_ymd_and_hms(2026, 6, 20, 12, 0, 0).unwrap().timestamp_millis(),
+                timestamp: Local
+                    .with_ymd_and_hms(2026, 6, 20, 12, 0, 0)
+                    .unwrap()
+                    .timestamp_millis(),
                 description: None,
             })
             .returning(MovementRow::as_returning())
@@ -397,7 +388,10 @@ pub mod integration {
                 original_amount: 200.0,
                 account_amount: 200.0,
                 installments: None,
-                timestamp: Local.with_ymd_and_hms(2026, 5, 20, 12, 0, 0).unwrap().timestamp_millis(),
+                timestamp: Local
+                    .with_ymd_and_hms(2026, 5, 20, 12, 0, 0)
+                    .unwrap()
+                    .timestamp_millis(),
                 description: None,
             })
             .returning(MovementRow::as_returning())
@@ -415,7 +409,10 @@ pub mod integration {
                 original_amount: 150.0,
                 account_amount: 150.0,
                 installments: None,
-                timestamp: Local.with_ymd_and_hms(2026, 7, 10, 12, 0, 0).unwrap().timestamp_millis(),
+                timestamp: Local
+                    .with_ymd_and_hms(2026, 7, 10, 12, 0, 0)
+                    .unwrap()
+                    .timestamp_millis(),
                 description: None,
             })
             .returning(MovementRow::as_returning())
@@ -451,12 +448,12 @@ pub mod integration {
     }
 
     fn setup_test_categories_and_budgets(connection: &mut SqliteConnection) -> QueryResult<()> {
-        use crate::schema::categories::dsl::categories;
         use crate::schema::budgets::dsl::budgets;
-        use crate::schema::movements::dsl::movements;
+        use crate::schema::categories::dsl::categories;
         use crate::schema::movement_installments::dsl::movement_installments;
-        use crate::schema::plannings::dsl::plannings;
+        use crate::schema::movements::dsl::movements;
         use crate::schema::planning_occurrences::dsl::planning_occurrences;
+        use crate::schema::plannings::dsl::plannings;
 
         // Clear dependent tables first to avoid foreign key / NotNull violations
         diesel::delete(movement_installments).execute(connection)?;
@@ -474,16 +471,58 @@ pub mod integration {
         // 104 (Sub-Groceries, parent: 103)
         // 105 (Isolated Category, no parent)
         // 106 (Category with no budgets)
-        use crate::schema::categories::dsl::{id as cat_id, key, father_id, icon, color};
+        use crate::schema::categories::dsl::{color, father_id, icon, id as cat_id, key};
         diesel::insert_into(categories)
             .values(vec![
-                (cat_id.eq(100), key.eq("food"), father_id.eq(None::<i32>), icon.eq(""), color.eq("#000000")),
-                (cat_id.eq(101), key.eq("rest"), father_id.eq(Some(100)), icon.eq(""), color.eq("#000000")),
-                (cat_id.eq(102), key.eq("fast"), father_id.eq(Some(101)), icon.eq(""), color.eq("#000000")),
-                (cat_id.eq(103), key.eq("groc"), father_id.eq(Some(100)), icon.eq(""), color.eq("#000000")),
-                (cat_id.eq(104), key.eq("subgroc"), father_id.eq(Some(103)), icon.eq(""), color.eq("#000000")),
-                (cat_id.eq(105), key.eq("isol"), father_id.eq(None::<i32>), icon.eq(""), color.eq("#000000")),
-                (cat_id.eq(106), key.eq("nobudg"), father_id.eq(None::<i32>), icon.eq(""), color.eq("#000000")),
+                (
+                    cat_id.eq(100),
+                    key.eq("food"),
+                    father_id.eq(None::<i32>),
+                    icon.eq(""),
+                    color.eq("#000000"),
+                ),
+                (
+                    cat_id.eq(101),
+                    key.eq("rest"),
+                    father_id.eq(Some(100)),
+                    icon.eq(""),
+                    color.eq("#000000"),
+                ),
+                (
+                    cat_id.eq(102),
+                    key.eq("fast"),
+                    father_id.eq(Some(101)),
+                    icon.eq(""),
+                    color.eq("#000000"),
+                ),
+                (
+                    cat_id.eq(103),
+                    key.eq("groc"),
+                    father_id.eq(Some(100)),
+                    icon.eq(""),
+                    color.eq("#000000"),
+                ),
+                (
+                    cat_id.eq(104),
+                    key.eq("subgroc"),
+                    father_id.eq(Some(103)),
+                    icon.eq(""),
+                    color.eq("#000000"),
+                ),
+                (
+                    cat_id.eq(105),
+                    key.eq("isol"),
+                    father_id.eq(None::<i32>),
+                    icon.eq(""),
+                    color.eq("#000000"),
+                ),
+                (
+                    cat_id.eq(106),
+                    key.eq("nobudg"),
+                    father_id.eq(None::<i32>),
+                    icon.eq(""),
+                    color.eq("#000000"),
+                ),
             ])
             .execute(connection)?;
 
@@ -493,14 +532,46 @@ pub mod integration {
         // Budget 3: Category 102 (Fast Food Budget)
         // Budget 4: Category 103 (Groceries Budget)
         // Budget 5: Category 105 (Isolated Budget)
-        use crate::schema::budgets::dsl::{id as b_id, budget_period_type_id, category_id as b_cat_id, currency_id, name};
+        use crate::schema::budgets::dsl::{
+            budget_period_type_id, category_id as b_cat_id, currency_id, id as b_id, name,
+        };
         diesel::insert_into(budgets)
             .values(vec![
-                (b_id.eq(1), budget_period_type_id.eq(2), b_cat_id.eq(100), currency_id.eq(1), name.eq("Food Budget")),
-                (b_id.eq(2), budget_period_type_id.eq(2), b_cat_id.eq(101), currency_id.eq(1), name.eq("Restaurants Budget")),
-                (b_id.eq(3), budget_period_type_id.eq(2), b_cat_id.eq(102), currency_id.eq(1), name.eq("Fast Food Budget")),
-                (b_id.eq(4), budget_period_type_id.eq(2), b_cat_id.eq(103), currency_id.eq(1), name.eq("Groceries Budget")),
-                (b_id.eq(5), budget_period_type_id.eq(2), b_cat_id.eq(105), currency_id.eq(1), name.eq("Isolated Budget")),
+                (
+                    b_id.eq(1),
+                    budget_period_type_id.eq(2),
+                    b_cat_id.eq(100),
+                    currency_id.eq(1),
+                    name.eq("Food Budget"),
+                ),
+                (
+                    b_id.eq(2),
+                    budget_period_type_id.eq(2),
+                    b_cat_id.eq(101),
+                    currency_id.eq(1),
+                    name.eq("Restaurants Budget"),
+                ),
+                (
+                    b_id.eq(3),
+                    budget_period_type_id.eq(2),
+                    b_cat_id.eq(102),
+                    currency_id.eq(1),
+                    name.eq("Fast Food Budget"),
+                ),
+                (
+                    b_id.eq(4),
+                    budget_period_type_id.eq(2),
+                    b_cat_id.eq(103),
+                    currency_id.eq(1),
+                    name.eq("Groceries Budget"),
+                ),
+                (
+                    b_id.eq(5),
+                    budget_period_type_id.eq(2),
+                    b_cat_id.eq(105),
+                    currency_id.eq(1),
+                    name.eq("Isolated Budget"),
+                ),
             ])
             .execute(connection)?;
 
@@ -544,7 +615,8 @@ pub mod integration {
         assert_eq!(res, vec![1]);
 
         // 4. Update without category change
-        let mut res = get_affected_budget_ids_internal(connection, 102, Some(102), &hierarchy).unwrap();
+        let mut res =
+            get_affected_budget_ids_internal(connection, 102, Some(102), &hierarchy).unwrap();
         res.sort();
         assert_eq!(res, vec![1, 2, 3]);
 
@@ -552,7 +624,8 @@ pub mod integration {
         // Old category: Groceries (103) -> Food (100) [Budgets 1, 4]
         // New category: Fast Food (102) -> Restaurants (101) -> Food (100) [Budgets 1, 2, 3]
         // Union: Budgets 1, 2, 3, 4 (deduplicated)
-        let mut res = get_affected_budget_ids_internal(connection, 102, Some(103), &hierarchy).unwrap();
+        let mut res =
+            get_affected_budget_ids_internal(connection, 102, Some(103), &hierarchy).unwrap();
         res.sort();
         assert_eq!(res, vec![1, 2, 3, 4]);
 

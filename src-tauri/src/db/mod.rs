@@ -6,6 +6,7 @@ use crate::models::general::Environment;
 
 pub mod connect;
 pub mod query;
+pub mod statistics_query;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
@@ -31,10 +32,7 @@ pub fn run_migrations(database_url: &String, environment: &Environment) -> Resul
     }
 }
 
-fn run_seed(
-    conn: &mut diesel::SqliteConnection,
-    environment: &Environment,
-) -> Result<(), String> {
+fn run_seed(conn: &mut diesel::SqliteConnection, environment: &Environment) -> Result<(), String> {
     let seed_file = match environment {
         Environment::Development => "seeds/dev.sql",
         Environment::Test => "seeds/test.sql",
@@ -43,8 +41,8 @@ fn run_seed(
 
     tracing::info!("Seeding database with {}", seed_file);
 
-    let seed_sql = std::fs::read_to_string(seed_file)
-        .map_err(|e| format!("Cannot read {seed_file}: {e}"))?;
+    let seed_sql =
+        std::fs::read_to_string(seed_file).map_err(|e| format!("Cannot read {seed_file}: {e}"))?;
 
     conn.batch_execute(&seed_sql)
         .map_err(|e| format!("Failed to execute seed file {seed_file}: {e}"))?;

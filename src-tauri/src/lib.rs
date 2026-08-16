@@ -147,6 +147,7 @@ pub fn run() {
             functions::accounts::get_credit_cards_next_payment,
             functions::accounts::pay_credit_card,
             functions::movements::mark_installments_as_paid,
+            functions::statistics::get_statistics,
             export_logs,
             log_frontend_error
         ])

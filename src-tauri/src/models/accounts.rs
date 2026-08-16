@@ -109,4 +109,3 @@ pub struct CreditCardPaymentRequest {
     pub from_account_id: i32,
     pub amount: f64,
 }
-

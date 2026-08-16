@@ -4,7 +4,10 @@ use std::sync::Mutex;
 use tauri::State;
 
 use crate::models::general::AppState;
-use crate::models::movements::{Movement, MovementInsert, MovementInstallment, MovementInstallmentRow, MovementRow, MovementType};
+use crate::models::movements::{
+    Movement, MovementInsert, MovementInstallment, MovementInstallmentRow, MovementRow,
+    MovementType,
+};
 
 #[cfg(test)]
 #[path = "./movements_test.rs"]
@@ -35,7 +38,10 @@ pub fn get_movements(state: State<'_, Mutex<AppState>>) -> Result<Vec<Movement>,
 }
 
 #[tauri::command]
-pub fn get_movement(state: State<'_, Mutex<AppState>>, movement_id: i32) -> Result<Movement, String> {
+pub fn get_movement(
+    state: State<'_, Mutex<AppState>>,
+    movement_id: i32,
+) -> Result<Movement, String> {
     tracing::debug!("Executing command get_movement id={}", movement_id);
 
     let state = state.lock().unwrap();
@@ -44,7 +50,10 @@ pub fn get_movement(state: State<'_, Mutex<AppState>>, movement_id: i32) -> Resu
     get_movement_internal(connection, movement_id)
 }
 
-fn get_movement_internal(connection: &mut SqliteConnection, movement_id_val: i32) -> Result<Movement, String> {
+fn get_movement_internal(
+    connection: &mut SqliteConnection,
+    movement_id_val: i32,
+) -> Result<Movement, String> {
     use crate::schema::movements::dsl::movements;
 
     movements
@@ -89,7 +98,9 @@ fn get_movement_installments_internal(
     connection: &mut SqliteConnection,
     movement_id_val: i32,
 ) -> Result<Vec<MovementInstallment>, String> {
-    use crate::schema::movement_installments::dsl::{movement_installments, movement_id, installment_number};
+    use crate::schema::movement_installments::dsl::{
+        installment_number, movement_id, movement_installments,
+    };
 
     movement_installments
         .filter(movement_id.eq(movement_id_val))
@@ -179,7 +190,11 @@ pub(crate) fn add_movement_internal(
                 type_id,
                 account_id,
                 to_account_id,
-                category_id: if type_id == MOVEMENT_TRANSFER_ID { TRANSFER_CATEGORY_ID } else { category_id },
+                category_id: if type_id == MOVEMENT_TRANSFER_ID {
+                    TRANSFER_CATEGORY_ID
+                } else {
+                    category_id
+                },
                 currency_id,
                 original_amount,
                 account_amount: final_account_amount,
@@ -302,8 +317,11 @@ fn update_movement_internal(
 
             // Delete old installments
             {
-                use crate::schema::movement_installments::dsl::{movement_installments, movement_id as inst_movement_id};
-                diesel::delete(movement_installments.filter(inst_movement_id.eq(id))).execute(connection)?;
+                use crate::schema::movement_installments::dsl::{
+                    movement_id as inst_movement_id, movement_installments,
+                };
+                diesel::delete(movement_installments.filter(inst_movement_id.eq(id)))
+                    .execute(connection)?;
             }
 
             // TODO: account_amount should be calculated dynamically if currencies differ
@@ -313,7 +331,11 @@ fn update_movement_internal(
                 .set((
                     crate::schema::movements::account_id.eq(account_id),
                     crate::schema::movements::to_account_id.eq(to_account_id),
-                    crate::schema::movements::category_id.eq(if type_id == MOVEMENT_TRANSFER_ID { TRANSFER_CATEGORY_ID } else { category_id }),
+                    crate::schema::movements::category_id.eq(if type_id == MOVEMENT_TRANSFER_ID {
+                        TRANSFER_CATEGORY_ID
+                    } else {
+                        category_id
+                    }),
                     crate::schema::movements::currency_id.eq(currency_id),
                     crate::schema::movements::original_amount.eq(original_amount),
                     crate::schema::movements::account_amount.eq(final_account_amount),
@@ -528,20 +550,23 @@ fn create_installments_if_credit(
     timestamp: i64,
 ) -> QueryResult<()> {
     if type_id == MOVEMENT_EXPENSE_ID {
-        use crate::schema::accounts_credit_info::dsl::{accounts_credit_info, account_id as credit_acc_id};
-        let credit_info_row: Option<crate::models::accounts::AccountCreditInfoRow> = accounts_credit_info
-            .filter(credit_acc_id.eq(account_id))
-            .first::<crate::models::accounts::AccountCreditInfoRow>(connection)
-            .optional()?;
+        use crate::schema::accounts_credit_info::dsl::{
+            account_id as credit_acc_id, accounts_credit_info,
+        };
+        let credit_info_row: Option<crate::models::accounts::AccountCreditInfoRow> =
+            accounts_credit_info
+                .filter(credit_acc_id.eq(account_id))
+                .first::<crate::models::accounts::AccountCreditInfoRow>(connection)
+                .optional()?;
 
         if let Some(credit_info) = credit_info_row {
             let total_inst = installments.unwrap_or(1);
             let inst_amount = original_amount / (total_inst as f64);
-            
-            use crate::schema::movement_installments::dsl::movement_installments;
+
             use crate::models::movements::MovementInstallmentInsert;
+            use crate::schema::movement_installments::dsl::movement_installments;
             use crate::utils::date::calculate_credit_payment_date_for_installment;
-            
+
             for i in 1..=total_inst {
                 let due_timestamp = calculate_credit_payment_date_for_installment(
                     timestamp,
@@ -549,7 +574,7 @@ fn create_installments_if_credit(
                     credit_info.days_to_pay as u32,
                     i,
                 );
-                
+
                 let installment = MovementInstallmentInsert {
                     movement_id,
                     installment_number: i,
@@ -559,7 +584,7 @@ fn create_installments_if_credit(
                     paid: false,
                     paid_timestamp: None,
                 };
-                
+
                 diesel::insert_into(movement_installments)
                     .values(&installment)
                     .execute(connection)?;
@@ -597,11 +622,7 @@ pub(crate) fn mark_installments_as_paid_internal(
     connection
         .transaction::<Vec<i32>, diesel::result::Error, _>(|connection| {
             use crate::schema::movement_installments::dsl::{
-                id,
-                movement_id,
-                movement_installments,
-                paid,
-                paid_timestamp,
+                id, movement_id, movement_installments, paid, paid_timestamp,
             };
 
             let count: i64 = movement_installments
@@ -615,10 +636,7 @@ pub(crate) fn mark_installments_as_paid_internal(
 
             let now_ms = chrono::Local::now().timestamp_millis();
             diesel::update(movement_installments.filter(id.eq_any(&unique_options)))
-                .set((
-                    paid.eq(true),
-                    paid_timestamp.eq(Some(now_ms)),
-                ))
+                .set((paid.eq(true), paid_timestamp.eq(Some(now_ms))))
                 .execute(connection)?;
 
             let mut movement_ids = movement_installments
@@ -639,4 +657,3 @@ pub(crate) fn mark_installments_as_paid_internal(
             }
         })
 }
-

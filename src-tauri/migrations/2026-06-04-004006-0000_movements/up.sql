@@ -44,6 +44,9 @@ CREATE TABLE movements (
         ON DELETE SET NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_movements_currency_timestamp
+ON movements(currency_id, timestamp);
+
 CREATE TABLE movement_installments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     movement_id INTEGER NOT NULL,

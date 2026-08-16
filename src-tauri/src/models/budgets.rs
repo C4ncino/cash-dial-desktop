@@ -28,11 +28,7 @@ pub struct BudgetPeriodType {
 
 impl From<(BudgetPeriodTypeRow, BudgetPeriodTypeTranslationRow)> for BudgetPeriodType {
     fn from((item, translation): (BudgetPeriodTypeRow, BudgetPeriodTypeTranslationRow)) -> Self {
-        Self {
-            id: item.id,
-            key: item.key,
-            name: translation.name,
-        }
+        Self { id: item.id, key: item.key, name: translation.name }
     }
 }
 
@@ -126,6 +122,5 @@ pub struct BudgetPeriodDetails {
 #[serde(rename_all = "camelCase")]
 pub struct BudgetDetails {
     pub budget: BudgetRow,
-    pub periods: Vec<BudgetPeriodDetails>
+    pub periods: Vec<BudgetPeriodDetails>,
 }
-

@@ -153,4 +153,3 @@ impl From<MovementInstallmentRow> for MovementInstallment {
         }
     }
 }
-

@@ -318,14 +318,10 @@ fn get_account_balance_internal(
 ) -> Result<f64, String> {
     use crate::schema::accounts::dsl::{accounts, balance};
 
-    accounts
-        .find(account_id)
-        .select(balance)
-        .first::<f64>(connection)
-        .map_err(|e| {
-            tracing::error!("Failed getting account balance for id {}: {}", account_id, e);
-            e.to_string()
-        })
+    accounts.find(account_id).select(balance).first::<f64>(connection).map_err(|e| {
+        tracing::error!("Failed getting account balance for id {}: {}", account_id, e);
+        e.to_string()
+    })
 }
 
 fn get_account_type(account_types: &[AccountType], type_id: i32) -> AccountType {
@@ -454,7 +450,9 @@ pub fn get_credit_card_next_payment_internal(
     account_id_val: i32,
 ) -> Result<crate::models::accounts::CreditCardNextPayment, String> {
     use crate::schema::accounts::dsl::{accounts, id as acc_id};
-    use crate::schema::accounts_credit_info::dsl::{accounts_credit_info, account_id as info_acc_id};
+    use crate::schema::accounts_credit_info::dsl::{
+        account_id as info_acc_id, accounts_credit_info,
+    };
 
     let (_account_row, credit_info_row) = accounts
         .left_join(accounts_credit_info)
@@ -467,9 +465,9 @@ pub fn get_credit_card_next_payment_internal(
         format!("Account with ID {} is not a credit card or lacks credit info", account_id_val)
     })?;
 
-    use crate::schema::movements::dsl::{movements, account_id as mov_account_id};
-    use crate::schema::movement_installments::dsl::{movement_installments, paid, due_timestamp};
     use crate::models::movements::MovementInstallmentRow;
+    use crate::schema::movement_installments::dsl::{due_timestamp, movement_installments, paid};
+    use crate::schema::movements::dsl::{account_id as mov_account_id, movements};
 
     let unpaid_installments = movement_installments
         .inner_join(movements)
@@ -494,16 +492,10 @@ pub fn get_credit_card_next_payment_internal(
         });
     }
 
-    let min_due = unpaid_installments
-        .iter()
-        .map(|inst| inst.due_timestamp)
-        .min()
-        .unwrap();
+    let min_due = unpaid_installments.iter().map(|inst| inst.due_timestamp).min().unwrap();
 
-    let cycle_installments: Vec<&MovementInstallmentRow> = unpaid_installments
-        .iter()
-        .filter(|inst| inst.due_timestamp == min_due)
-        .collect();
+    let cycle_installments: Vec<&MovementInstallmentRow> =
+        unpaid_installments.iter().filter(|inst| inst.due_timestamp == min_due).collect();
 
     use std::collections::HashMap;
     let mut movements_map: HashMap<i32, (Vec<i32>, f64)> = HashMap::new();
@@ -579,8 +571,12 @@ pub fn pay_credit_card_internal(
 
     connection
         .transaction::<Vec<i32>, CreditCardPaymentError, _>(|connection| {
-            use crate::schema::accounts::dsl::{accounts, id as acc_id, currency_id as acc_currency_id};
-            use crate::schema::accounts_credit_info::dsl::{accounts_credit_info, account_id as info_acc_id};
+            use crate::schema::accounts::dsl::{
+                accounts, currency_id as acc_currency_id, id as acc_id,
+            };
+            use crate::schema::accounts_credit_info::dsl::{
+                account_id as info_acc_id, accounts_credit_info,
+            };
 
             // 1. Validate credit card account exists and is a credit card
             let has_credit_info = accounts_credit_info
@@ -658,5 +654,3 @@ pub fn pay_credit_card_internal(
         })
         .map_err(|e| e.to_string())
 }
-
-
