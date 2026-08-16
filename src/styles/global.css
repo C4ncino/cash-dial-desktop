@@ -12,12 +12,11 @@ html body {
 }
 
 .gradient-bg {
-  background-color: #0b0e14;
   background-image:
-    radial-gradient(at 20% 20%, rgba(0, 229, 255, 0.25) 0px, transparent 50%),
-    radial-gradient(at 80% 40%, rgba(138, 43, 226, 0.3) 0px, transparent 50%),
-    radial-gradient(at 40% 80%, rgba(255, 0, 128, 0.25) 0px, transparent 60%),
-    radial-gradient(at 90% 10%, rgba(0, 255, 128, 0.15) 0px, transparent 40%);
+    radial-gradient(at 20% 20%, rgba(0, 229, 255, 0.3) 0px, transparent 45%),
+    radial-gradient(at 80% 40%, rgba(137, 33, 235, 0.3) 0px, transparent 50%),
+    radial-gradient(at 40% 80%, rgba(17, 14, 16, 0.3) 0px, transparent 60%),
+    radial-gradient(at 90% 10%, rgba(0, 255, 128, 0.3) 0px, transparent 40%);
   background-size: cover;
 }
 

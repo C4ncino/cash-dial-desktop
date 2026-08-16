@@ -1,20 +1,20 @@
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 import { vi } from "vitest";
-import React from 'react';
+import React from "react";
 
 vi.mock("zustand", () => ({
   useStore: vi.fn(),
 }));
 
 // Mock Zustand stores
-vi.mock('@/stores/currencyStore', () => ({
+vi.mock("@/stores/currencyStore", () => ({
   currencyStore: {
     getState: () => ({
       getById: (id: number) => ({
         id,
-        code: 'USD',
-        name: 'US Dollar',
-        symbol: '$',
+        code: "USD",
+        name: "US Dollar",
+        symbol: "$",
       }),
       currencies: [],
     }),
@@ -23,7 +23,7 @@ vi.mock('@/stores/currencyStore', () => ({
 }));
 
 // Mock webcoreui
-vi.mock('webcoreui', () => ({
+vi.mock("webcoreui", () => ({
   modal: vi.fn(() => ({
     open: vi.fn(),
     close: vi.fn(),
@@ -32,20 +32,21 @@ vi.mock('webcoreui', () => ({
   toast: vi.fn(),
 }));
 
-vi.mock('webcoreui/react', () => ({
+vi.mock("webcoreui/react", () => ({
   Modal: ({ children, id, title }: any) =>
-    React.createElement('div', {
+    React.createElement("div", {
       id,
-      'data-testid': 'modal',
-      'data-title': title,
+      "data-testid": "modal",
+      "data-title": title,
       children,
     }),
   Progress: ({ value }: any) =>
-    React.createElement('div', {
-      'data-testid': 'progress',
+    React.createElement("div", {
+      "data-testid": "progress",
       style: { width: `${value}%` },
     }),
-  Input: ({ label, name, value,...props }: any) => React.createElement(
+  Input: ({ label, name, value, ...props }: any) =>
+    React.createElement(
       "div",
       {},
       [
@@ -63,82 +64,63 @@ vi.mock('webcoreui/react', () => ({
           id: name,
           name,
           ...props,
-          defaultValue: value
+          defaultValue: value,
         }),
       ].filter(Boolean),
     ),
-    Radio: ({ items, name, onChange }: any) => React.createElement(
+  Radio: ({ items, name, onChange }: any) =>
+    React.createElement(
       "div",
       {},
       items.map((item: any) =>
-        React.createElement(
-          "div",
-          { key: item.value },
-          [
-            React.createElement(
-              "label",
-              {
-                key: "label",
-                htmlFor: `${name}-${item.value}`,
-              },
-              item.label,
-            ),
-            React.createElement("input", {
-              key: "input",
-              id: `${name}-${item.value}`,
-              type: "radio",
-              name,
-              value: item.value,
-              onChange,
-            }),
-          ],
-        ),
+        React.createElement("div", { key: item.value }, [
+          React.createElement(
+            "label",
+            {
+              key: "label",
+              htmlFor: `${name}-${item.value}`,
+            },
+            item.label,
+          ),
+          React.createElement("input", {
+            key: "input",
+            id: `${name}-${item.value}`,
+            type: "radio",
+            name,
+            value: item.value,
+            onChange,
+          }),
+        ]),
       ),
     ),
-    Accordion: ({ items }: any) => React.createElement(
+  Accordion: ({ items }: any) =>
+    React.createElement(
       "div",
       {},
       items.map((item: any) =>
-        React.createElement(
-          "div",
-          { key: item.title },
-          [
-            React.createElement(
-              "h3",
-              { key: "title" },
-              item.title,
-            ),
-            React.createElement(
-              "p",
-              { key: "content" },
-              item.content,
-            ),
-          ],
-        ),
+        React.createElement("div", { key: item.title }, [
+          React.createElement("h3", { key: "title" }, item.title),
+          React.createElement("p", { key: "content" }, item.content),
+        ]),
       ),
     ),
 }));
 
 // Mock the SquareIcon component
-vi.mock('@/components/General/SquareIcon', () => ({
+vi.mock("@/components/General/SquareIcon", () => ({
   default: ({ icon, backgroundColor }: any) =>
-    React.createElement('div', {
-      'data-testid': 'square-icon',
-      'data-icon': icon,
-      'data-bg': backgroundColor,
+    React.createElement("div", {
+      "data-testid": "square-icon",
+      "data-icon": icon,
+      "data-bg": backgroundColor,
     }),
 }));
 
 // Mock the MoneyText component
-vi.mock('@/components/General/MoneyText', () => ({
+vi.mock("@/components/General/MoneyText", () => ({
   default: ({ amount, currency }: any) =>
-    React.createElement(
-      'span',
-      { 'data-testid': 'money-text' },
-      `${currency?.symbol}${amount}`
-    ),
+    React.createElement("span", { "data-testid": "money-text" }, `${currency?.symbol}${amount}`),
 }));
-
 
 vi.mock("@tauri-apps/plugin-locale", () => ({
   locale: vi.fn().mockResolvedValue("en-US"),

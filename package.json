@@ -8,6 +8,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "tauri": "tauri",
+    "format": "biome format --write .",
     "test": "vitest run src",
     "build:test": "pnpm tauri build --debug --no-bundle",
     "test:e2e": "pnpm run build:test && cross-env DATABASE_URL=./e2e-test.sqlite vitest run tests/e2e --fileParallelism=false",
@@ -27,7 +28,9 @@
     "@types/react-dom": "^19.2.3",
     "astro": "^6.3.8",
     "astro-icon": "^1.1.5",
+    "chart.js": "^4.5.1",
     "react": "^19.2.4",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.4",
     "tailwind-animations": "^1.0.1",
     "tailwind-merge": "^3.4.0",
@@ -35,6 +38,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
     "@iconify-json/iconoir": "^1.2.10",
     "@iconify/react": "^6.0.2",
     "@tauri-apps/cli": "^2.9.6",

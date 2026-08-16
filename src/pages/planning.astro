@@ -5,24 +5,9 @@ import Budgets from "@/components/Budgets/Budgets.astro";
 
 <BaseLayout title="Planificación" description="">
   <h1 class="text-3xl font-bold mb-4">Planificación</h1>
-  <p class="text-lg text-gray-700 dark:text-gray-300">
-    Aquí puedes planificar tus finanzas, establecer presupuestos y metas de
-    ahorro.
-  </p>
 
   <section class="mt-6">
     <h2 class="text-xl font-semibold mb-3">Presupuestos</h2>
     <Budgets client:load />
   </section>
 </BaseLayout>
-
-<script>
-  import { budgetStore } from "@/stores/budgetStore";
-  document.addEventListener("astro:page-load", async () => {
-    try {
-      await budgetStore.getState().populate();
-    } catch (err) {
-      // ignore
-    }
-  });
-</script>
