@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
 import AccountInfo from "@/components/Accounts/AccountInfo";
-import { formatNumber } from "@/lib/formatters";
+import { formatAmount, formatNumber } from "@/lib/formatters";
 import { logger } from "@/lib/logger";
 
 vi.mock("zustand");
@@ -61,12 +61,14 @@ describe("AccountInfo", () => {
     expect(screen.getByTestId("square-icon")).toBeInTheDocument();
   });
 
-  it("should render money text with balance", () => {
+  it("should render the formatted balance", () => {
     (useStore as any).mockImplementation(() => mockAccount);
 
     render(<AccountInfo />);
 
-    expect(screen.getByTestId("money-text")).toBeInTheDocument();
+    expect(
+      screen.getByText(formatAmount(mockAccount.balance, { code: "USD" } as Currency)),
+    ).toBeInTheDocument();
   });
 
   it("should render credit info section when creditInfo exists", () => {

@@ -1,5 +1,7 @@
 import { Icon } from "@iconify/react";
 
+import CategoryName from "@/components/General/CategoryName";
+
 type Props = {
   node: CategoryNode;
   expandedParents: Record<number, boolean>;
@@ -26,8 +28,7 @@ const CategoryItem = ({ node, expandedParents, selectedId, onToggle, onSelect }:
         className="flex w-full items-center justify-between"
       >
         <span className="flex items-center gap-2.5">
-          <Icon icon={`iconoir:${node.icon}`} style={{ color: node.color }} className="w-5 h-5" />
-          <p>{node.name}</p>
+          <CategoryName id={node.id} customName={node.name} color={node.color} />
         </span>
 
         {hasChildren && (

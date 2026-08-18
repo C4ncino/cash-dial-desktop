@@ -1,29 +1,57 @@
 import { Icon } from "@iconify/react";
 
-import { formatNumber, formatShortAmount } from "@/lib/formatters";
-import { MOVEMENT_TYPES } from "@/types/enums";
+import { formatAmount, formatNumber, formatShortAmount } from "@/lib/formatters";
+
+export type AmountTone = "income" | "expense" | "neutral";
+export type AmountFormat = "number" | "short" | "currency";
+export type AmountIcon = "plus" | "minus" | "none";
 
 interface Props {
-  type: MOVEMENT_TYPES;
   amount: number;
-  needShort?: boolean;
+  tone?: AmountTone;
+  format?: AmountFormat;
+  icon?: AmountIcon;
+  currency?: Currency;
   className?: string;
+  amountClassName?: string;
+  inline?: boolean;
 }
 
-const AmountText = ({ type, amount, needShort, className }: Props) => {
+const AmountText = ({
+  amount,
+  tone = "neutral",
+  format = "number",
+  icon = "none",
+  currency,
+  className = "",
+  amountClassName = "",
+  inline = false,
+}: Props) => {
+  const toneClass = tone === "income"
+    ? "text-green-500"
+    : tone === "expense"
+      ? "text-red-500"
+      : "text-white";
+
+  const formattedAmount = format === "short"
+    ? formatShortAmount(amount)
+    : format === "currency" && currency
+      ? formatAmount(amount, currency)
+      : formatNumber(amount, 1000);
+
+  if (inline) {
+    return <strong className={className}>{formattedAmount}</strong>;
+  }
+
   return (
-    <div
-      className={`text-2xl flex flex-row ${type === MOVEMENT_TYPES.INCOME ? "text-green-500" : type === MOVEMENT_TYPES.EXPENSE ? "text-red-500" : "text-white"} ${className}`}
-    >
-      {type !== MOVEMENT_TYPES.TRANSFER && (
+    <div className={`text-2xl flex flex-row ${toneClass} ${className}`}>
+      {icon !== "none" && (
         <Icon
-          icon={`iconoir:${type === MOVEMENT_TYPES.INCOME ? "plus" : "minus"}`}
+          icon={`iconoir:${icon}`}
           className="mt-1"
         />
       )}
-      <p className="font-semibold">
-        {needShort ? formatShortAmount(amount) : formatNumber(amount, 1000)}
-      </p>
+      <p className={`font-semibold ${amountClassName}`}>{formattedAmount}</p>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useStore } from "zustand";
 
 import MovementCard from "@/components/Movements/MovementCard";
 
@@ -12,16 +13,22 @@ vi.mock("@/stores/accountsStore", () => ({
     getState: () => ({
       getById: (id: number) => {
         if (id === 1) {
-          return { id: 1, name: "Source Account", currencyId: 1 };
+          return { id: 1, name: "Source Account", currencyId: 1, type: { icon: "wallet" } };
         }
         if (id === 2) {
-          return { id: 2, name: "Dest Account", currencyId: 1 };
+          return { id: 2, name: "Dest Account", currencyId: 1, type: { icon: "card" } };
         }
         return undefined;
       },
+      accounts: [
+        { id: 1, name: "Source Account", type: { icon: "wallet" } },
+        { id: 2, name: "Dest Account", type: { icon: "card" } },
+      ],
     }),
   },
 }));
+
+vi.mock("zustand");
 
 vi.mock("@/stores/categoryStore", () => ({
   categoryStore: {
@@ -49,6 +56,12 @@ const mockMovement: Movement = {
 };
 
 describe("MovementCard", () => {
+  beforeEach(() => {
+    vi.mocked(useStore).mockImplementation((store: any, selector: any) =>
+      selector(store.getState()),
+    );
+  });
+
   it("should render movement category and account name", () => {
     render(<MovementCard movement={mockMovement} />);
 

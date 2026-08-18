@@ -1,13 +1,21 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
 import Budgets from "@/components/Budgets/Budgets.astro";
+import PlanningModals from "@/components/Plannings/Modals.astro";
+import PlanningsLanding from "@/components/Plannings/PlanningsLanding.astro";
+import PlanningToasts from "@/components/Plannings/Toasts.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Planificación" description="">
-  <h1 class="text-3xl font-bold mb-4">Planificación</h1>
-
-  <section class="mt-6">
-    <h2 class="text-xl font-semibold mb-3">Presupuestos</h2>
-    <Budgets client:load />
+  <section aria-labelledby="budgets-title" class="space-y-3">
+    <h1 id="budgets-title" class="text-3xl font-bold">
+      Presupuestos y planificaciones
+    </h1>
+    <Budgets />
   </section>
+
+  <PlanningsLanding />
+
+  <PlanningModals />
+  <PlanningToasts />
 </BaseLayout>

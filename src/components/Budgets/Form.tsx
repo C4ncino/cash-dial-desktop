@@ -46,6 +46,7 @@ const BudgetForm = ({ modalId }: Props) => {
   const periodTypes = useStore(budgetStore, (s) => s.periodTypes);
 
   const [errors, setErrors] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState<number | undefined>();
   const [selectedPeriodType, setSelectedPeriodType] = useState<number | null>(
     periodTypes.length > 0 ? periodTypes[0].id : null,
   );
@@ -61,6 +62,7 @@ const BudgetForm = ({ modalId }: Props) => {
     const budget = isEditing ? budgetStore.getState().getById(editState.id as number) : undefined;
 
     setSelectedPeriodType(budget ? budget.budget.budgetPeriodTypeId : null);
+    setCategoryId(budget?.budget.categoryId);
 
     return budget;
   }, [editState.id, editState.type, modalId]);
@@ -177,7 +179,10 @@ const BudgetForm = ({ modalId }: Props) => {
         className="w-5/6 h-full m-auto space-y-4"
         id="budget-form"
         onSubmit={onSubmit}
-        onReset={() => setSelectedPeriodType(budget ? budget.budget.budgetPeriodTypeId : null)}
+        onReset={() => {
+          setSelectedPeriodType(budget ? budget.budget.budgetPeriodTypeId : null);
+          setCategoryId(budget?.budget.categoryId);
+        }}
       >
         <fieldset className="space-y-4">
           <Input name="name" label="Nombre" required value={budget ? budget.budget.name : ""} />
@@ -185,7 +190,7 @@ const BudgetForm = ({ modalId }: Props) => {
 
         {!budget && (
           <>
-            <SelectCategories />
+            <SelectCategories categoryId={categoryId} onChange={setCategoryId} />
 
             <fieldset>
               <label htmlFor="amountLimit" className="text-gray-webui-text">

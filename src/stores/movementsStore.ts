@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
+import { planningsStore } from "@/stores/planningsStore";
 import { MOVEMENT_FUNCTIONS, MOVEMENT_TYPES } from "@/types/enums";
 
 function buildByAccountIndex(movements: Movement[]): Record<number, number[]> {
@@ -107,7 +108,7 @@ export const movementsStore = createStore<
   },
 
   add: async (movement: Movement) => {
-    const newMovement = (await invoke(MOVEMENT_FUNCTIONS.add, {
+    const createdMovement = (await invoke(MOVEMENT_FUNCTIONS.add, {
       typeId: movement.typeId,
       accountId: movement.accountId,
       toAccountId: movement.toAccountId,
@@ -118,7 +119,11 @@ export const movementsStore = createStore<
       installments: movement.installments,
       timestamp: movement.timestamp,
       description: movement.description,
+      planningId: movement.planningId,
     })) as Movement;
+    const newMovement = movement.planningId
+      ? { ...createdMovement, planningId: movement.planningId }
+      : createdMovement;
 
     if (newMovement.installments) {
       newMovement.installmentsData = (await invoke(MOVEMENT_FUNCTIONS.getInstallments, {
@@ -127,6 +132,10 @@ export const movementsStore = createStore<
     }
 
     logger.info("Movement created", newMovement);
+
+    if (movement.planningId) {
+      await planningsStore.getState().refresh(movement.planningId);
+    }
 
     return set((state) => {
       const byId = { ...state.byId, [newMovement.id]: newMovement };
@@ -150,7 +159,12 @@ export const movementsStore = createStore<
   },
 
   remove: async (id: number) => {
+    const removedMovement = get().byId[id];
     await invoke(MOVEMENT_FUNCTIONS.remove, { id });
+
+    if (removedMovement?.planningId) {
+      await planningsStore.getState().refresh(removedMovement.planningId);
+    }
 
     return set((state) => {
       const byId = { ...state.byId };
@@ -276,6 +290,7 @@ export function createMovementFromData(
         : undefined,
     timestamp,
     description: data.description ? String(data.description) : undefined,
+    planningId: data.planningId ? Number(data.planningId) : undefined,
   };
 }
 

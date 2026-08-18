@@ -18,7 +18,28 @@ export const categoryStore = createStore<
   getById: (id: number) => get().categories.find((category) => category.id === id),
 }));
 
-export function getCategoriesTree(flatCategories: Category[]): CategoryNode[] {
+export function isCategoryInSubtree(
+  flatCategories: Category[],
+  categoryId: number,
+  rootCategoryId: number,
+): boolean {
+  if (categoryId === rootCategoryId) return true;
+
+  const categoryMap = new Map<number, Category>(flatCategories.map((c) => [c.id, c]));
+  let current = categoryMap.get(categoryId);
+
+  while (current && current.fatherId !== null) {
+    if (current.fatherId === rootCategoryId) return true;
+    current = categoryMap.get(current.fatherId);
+  }
+
+  return false;
+}
+
+export function getCategoriesTree(
+  flatCategories: Category[],
+  rootCategoryId?: number,
+): CategoryNode[] {
   const map = new Map<number, CategoryNode>();
 
   for (const cat of flatCategories) {
@@ -59,6 +80,11 @@ export function getCategoriesTree(flatCategories: Category[]): CategoryNode[] {
       if (parent) parent.children.push(node);
       else roots.push(node);
     }
+  }
+
+  if (rootCategoryId) {
+    const rootNode = map.get(rootCategoryId);
+    return rootNode ? [rootNode] : [];
   }
 
   return roots;

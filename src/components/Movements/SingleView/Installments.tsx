@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react";
 
-import MoneyText from "@/components/General/MoneyText";
+import AmountText from "@/components/General/AmountText";
 
 interface Props {
   installmentsData: MovementInstallment[];
@@ -22,7 +22,12 @@ const Installments = ({ installmentsData, movementCurrency }: Props) => {
             </dt>
 
             <dd className="text-base text-zinc-200 mt-0.5">
-              <MoneyText amount={installment.amount} currency={movementCurrency} />
+              <AmountText
+                amount={installment.amount}
+                currency={movementCurrency}
+                format="currency"
+                inline
+              />
 
               {installment.paid && installment.paidTimestamp && (
                 <p className="text-green-400 flex flex-row items-center gap-1">

@@ -26,6 +26,7 @@ type Movement = {
   timestamp: number;
   description?: string;
   installmentsData?: MovementInstallment[];
+  planningId?: number;
 };
 
 type MovementsStore = {

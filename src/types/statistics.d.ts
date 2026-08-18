@@ -42,6 +42,7 @@ type StatisticsCategoryNode = StatisticsCategoryEntry & {
 type StatisticsObligation = {
   installmentId: number;
   movementId: number;
+  accountId: number;
   dueTimestamp: number;
   amount: number;
   paid: boolean;

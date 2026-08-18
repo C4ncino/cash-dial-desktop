@@ -8,7 +8,7 @@ interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 const SelectCurrency = ({ currencyId, ...selectProps }: Props) => {
-  const currencies = useStore(currencyStore, (state) => state.currencies);
+  const currencies = useStore(currencyStore, (state) => state?.currencies) ?? [];
 
   const defaultClassName = "border border-[#252525] border-l-0 w-24 px-2";
 

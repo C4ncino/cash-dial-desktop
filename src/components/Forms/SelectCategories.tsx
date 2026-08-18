@@ -3,12 +3,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Breadcrumb } from "webcoreui/react";
 import { useStore } from "zustand";
 
-import { categoryStore, getCategoriesTree } from "@/stores/categoryStore";
+import { categoryStore, getCategoriesTree, isCategoryInSubtree } from "@/stores/categoryStore";
 
 import CategoryItem from "./CategoryItem";
 
 interface Props {
   categoryId?: number;
+  rootCategoryId?: number;
   onChange?: (id: number) => void;
 }
 
@@ -19,7 +20,7 @@ interface Item {
   target?: "_self" | "_blank" | "_parent" | "_top" | "_unfencedTop";
 }
 
-const SelectCategories = ({ categoryId, onChange }: Props) => {
+const SelectCategories = ({ categoryId, rootCategoryId, onChange }: Props) => {
   const { categories, getById } = useStore(categoryStore, (state) => state);
 
   const dropdownRef = useRef<HTMLFieldSetElement>(null);
@@ -53,8 +54,29 @@ const SelectCategories = ({ categoryId, onChange }: Props) => {
   const selectedCategory = selectedId ? getById(selectedId) : undefined;
 
   useEffect(() => {
-    if (categoryId !== undefined && categories.length > 0) setSelectedId(categoryId);
-  }, [categoryId, categories]);
+    if (categories.length > 0) {
+      if (categoryId) {
+        if (rootCategoryId && !isCategoryInSubtree(categories, categoryId, rootCategoryId)) {
+          setSelectedId(undefined);
+        } else {
+          setSelectedId(categoryId);
+        }
+      } else {
+        setSelectedId(undefined);
+      }
+    }
+  }, [categoryId, categories, rootCategoryId]);
+
+  useEffect(() => {
+    if (rootCategoryId && selectedId) {
+      if (!isCategoryInSubtree(categories, selectedId, rootCategoryId)) {
+        setSelectedId(undefined);
+        if (onChange) {
+          onChange(undefined as unknown as number);
+        }
+      }
+    }
+  }, [rootCategoryId, categories, selectedId, onChange]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,7 +90,10 @@ const SelectCategories = ({ categoryId, onChange }: Props) => {
     };
   }, []);
 
-  const categoryTree = useMemo(() => getCategoriesTree(categories), [categories]);
+  const categoryTree = useMemo(
+    () => getCategoriesTree(categories, rootCategoryId),
+    [categories, rootCategoryId],
+  );
 
   if (categories.length === 0) return null;
 
@@ -95,7 +120,13 @@ const SelectCategories = ({ categoryId, onChange }: Props) => {
         Categoría
       </label>
 
-      <input hidden id="categoryId" name="categoryId" value={selectedId ?? ""} />
+      <input
+        hidden
+        readOnly
+        id="categoryId"
+        name="categoryId"
+        value={selectedId ?? ""}
+      />
 
       <button
         type="button"

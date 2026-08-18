@@ -8,10 +8,11 @@ interface Props {
   accountId?: number;
   excludeId?: number;
   excludeCredit?: boolean;
+  disabled?: boolean;
   onChange?: (id: number) => void;
 }
 
-const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, onChange }: Props) => {
+const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, disabled, onChange }: Props) => {
   const accounts = useStore(accountsStore, (state) => state.accounts);
 
   console.log(accounts);
@@ -33,6 +34,7 @@ const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, onCh
         name={name}
         id={name}
         required
+        disabled={disabled}
         className="w-full border border-[#252525] bg-transparent rounded px-3 py-2"
         defaultValue={accountId}
         onChange={(e) => onChange?.(Number(e.target.value))}

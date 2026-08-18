@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useStore } from "zustand";
 
 import CreditCardPaymentForm from "@/components/Accounts/CreditCardPaymentForm";
-import MoneyText from "@/components/General/MoneyText";
+import AmountText from "@/components/General/AmountText";
 import useDate from "@/hooks/useDate";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
@@ -92,9 +92,11 @@ const AccountNextPayment = ({ accountId }: Props) => {
         </div>
 
         <div className="flex items-center space-x-4">
-          <MoneyText
+          <AmountText
             amount={nextPayment.totalAmount}
             currency={currency}
+            format="currency"
+            inline
             className="text-xl font-medium"
           />
           <Icon
@@ -130,9 +132,11 @@ const AccountNextPayment = ({ accountId }: Props) => {
                     <span className="text-zinc-200">{description}</span>
                     <span className="text-xs text-zinc-500">{installmentText}</span>
                   </div>
-                  <MoneyText
+                  <AmountText
                     amount={movementInfo.amount}
                     currency={currency}
+                    format="currency"
+                    inline
                     className="text-zinc-300"
                   />
                 </li>

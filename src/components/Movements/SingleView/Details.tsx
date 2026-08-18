@@ -1,23 +1,25 @@
+import AccountName from "@/components/General/AccountName";
+import CategoryName from "@/components/General/CategoryName";
 import { MOVEMENT_TYPES } from "@/types/enums";
 
 interface Props {
-  categoryName: string;
+  categoryId: number;
   typeName: string;
   typeId: MOVEMENT_TYPES;
   installments?: number;
   description?: string;
-  accountName: string;
-  toAccountName?: string;
+  accountId: number;
+  toAccountId?: number;
 }
 
 const Details = ({
-  categoryName,
+  categoryId,
   typeName,
   typeId,
   installments,
   description,
-  accountName,
-  toAccountName,
+  accountId,
+  toAccountId,
 }: Props) => {
   return (
     <section className="space-y-3">
@@ -25,7 +27,7 @@ const Details = ({
       <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800">
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Categoría</dt>
-          <dd className="text-base text-zinc-200 mt-0.5">{categoryName}</dd>
+          <dd className="text-base text-zinc-200 mt-0.5"><CategoryName id={categoryId} /></dd>
         </div>
 
         <div>
@@ -37,13 +39,13 @@ const Details = ({
           <dt className="text-sm text-zinc-500 font-medium">
             {typeId === MOVEMENT_TYPES.TRANSFER ? "Cuenta origen" : "Cuenta"}
           </dt>
-          <dd className="text-base text-zinc-200 mt-0.5">{accountName}</dd>
+          <dd className="text-base text-zinc-200 mt-0.5"><AccountName id={accountId} /></dd>
         </div>
 
-        {typeId === MOVEMENT_TYPES.TRANSFER && toAccountName && (
+        {typeId === MOVEMENT_TYPES.TRANSFER && toAccountId !== undefined && (
           <div>
             <dt className="text-sm text-zinc-500 font-medium">Cuenta destino</dt>
-            <dd className="text-base text-zinc-200 mt-0.5">{toAccountName}</dd>
+            <dd className="text-base text-zinc-200 mt-0.5"><AccountName id={toAccountId} /></dd>
           </div>
         )}
 

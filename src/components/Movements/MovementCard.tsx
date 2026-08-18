@@ -1,9 +1,11 @@
 import { Icon } from "@iconify/react";
 
+import AccountName from "@/components/General/AccountName";
 import AmountText from "@/components/General/AmountText";
 import useDate from "@/hooks/useDate";
 import { accountsStore } from "@/stores/accountsStore";
 import { categoryStore } from "@/stores/categoryStore";
+import { MOVEMENT_TYPES } from "@/types/enums";
 
 interface Props {
   movement: Movement;
@@ -38,11 +40,11 @@ const MovementCard = ({ movement, showTime }: Props) => {
         <div className="text-left">
           <p className="text-xl font-medium mb-0.5">{category.name}</p>
           <span className="flex space-x-2 text-zinc-300">
-            <p>{account.name}</p>
+            <p><AccountName id={account.id} /></p>
             {toAccount && (
               <>
                 <Icon icon="iconoir:dot-arrow-right" className="text-2xl" />
-                <p>{toAccount.name}</p>
+                <p><AccountName id={toAccount.id} /></p>
               </>
             )}
           </span>
@@ -51,9 +53,10 @@ const MovementCard = ({ movement, showTime }: Props) => {
 
       <div className="flex flex-col items-end">
         <AmountText
-          type={movement.typeId}
           amount={movement.originalAmount}
-          needShort={textLength > 28}
+          tone={movement.typeId === MOVEMENT_TYPES.INCOME ? "income" : movement.typeId === MOVEMENT_TYPES.EXPENSE ? "expense" : "neutral"}
+          icon={movement.typeId === MOVEMENT_TYPES.INCOME ? "plus" : movement.typeId === MOVEMENT_TYPES.EXPENSE ? "minus" : "none"}
+          format={textLength > 28 ? "short" : "number"}
         />
         <time className="dark:text-zinc-400 text-xs text-right">{showTime ? time : dateShort}</time>
       </div>

@@ -6,6 +6,14 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
 }));
 
+const mockPlanningRefresh = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("@/stores/planningsStore", () => ({
+  planningsStore: {
+    getState: () => ({ refresh: mockPlanningRefresh }),
+  },
+}));
+
 vi.unmock("@/stores/movementsStore");
 
 import { invoke } from "@tauri-apps/api/core";
@@ -76,6 +84,7 @@ describe("movementsStore", () => {
     });
 
     vi.clearAllMocks();
+    mockPlanningRefresh.mockClear();
   });
 
   it("populate loads movements and types", async () => {
@@ -153,6 +162,16 @@ describe("movementsStore", () => {
     expect(state.byAccount[3]).toEqual([12]);
   });
 
+  it("passes planningId to Tauri and refreshes the linked planning", async () => {
+    const linkedMovement = { ...movement, id: 14, planningId: 7 };
+    mockInvoke.mockResolvedValue(linkedMovement);
+
+    await movementsStore.getState().add(linkedMovement);
+
+    expect(mockInvoke).toHaveBeenCalledWith("add_movement", expect.objectContaining({ planningId: 7 }));
+    expect(mockPlanningRefresh).toHaveBeenCalledWith(7);
+  });
+
   it("remove deletes movement and correctly updates indexes", async () => {
     const m1 = { ...movement, id: 1 };
     const m2 = { ...movement, id: 2, accountId: 2 };
@@ -172,6 +191,21 @@ describe("movementsStore", () => {
     expect(state.allIds).toEqual([2]);
     expect(state.byAccount[1]).toBeUndefined();
     expect(state.byAccount[2]).toEqual([2]);
+  });
+
+  it("refreshes a linked planning after removing its movement", async () => {
+    const linkedMovement = { ...movement, id: 15, planningId: 7 };
+    movementsStore.setState({
+      byId: { 15: linkedMovement },
+      allIds: [15],
+      byAccount: { 1: [15] },
+      types: [],
+    });
+    mockInvoke.mockResolvedValue(1);
+
+    await movementsStore.getState().remove(15);
+
+    expect(mockPlanningRefresh).toHaveBeenCalledWith(7);
   });
 
   it("getById returns movement", () => {

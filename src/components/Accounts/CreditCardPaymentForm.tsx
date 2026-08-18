@@ -5,7 +5,7 @@ import { Input } from "webcoreui/react";
 
 import FormErrors from "@/components/Forms/FormErrors";
 import SelectAccounts from "@/components/Forms/SelectAccounts";
-import MoneyText from "@/components/General/MoneyText";
+import AmountText from "@/components/General/AmountText";
 import { formatAmount } from "@/lib/formatters";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
@@ -218,7 +218,13 @@ const CreditCardPaymentForm = ({
       <div className="border-t border-zinc-700 pt-3 space-y-1 text-sm">
         <div className="flex justify-between">
           <span className="text-zinc-400">Próximo pago:</span>
-          <MoneyText amount={totalAmount} currency={currency} className="text-zinc-200" />
+          <AmountText
+            amount={totalAmount}
+            currency={currency}
+            format="currency"
+            inline
+            className="text-zinc-200"
+          />
         </div>
         <div className="flex justify-between">
           <span className="text-zinc-400">Monto cubierto:</span>

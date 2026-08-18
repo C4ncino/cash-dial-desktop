@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { closeModal, toast } from "webcoreui";
 import { useStore } from "zustand";
@@ -7,6 +7,7 @@ import MovementForm from "@/components/Movements/MovementForm";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
+import { planningsStore } from "@/stores/planningsStore";
 import { createMovementFromData, validateMovement } from "@/stores/movementsStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
@@ -131,6 +132,18 @@ const mockAccounts = [
   },
 ];
 
+const mockPlanning = {
+  id: 7,
+  typeId: MOVEMENT_TYPES.EXPENSE,
+  accountId: 1,
+  categoryId: 1,
+  currencyId: 1,
+  name: "Rent",
+  amount: 1200,
+  recurringRule: { isActive: true },
+  currentOccurrence: { statusId: 1, expectedDate: Date.now() },
+};
+
 const mockUseStoreState = ({ accounts = mockAccounts, editState = {} }: any = {}) => {
   vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
     if (store === accountsStore) {
@@ -144,9 +157,70 @@ const mockUseStoreState = ({ accounts = mockAccounts, editState = {} }: any = {}
       });
     }
 
+    if (store === planningsStore) {
+      return selector({ plannings: [mockPlanning] });
+    }
+
     return undefined;
   });
+
+  /* it("submits planningId and applies the selected planning context", () => {
+    vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
+    const createdMovement = { accountId: 1, originalAmount: 1200, planningId: 7 };
+    vi.mocked(createMovementFromData).mockReturnValue(createdMovement as any);
+
+    render(
+      <MovementForm
+        modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+        movementType={MOVEMENT_TYPES.EXPENSE}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Planificación (opcional)"), {
+      target: { value: "7" },
+    });
+    fireEvent.submit(document.getElementById("expense-form")!);
+
+    expect(createMovementFromData.mock.calls[0][0]).toMatchObject({ planningId: "7" });
+    expect(mockAdd).toHaveBeenCalledWith(createdMovement);
+  }); */
 };
+
+it("submits planningId and applies the selected planning context", () => {
+  vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
+  const createdMovement = { accountId: 1, originalAmount: 1200, planningId: 7 };
+  vi.mocked(createMovementFromData).mockReturnValue(createdMovement as any);
+  mockUseStoreState();
+  render(<MovementForm modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE} movementType={MOVEMENT_TYPES.EXPENSE} />);
+  fireEvent.change(screen.getByLabelText(/Planificaci.*opcional/), { target: { value: "7" } });
+  fireEvent.submit(document.getElementById("expense-form")!);
+  expect(createMovementFromData.mock.calls[0][0]).toMatchObject({ planningId: "7" });
+  expect(mockAdd).toHaveBeenCalledWith(createdMovement);
+});
+
+it("populates the amount when completing a planning occurrence", async () => {
+  mockUseStoreState();
+  render(<MovementForm modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE} movementType={MOVEMENT_TYPES.EXPENSE} />);
+
+  fireEvent(
+    window,
+    new CustomEvent("planning:movement-create", {
+      detail: { planningId: mockPlanning.id, amount: mockPlanning.amount },
+    }),
+  );
+
+  await waitFor(() => expect(screen.getByLabelText("Monto")).toHaveValue(1200));
+});
+
+it("shows backend planning compatibility errors in the form", async () => {
+  vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
+  vi.mocked(createMovementFromData).mockReturnValue({ planningId: 7 } as any);
+  mockAdd.mockRejectedValueOnce(new Error("planning compatibility error"));
+  mockUseStoreState();
+  render(<MovementForm modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE} movementType={MOVEMENT_TYPES.EXPENSE} />);
+  fireEvent.submit(document.getElementById("expense-form")!);
+  await waitFor(() => expect(screen.getByText("planning compatibility error")).toBeInTheDocument());
+});
 
 describe("MovementForm", () => {
   beforeEach(() => {

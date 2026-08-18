@@ -8,8 +8,14 @@ import { editStore } from "@/stores/editStore";
 import { EDIT_TYPES, MODAL_ID } from "@/types/enums";
 
 vi.mock("@/components/Forms/SelectCategories", () => ({
-  default: () => (
-    <select name="categoryId" data-testid="category-select" defaultValue={"1"}>
+  default: ({ categoryId, onChange }: { categoryId?: number; onChange?: (id: number) => void }) => (
+    <select
+      name="categoryId"
+      data-testid="category-select"
+      value={categoryId ?? ""}
+      onChange={(event) => onChange?.(Number(event.target.value))}
+    >
+      <option value="">Select a category</option>
       <option value="1">Food</option>
     </select>
   ),
@@ -92,6 +98,8 @@ describe("BudgetForm", () => {
     render(<BudgetForm modalId={MODAL_ID.BUDGET.CREATE} />);
 
     fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "New Budget" } });
+
+    fireEvent.change(screen.getByTestId("category-select"), { target: { value: "1" } });
 
     fireEvent.change(screen.getByLabelText("Límite"), { target: { value: "200" } });
 

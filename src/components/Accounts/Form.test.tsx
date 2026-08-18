@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { closeModal, toast } from "webcoreui";
 import { useStore } from "zustand";
@@ -82,6 +82,9 @@ describe("AccountForm", () => {
     logger.debug("AccountForm test beforeEach: clear mocks and setup store state");
     vi.clearAllMocks();
 
+    mockAdd.mockResolvedValue(undefined);
+    mockUpdate.mockResolvedValue(undefined);
+
     mockUseStoreState();
   });
 
@@ -135,7 +138,7 @@ describe("AccountForm", () => {
     expect(mockAdd).not.toHaveBeenCalled();
   });
 
-  it("should create account when form is valid", () => {
+  it("should create account when form is valid", async () => {
     vi.mocked(validate).mockReturnValue({
       valid: true,
       errors: [],
@@ -163,11 +166,14 @@ describe("AccountForm", () => {
 
     expect(createAccountFromData).toHaveBeenCalled();
     expect(mockAdd).toHaveBeenCalledWith(createdAccount);
-    expect(toast).toHaveBeenCalledWith("#account-created");
-    expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.ACCOUNT.CREATE}`);
+
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith("#account-created");
+      expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.ACCOUNT.CREATE}`);
+    });
   });
 
-  it("should update account when editing", () => {
+  it("should update account when editing", async () => {
     mockUseStoreState({
       editState: {
         id: 1,
@@ -193,7 +199,10 @@ describe("AccountForm", () => {
     fireEvent.submit(form!);
 
     expect(mockUpdate).toHaveBeenCalledWith(1, updatedAccount);
-    expect(toast).toHaveBeenCalledWith("#account-updated");
+
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith("#account-updated");
+    });
   });
 
   it("should populate fields when editing an account", () => {

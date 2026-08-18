@@ -38,7 +38,7 @@ describe("Tauri - Account creation", () => {
 
     await driver.sleep(200);
 
-    const accountLink = await driver.findElement(By.css('a[href="/account?id=5"]'));
+    const accountLink = await driver.findElement(By.css('a[href="/account?id=6"]'));
     await accountLink.click();
 
     await driver.wait(until.elementLocated(By.css("body")), 10000);

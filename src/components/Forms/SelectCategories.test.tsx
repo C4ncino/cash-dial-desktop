@@ -93,6 +93,9 @@ describe("SelectCategories", () => {
 
     expect(screen.getByText("General")).toBeInTheDocument();
     expect(screen.getByText("Groceries")).toBeInTheDocument();
+    expect(
+      screen.getAllByTestId("icon").some((icon) => icon.getAttribute("data-icon") === "iconoir:apple"),
+    ).toBe(true);
 
     fireEvent.click(parentItem);
     expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
@@ -134,5 +137,53 @@ describe("SelectCategories", () => {
 
     expect(formData).toBeDefined();
     expect(formData?.get("categoryId")).toBe("2");
+  });
+
+  it("should restrict category options to rootCategoryId subtree when rootCategoryId is provided", () => {
+    const categoriesWithTransport = [
+      ...mockCategories,
+      {
+        id: 3,
+        key: "transport",
+        fatherId: null,
+        name: "Transport",
+        icon: "car",
+        color: "#3b82f6",
+      },
+    ];
+    mockUseStoreState({ categories: categoriesWithTransport });
+
+    render(<SelectCategories rootCategoryId={1} />);
+
+    const selectButton = screen.getByRole("button");
+    fireEvent.click(selectButton);
+
+    expect(screen.getByText("Food")).toBeInTheDocument();
+    expect(screen.queryByText("Transport")).not.toBeInTheDocument();
+  });
+
+  it("should reset invalid selected category when rootCategoryId changes to an incompatible category", () => {
+    const mockOnChange = vi.fn();
+    const categoriesWithTransport = [
+      ...mockCategories,
+      {
+        id: 3,
+        key: "transport",
+        fatherId: null,
+        name: "Transport",
+        icon: "car",
+        color: "#3b82f6",
+      },
+    ];
+    mockUseStoreState({ categories: categoriesWithTransport });
+
+    const { rerender } = render(
+      <SelectCategories categoryId={3} rootCategoryId={undefined} onChange={mockOnChange} />,
+    );
+
+    // Now set rootCategoryId to 1 (Food) which does not contain category 3 (Transport)
+    rerender(<SelectCategories categoryId={3} rootCategoryId={1} onChange={mockOnChange} />);
+
+    expect(screen.getByText("Seleccionar Categoría")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import MoneyText from "@/components/General/MoneyText";
+import AmountText from "@/components/General/AmountText";
 
 interface Props {
   originalAmount: number;
@@ -23,7 +23,7 @@ const CurrencyConversion = ({
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Monto original</dt>
           <dd className="text-base text-zinc-200 mt-0.5">
-            <MoneyText amount={originalAmount} currency={movementCurrency} />
+            <AmountText amount={originalAmount} currency={movementCurrency} format="currency" inline />
           </dd>
         </div>
 
@@ -44,7 +44,7 @@ const CurrencyConversion = ({
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Monto convertido</dt>
           <dd className="text-base text-zinc-200 mt-0.5">
-            <MoneyText amount={accountAmount} currency={accountCurrency} />
+            <AmountText amount={accountAmount} currency={accountCurrency} format="currency" inline />
           </dd>
         </div>
       </dl>

@@ -1,8 +1,9 @@
 ---
 import Accounts from "@/components/Accounts/Accounts.astro";
 import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
-import MovementsLanding from "@/components/Movements/MovementsLanding";
 import MovementModals from "@/components/Movements/Modals.astro";
+import MovementsLanding from "@/components/Movements/MovementsLanding";
+import UrgentOccurrences from "@/components/Plannings/UrgentOccurrences";
 import MovementToasts from "@/components/Movements/Toasts.astro";
 import Budgets from "@/components/Budgets/Budgets.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
@@ -16,22 +17,12 @@ logger.debug(TEST_MODE);
 <BaseLayout title="Home" description="">
   <Accounts />
   <MovementsLanding client:load />
+  <UrgentOccurrences client:load />
   <Budgets />
 
   <CreateSpeedDial />
   <MovementModals />
   <MovementToasts />
 </BaseLayout>
-
-<script>
-  import { budgetStore } from "@/stores/budgetStore";
-  document.addEventListener("astro:page-load", async () => {
-    try {
-      await budgetStore.getState().populate();
-    } catch (err) {
-      // ignore
-    }
-  });
-</script>
 
 {TEST_MODE && <script src="../lib/test.ts" />}

@@ -14,8 +14,8 @@ describe("Movement E2E", () => {
 
   // Helpers
   async function openSpeedDial() {
-    const container = await driver.findElement(By.css(".speed-dial"));
-    const classes = await container.getAttribute("class");
+    const speedDialLocator = By.css(".speed-dial");
+    const classes = await driver.findElement(speedDialLocator).getAttribute("class");
 
     if (!classes) return false;
 
@@ -23,11 +23,15 @@ describe("Movement E2E", () => {
       const toggle = await driver.findElement(By.id("speed-dial-toggle"));
       await toggle.click();
       await driver.wait(async () => {
-        const cls = await container.getAttribute("class");
+        try {
+          const cls = await driver.findElement(speedDialLocator).getAttribute("class");
 
-        if (!cls) return false;
+          if (!cls) return false;
 
-        return cls.includes("is-open");
+          return cls.includes("is-open");
+        } catch {
+          return false;
+        }
       }, 3000);
     }
   }
@@ -40,26 +44,24 @@ describe("Movement E2E", () => {
 
   async function getAccountBalance(accountId: number): Promise<number> {
     const cardLocator = By.css(`a[href="/account?id=${accountId}"]`);
-    await driver.wait(until.elementLocated(cardLocator), 10000);
-    const card = await driver.findElement(cardLocator);
-    const balanceText = await card.findElement(By.css("strong")).getText();
-    const cleaned = balanceText.replace(/[^\d.,-]/g, "");
-    const lastComma = cleaned.lastIndexOf(",");
-    const lastDot = cleaned.lastIndexOf(".");
+    return driver.wait(async () => {
+      try {
+        const card = await driver.findElement(cardLocator);
+        const balanceText = await card.findElement(By.css("strong")).getText();
+        const cleaned = balanceText.replace(/[^\d.,-]/g, "");
+        const lastComma = cleaned.lastIndexOf(",");
+        const lastDot = cleaned.lastIndexOf(".");
 
-    if (lastComma > lastDot) {
-      return Number.parseFloat(cleaned.replace(/\./g, "").replace(/,/g, "."));
-    }
-    if (lastDot > lastComma) {
-      return Number.parseFloat(cleaned.replace(/,/g, ""));
-    }
-    if (lastComma !== -1) {
-      if (cleaned.match(/,\d{2}$/)) {
-        return Number.parseFloat(cleaned.replace(/,/g, "."));
+        if (lastComma > lastDot) return Number.parseFloat(cleaned.replace(/\./g, "").replace(/,/g, "."));
+        if (lastDot > lastComma) return Number.parseFloat(cleaned.replace(/,/g, ""));
+        if (lastComma !== -1) {
+          return Number.parseFloat(cleaned.match(/,\d{2}$/) ? cleaned.replace(/,/g, ".") : cleaned.replace(/,/g, ""));
+        }
+        return Number.parseFloat(cleaned);
+      } catch {
+        return false;
       }
-      return Number.parseFloat(cleaned.replace(/,/g, ""));
-    }
-    return Number.parseFloat(cleaned);
+    }, 10000);
   }
 
   it("creates an income movement and verifies its rendering and details", async () => {
@@ -85,10 +87,9 @@ describe("Movement E2E", () => {
     const incomeAccountSelect = await driver.findElement(
       By.css('#income-form select[name="accountId"]'),
     );
-    await incomeAccountSelect.click();
-
-    const incomeAccountOption = await incomeAccountSelect.findElement(
-      By.xpath('./option[text()="Efectivo"]'),
+    const incomeAccountOption = await driver.wait(
+      until.elementLocated(By.css('#income-form select[name="accountId"] option[value="1"]')),
+      10000,
     );
     await incomeAccountOption.click();
 
@@ -99,11 +100,11 @@ describe("Movement E2E", () => {
     const incomeParentBtn = await driver.findElement(
       By.xpath('//form[@id="income-form"]//button[contains(., "Ingresos")]'),
     );
-    await incomeParentBtn.click();
+    await driver.executeScript("arguments[0].click();", incomeParentBtn);
     const incomeChildBtn = await driver.findElement(
       By.xpath('//form[@id="income-form"]//button[contains(., "Sueldo")]'),
     );
-    await incomeChildBtn.click();
+    await driver.executeScript("arguments[0].click();", incomeChildBtn);
 
     const incomeDescInput = await driver.findElement(
       By.css('#income-form input[name="description"]'),
@@ -181,12 +182,10 @@ describe("Movement E2E", () => {
     const expenseAccountSelect = await driver.findElement(
       By.css('#expense-form select[name="accountId"]'),
     );
-    await expenseAccountSelect.click();
-
-    const expenseAccountOption = await expenseAccountSelect.findElement(
-      By.xpath('./option[text()="Efectivo"]'),
+    const expenseAccountOption = await driver.wait(
+      until.elementLocated(By.css('#expense-form select[name="accountId"] option[value="1"]')),
+      10000,
     );
-    console.log(expenseAccountOption);
     await expenseAccountOption.click();
 
     const expenseCatBtn = await driver.findElement(
@@ -196,11 +195,11 @@ describe("Movement E2E", () => {
     const expenseParentBtn = await driver.findElement(
       By.xpath('//form[@id="expense-form"]//button[contains(., "Comida y Bebida")]'),
     );
-    await expenseParentBtn.click();
+    await driver.executeScript("arguments[0].click();", expenseParentBtn);
     const expenseChildBtn = await driver.findElement(
       By.xpath('//form[@id="expense-form"]//button[contains(., "Supermercados")]'),
     );
-    await expenseChildBtn.click();
+    await driver.executeScript("arguments[0].click();", expenseChildBtn);
 
     const expenseDescInput = await driver.findElement(
       By.css('#expense-form input[name="description"]'),
@@ -283,9 +282,9 @@ describe("Movement E2E", () => {
     const transferAccountSelect = await driver.findElement(
       By.css('#transfer-form select[name="accountId"]'),
     );
-    await transferAccountSelect.click();
-    const transferAccountOption = await transferAccountSelect.findElement(
-      By.xpath('./option[text()="Efectivo"]'),
+    const transferAccountOption = await driver.wait(
+      until.elementLocated(By.css('#transfer-form select[name="accountId"] option[value="1"]')),
+      10000,
     );
     await transferAccountOption.click();
 

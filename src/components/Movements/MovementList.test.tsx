@@ -19,7 +19,12 @@ vi.mock("@/stores/accountsStore", () => ({
       getById: (id: number) => ({
         id,
         name: `Account ${id}`,
+        type: { icon: id === 1 ? "wallet" : "card" },
       }),
+      accounts: [
+        { id: 1, name: "Account 1", type: { icon: "wallet" } },
+        { id: 2, name: "Account 2", type: { icon: "card" } },
+      ],
     }),
   },
 }));
@@ -73,6 +78,11 @@ const mockById: Record<number, Movement> = {
   },
 };
 
+const mockAccounts = [
+  { id: 1, name: "Account 1", type: { icon: "wallet" } },
+  { id: 2, name: "Account 2", type: { icon: "card" } },
+];
+
 describe("MovementList", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -80,9 +90,7 @@ describe("MovementList", () => {
 
   it("should render empty state when no movement IDs are provided", () => {
     (useStore as any).mockImplementation((_store: any, selector: any) =>
-      selector({
-        byId: mockById,
-      }),
+      selector({ byId: mockById, accounts: mockAccounts }),
     );
 
     render(<MovementList movementIds={[]} />);
@@ -91,9 +99,7 @@ describe("MovementList", () => {
 
   it("should render date headers correctly in Spanish", () => {
     (useStore as any).mockImplementation((_store: any, selector: any) =>
-      selector({
-        byId: mockById,
-      }),
+      selector({ byId: mockById, accounts: mockAccounts }),
     );
 
     render(<MovementList movementIds={[1, 3]} />);
@@ -105,9 +111,7 @@ describe("MovementList", () => {
 
   it("should render movement cards under correct dates", () => {
     (useStore as any).mockImplementation((_store: any, selector: any) =>
-      selector({
-        byId: mockById,
-      }),
+      selector({ byId: mockById, accounts: mockAccounts }),
     );
 
     render(<MovementList movementIds={[1, 2, 3]} />);
@@ -122,9 +126,7 @@ describe("MovementList", () => {
 
   it("should work when rendering all movements (allIds)", () => {
     (useStore as any).mockImplementation((_store: any, selector: any) =>
-      selector({
-        byId: mockById,
-      }),
+      selector({ byId: mockById, accounts: mockAccounts }),
     );
 
     const allIds = [1, 2, 3];
@@ -136,9 +138,7 @@ describe("MovementList", () => {
 
   it("should work when rendering single account movements (byAccount)", () => {
     (useStore as any).mockImplementation((_store: any, selector: any) =>
-      selector({
-        byId: mockById,
-      }),
+      selector({ byId: mockById, accounts: mockAccounts }),
     );
 
     // Account 2 only has movement 3 (Expense 2)

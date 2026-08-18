@@ -6,6 +6,7 @@ import { useStore } from "zustand";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { movementsStore } from "@/stores/movementsStore";
+import { formatAmount } from "@/lib/formatters";
 
 vi.mock("zustand");
 vi.mock("@/stores/accountsStore");
@@ -112,7 +113,7 @@ describe("AccountNextPayment", () => {
     render(<AccountNextPayment accountId={1} />);
     expect(await screen.findByText("Próximo pago")).toBeInTheDocument();
     expect(screen.getByText("Fecha límite: 15/08/2026")).toBeInTheDocument();
-    expect(screen.getByTestId("money-text")).toBeInTheDocument();
+    expect(screen.getByText(formatAmount(mockNextPayment.totalAmount, mockCurrency))).toBeInTheDocument();
   });
 
   it("expands to show movements and installments", async () => {

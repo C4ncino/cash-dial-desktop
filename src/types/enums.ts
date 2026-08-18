@@ -62,18 +62,32 @@ export enum BUDGET_UPDATE_TYPES {
   NEXT_PERIOD = "next_period",
 }
 
+export enum PLANNING_FUNCTIONS {
+  getRecurringTypes = "get_planning_recurring_types",
+  getStatuses = "get_planning_statuses",
+  getAll = "get_plannings",
+  get = "get_planning",
+  getOccurrences = "get_planning_occurrences",
+  create = "create_planning",
+  update = "update_planning",
+  delete = "delete_planning",
+  activate = "activate_planning",
+  deactivate = "deactivate_planning",
+  cancelOccurrence = "cancel_planning_occurrence",
+  completeOccurrence = "complete_planning_occurrence",
+}
+
 export enum PLANNINGS_RECURRING_TYPES {
-  UNIQUE,
-  DAILY,
-  WEEKLY,
-  MONTHLY,
-  YEARLY,
+  DAILY = 1,
+  WEEKLY = 2,
+  MONTHLY = 3,
+  YEARLY = 4,
 }
 
 export enum PLANNING_STATUS {
-  PENDING,
-  COMPLETED,
-  CANCELLED,
+  PENDING = 1,
+  CANCELED = 2,
+  COMPLETED = 3,
 }
 
 export const MODAL_ID = {
@@ -104,11 +118,18 @@ export const MODAL_ID = {
     CREATE: "create-budget-dialog",
     EDIT: "edit-budget-dialog",
   },
+  PLANNING: {
+    CREATE: "create-planning-dialog",
+    EDIT: "edit-planning-dialog",
+    DELETE: "delete-planning-dialog",
+    DEACTIVATE: "deactivate-planning-dialog",
+  },
 };
 
 export enum EDIT_TYPES {
   ACCOUNT,
   BUDGET,
+  PLANNING,
   INCOME,
   EXPENSE,
   TRANSFER,

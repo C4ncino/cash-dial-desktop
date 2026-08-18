@@ -69,10 +69,10 @@ const MovementInfo = () => {
       />
 
       <Details
-        categoryName={category.name}
+        categoryId={category.id}
         typeName={movementTypeObj?.name || ""}
-        accountName={account.name}
-        toAccountName={toAccount?.name}
+        accountId={account.id}
+        toAccountId={toAccount?.id}
         {...movement}
       />
 

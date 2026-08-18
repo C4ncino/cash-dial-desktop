@@ -10,7 +10,11 @@ vi.unmock("@/stores/categoryStore");
 
 import { invoke } from "@tauri-apps/api/core";
 
-import { categoryStore, getCategoriesTree } from "@/stores/categoryStore";
+import {
+  categoryStore,
+  getCategoriesTree,
+  isCategoryInSubtree,
+} from "@/stores/categoryStore";
 
 const mockInvoke = vi.mocked(invoke);
 
@@ -206,5 +210,58 @@ describe("getCategoriesTree", () => {
         children: [],
       },
     ]);
+  });
+
+  it("filters tree rooted at rootCategoryId when provided", () => {
+    const food: Category = {
+      id: 1,
+      fatherId: null,
+      name: "Food",
+      icon: "apple",
+      color: "#00a63e",
+    };
+    const groceries: Category = {
+      id: 2,
+      fatherId: 1,
+      name: "Groceries",
+      icon: "cart",
+      color: "#00a63e",
+    };
+    const transport: Category = {
+      id: 3,
+      fatherId: null,
+      name: "Transport",
+      icon: "car",
+      color: "#3b82f6",
+    };
+
+    const tree = getCategoriesTree([food, groceries, transport], 1);
+    expect(tree).toHaveLength(1);
+    expect(tree[0].id).toBe(1);
+    expect(tree[0].children).toHaveLength(2);
+    expect(tree[0].children[1].id).toBe(2);
+  });
+});
+
+describe("isCategoryInSubtree", () => {
+  const categories: Category[] = [
+    { id: 1, fatherId: null, name: "Food", icon: "apple", color: "#00a63e" },
+    { id: 2, fatherId: 1, name: "Groceries", icon: "cart", color: "#00a63e" },
+    { id: 3, fatherId: 2, name: "Fruits", icon: "apple", color: "#00a63e" },
+    { id: 4, fatherId: null, name: "Transport", icon: "car", color: "#3b82f6" },
+  ];
+
+  it("returns true when categoryId equals rootCategoryId", () => {
+    expect(isCategoryInSubtree(categories, 1, 1)).toBe(true);
+  });
+
+  it("returns true for direct and indirect child categories", () => {
+    expect(isCategoryInSubtree(categories, 2, 1)).toBe(true);
+    expect(isCategoryInSubtree(categories, 3, 1)).toBe(true);
+  });
+
+  it("returns false for unrelated categories", () => {
+    expect(isCategoryInSubtree(categories, 4, 1)).toBe(false);
+    expect(isCategoryInSubtree(categories, 1, 4)).toBe(false);
   });
 });

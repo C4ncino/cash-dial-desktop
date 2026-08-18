@@ -3,6 +3,7 @@ import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import { useMemo, useState } from "react";
 import { Pie } from "react-chartjs-2";
 
+import CategoryName from "@/components/General/CategoryName";
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
 
@@ -228,11 +229,13 @@ const CategoriesList = ({
                     onClick={() => canExpand && setExpandedPath(path)}
                   >
                     <span>
-                      <span
-                        className="mr-2 inline-block h-3 w-3 rounded-full"
-                        style={{ backgroundColor: displayColor }}
+                      <CategoryName
+                        id={category.categoryId}
+                        parentId={category.parentId ?? undefined}
+                        customName={category.isVirtual ? category.name : undefined}
+                        color={displayColor}
+                        fallbackName={category.name}
                       />
-                      {category.name}
                       {canExpand && <small className="ml-2 opacity-60">Detalles</small>}
                     </span>
 

@@ -36,7 +36,7 @@ const AccountForm = ({ modalId }: Props) => {
     return account;
   }, [editState.id, editState.type, modalId]);
 
-  const onSubmit = (e: React.SubmitEvent) => {
+  const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     const data = Object.fromEntries(formData.entries());
@@ -65,10 +65,10 @@ const AccountForm = ({ modalId }: Props) => {
     console.debug("Is Editing mode:", editState.type === EDIT_TYPES.ACCOUNT);
 
     if (editState.id && editState.type === EDIT_TYPES.ACCOUNT) {
-      accountsStore.getState().update(editState.id, account);
+      await accountsStore.getState().update(editState.id, account);
       toast("#account-updated");
     } else {
-      accountsStore.getState().add(account);
+      await accountsStore.getState().add(account);
       toast("#account-created");
     }
 

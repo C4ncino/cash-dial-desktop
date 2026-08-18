@@ -12,12 +12,42 @@ vi.mock("@/hooks/useStatisticsSection", () => ({
 }));
 
 vi.mock("zustand", () => ({
-  useStore: (_store: unknown, selector?: (state: unknown) => unknown) =>
-    selector ? selector({ period: "month", granularity: "day" }) : undefined,
+  useStore: (store: unknown, selector?: (state: unknown) => unknown) => {
+    if (!selector) return undefined;
+    if (store === categoryStore) {
+      return selector({
+        categories: [
+          { id: 1, name: "Food", icon: "food", color: "#ff0000" },
+          { id: 2, name: "Transport", icon: "car", color: "#00ff00" },
+          { id: 3, name: "Taxi", icon: "car", color: "#0000ff" },
+          { id: 4, name: "Restaurants", icon: "restaurant", color: "#ffffff" },
+        ],
+        getById(id: number) {
+          return this.categories.find((category) => category.id === id);
+        },
+      });
+    }
+    if (store === accountsStore) {
+      return selector({
+        accounts: [{ id: 1, name: "Cash", type: { icon: "wallet" } }],
+      });
+    }
+    return selector({ period: "month", granularity: "day" });
+  },
+}));
+
+vi.mock("@/stores/categoryStore", () => ({
+  categoryStore: {},
+}));
+
+vi.mock("@/stores/accountsStore", () => ({
+  accountsStore: {},
 }));
 
 import BalanceTrend from "@/components/Statistics/BalanceTrend";
 import CategoriesList from "@/components/Statistics/CategoriesList";
+import { categoryStore } from "@/stores/categoryStore";
+import { accountsStore } from "@/stores/accountsStore";
 import ObligationsList from "@/components/Statistics/ObligationsList";
 import OverviewCard from "@/components/Statistics/OverviewCard";
 import SecondaryMetrics from "@/components/Statistics/SecondaryMetrics";
@@ -155,10 +185,11 @@ describe("statistics components", () => {
             {
               installmentId: 1,
               movementId: 2,
+              accountId: 1,
               dueTimestamp: 0,
               amount: 10,
               paid: false,
-              description: "Rent",
+              description: null,
               categoryId: 1,
             },
           ],
@@ -166,7 +197,8 @@ describe("statistics components", () => {
         symbol="$"
       />,
     );
-    expect(screen.getByText("Rent")).toBeInTheDocument();
+    expect(screen.getByText("Food")).toBeInTheDocument();
+    expect(screen.getByText("Cash")).toBeInTheDocument();
     expect(screen.getByTestId("obligation-metric-7")).toHaveTextContent("$10.00");
     expect(screen.getByTestId("obligation-metric-30")).toHaveTextContent("$20.00");
     expect(screen.getByTestId("obligation-metric-90")).toHaveTextContent("$30.00");
@@ -189,6 +221,7 @@ describe("statistics components", () => {
             {
               installmentId: 3,
               movementId: 3,
+              accountId: 1,
               dueTimestamp: new Date(2026, 7, 25).getTime(),
               amount: 75,
               paid: false,
@@ -198,6 +231,7 @@ describe("statistics components", () => {
             {
               installmentId: 1,
               movementId: 1,
+              accountId: 1,
               dueTimestamp: new Date(2026, 7, 15).getTime(),
               amount: 125,
               paid: false,
@@ -207,6 +241,7 @@ describe("statistics components", () => {
             {
               installmentId: 2,
               movementId: 2,
+              accountId: 1,
               dueTimestamp: new Date(2026, 7, 16).getTime(),
               amount: 50,
               paid: false,

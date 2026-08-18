@@ -1,6 +1,8 @@
 import { Icon } from "@iconify/react";
 import { useState } from "react";
 
+import AccountName from "@/components/General/AccountName";
+import CategoryName from "@/components/General/CategoryName";
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import useDate from "@/hooks/useDate";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
@@ -182,11 +184,13 @@ const ObligationRow = ({ item, symbol }: { item: StatisticsObligation; symbol: s
   <li className="flex min-w-0 items-start gap-3 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
     <UrgencyIndicator timestamp={item.dueTimestamp} />
     <div className="min-w-0 flex-1">
-      <p className="truncate font-medium" title={item.description ?? "Cuota"}>
-        {item.description ?? "Cuota"}
+      <p className="truncate font-medium" title={item.description || undefined}>
+        {item.description || <CategoryName id={item.categoryId} fallbackName="Categoría" />}
       </p>
-      <p className="text-sm opacity-70">
+      <p className="flex items-center gap-2 text-sm opacity-70">
         <ObligationDate timestamp={item.dueTimestamp} />
+        <span aria-hidden="true">·</span>
+        <AccountName id={item.accountId} />
       </p>
     </div>
     <strong className="shrink-0 text-right text-base">

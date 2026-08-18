@@ -1,0 +1,41 @@
+---
+import { Modal } from "webcoreui/astro";
+
+import PlanningForm from "./PlanningForm";
+import { MODAL_ID } from "@/types/enums";
+---
+
+<Modal
+  id={MODAL_ID.PLANNING.CREATE}
+  title="Crear Planificación"
+  className="min-w-lg!"
+  style="max-height: 90vh; overflow-y: auto;"
+>
+  <PlanningForm client:visible modalId={MODAL_ID.PLANNING.CREATE} formId="create-planning-form" />
+</Modal>
+
+<Modal
+  id={MODAL_ID.PLANNING.EDIT}
+  title="Editar Planificación"
+  className="min-w-lg!"
+  style="max-height: 90vh; overflow-y: auto;"
+>
+  <PlanningForm client:visible modalId={MODAL_ID.PLANNING.EDIT} formId="edit-planning-form" />
+</Modal>
+
+<script>
+  import { MODAL_ID } from "@/types/enums";
+  import { modal } from "webcoreui";
+
+  document.addEventListener("astro:page-load", () => {
+    modal({
+      trigger: "#create-planning-button",
+      modal: `#${MODAL_ID.PLANNING.CREATE}`,
+    });
+
+    modal({
+      trigger: "#edit-planning-button",
+      modal: `#${MODAL_ID.PLANNING.EDIT}`,
+    });
+  });
+</script>

@@ -116,12 +116,6 @@ vi.mock("@/components/General/SquareIcon", () => ({
     }),
 }));
 
-// Mock the MoneyText component
-vi.mock("@/components/General/MoneyText", () => ({
-  default: ({ amount, currency }: any) =>
-    React.createElement("span", { "data-testid": "money-text" }, `${currency?.symbol}${amount}`),
-}));
-
 vi.mock("@tauri-apps/plugin-locale", () => ({
   locale: vi.fn().mockResolvedValue("en-US"),
 }));

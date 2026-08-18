@@ -6,6 +6,7 @@ import { budgetStore } from "@/stores/budgetStore";
 import { categoryStore } from "@/stores/categoryStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { movementsStore } from "@/stores/movementsStore";
+import { planningsStore } from "@/stores/planningsStore";
 
 setupGlobalErrorHandlers();
 
@@ -26,6 +27,7 @@ export async function initStores() {
     categoryStore.getState().populate(),
     movementsStore.getState().populate(),
     budgetStore.getState().populate(),
+    planningsStore.getState().populate(),
   ]);
 
   logger.info("Stores ready...");

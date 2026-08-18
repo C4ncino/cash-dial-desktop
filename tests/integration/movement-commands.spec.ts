@@ -425,7 +425,7 @@ describe("Movement Commands", () => {
     it("returns movement ids for the paid installments", async () => {
       const movement = await invokeCommand<Movement>(MOVEMENT_FUNCTIONS.add, {
         typeId: 2,
-        accountId: 1,
+        accountId: 3,
         toAccountId: null,
         categoryId: 1,
         currencyId: 1,

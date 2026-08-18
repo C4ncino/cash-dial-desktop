@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 
 import AmountText from "@/components/General/AmountText";
 import useDate from "@/hooks/useDate";
-import type { MOVEMENT_TYPES } from "@/types/enums";
+import { MOVEMENT_TYPES } from "@/types/enums";
 
 interface Props {
   category: Category;
@@ -30,7 +30,12 @@ const Header = ({ category, currency, movementType, amount, timestamp }: Props) 
         <h1 className="hidden">{category.name}</h1>
 
         <strong className="flex flex-row gap-1">
-          <AmountText type={movementType} amount={amount} className="text-4xl" />
+          <AmountText
+            amount={amount}
+            tone={movementType === MOVEMENT_TYPES.INCOME ? "income" : movementType === MOVEMENT_TYPES.EXPENSE ? "expense" : "neutral"}
+            icon={movementType === MOVEMENT_TYPES.INCOME ? "plus" : movementType === MOVEMENT_TYPES.EXPENSE ? "minus" : "none"}
+            className="text-4xl"
+          />
           <span className="text-zinc-200 text-xl font-light mt-3">{currency.code}</span>
         </strong>
 

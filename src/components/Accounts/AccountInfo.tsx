@@ -3,7 +3,7 @@ import { Progress } from "webcoreui/react";
 import { useStore } from "zustand";
 
 import AccountNextPayment from "@/components/Accounts/AccountNextPayment";
-import MoneyText from "@/components/General/MoneyText";
+import AmountText from "@/components/General/AmountText";
 import SquareIcon from "@/components/General/SquareIcon";
 import { formatNumber } from "@/lib/formatters";
 import { accountsStore } from "@/stores/accountsStore";
@@ -34,7 +34,13 @@ const AccountInfo = () => {
           />
           <hgroup className="flex flex-col">
             <h1>{account.name}</h1>
-            <MoneyText amount={account.balance} currency={currency} className="text-2xl mt-px" />
+            <AmountText
+              amount={account.balance}
+              currency={currency}
+              format="currency"
+              inline
+              className="text-2xl mt-px"
+            />
           </hgroup>
         </div>
       </header>

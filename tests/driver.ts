@@ -105,6 +105,11 @@ export async function invokeCommand<T>(
   command: string,
   args?: Record<string, unknown>,
 ): Promise<T> {
+  await driver.wait(
+    async () => Boolean(await driver.executeScript("return Boolean(window.testApi?.invoke);")),
+    10000,
+  );
+
   const result = await driver.executeAsyncScript(
     (cmd: any, commandArgs: any, done: any) => {
       (window as any).testApi

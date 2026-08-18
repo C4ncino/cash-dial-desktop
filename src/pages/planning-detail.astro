@@ -1,0 +1,55 @@
+---
+import PlanningActions from "@/components/Plannings/PlanningActions";
+import PlanningInfo from "@/components/Plannings/PlanningInfo";
+import PlanningOccurrences from "@/components/Plannings/PlanningOccurrences";
+import PlanningModals from "@/components/Plannings/Modals.astro";
+import PlanningToasts from "@/components/Plannings/Toasts.astro";
+import MovementModals from "@/components/Movements/Modals.astro";
+import MovementToasts from "@/components/Movements/Toasts.astro";
+import DetailLayout from "@/layouts/DetailLayout.astro";
+---
+
+<DetailLayout title="Detalles de Planificación" description="">
+  <div class="flex justify-between mx-auto max-w-3xl">
+    <article class="flex-1 pr-4 max-w-2xl">
+      <PlanningInfo client:load />
+      <PlanningOccurrences client:load />
+    </article>
+    <menu class="flex flex-col gap-3">
+      <li class="text-sm">
+        <button id="edit-planning-button" class="edit-button hover:cursor-pointer" type="button">
+          Editar
+        </button>
+      </li>
+      <PlanningActions client:load />
+    </menu>
+  </div>
+</DetailLayout>
+
+<PlanningModals />
+<PlanningToasts />
+<MovementModals />
+<MovementToasts />
+
+<script>
+  import { modal } from "webcoreui";
+  import { editStore } from "@/stores/editStore";
+  import { EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
+
+  document.addEventListener("astro:page-load", () => {
+    const editButton = document.getElementById("edit-planning-button");
+    editButton?.addEventListener("click", () => {
+      const id = new URLSearchParams(window.location.search).get("id");
+      if (!id) throw new Error("Planning ID not found");
+      editStore.getState().setId(Number(id), EDIT_TYPES.PLANNING);
+    });
+
+    window.addEventListener("planning:movement-create", ((event: CustomEvent) => {
+      const typeId = event.detail.typeId;
+      const movementModalId = typeId === MOVEMENT_TYPES.INCOME
+        ? MODAL_ID.MOVEMENT.INCOME.CREATE
+        : MODAL_ID.MOVEMENT.EXPENSE.CREATE;
+      modal(`#${movementModalId}`).open();
+    }) as EventListener);
+  });
+</script>

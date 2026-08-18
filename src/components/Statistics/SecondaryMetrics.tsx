@@ -14,12 +14,12 @@ const SecondaryMetrics = ({
   const { response, loading, symbol: storeSymbol } = useStatisticsSection();
   const metrics = metricsProp ?? response?.secondary;
 
-  if (loading)
-    return <StatisticsSectionSkeleton ariaLabel="Métricas secundarias" className="h-56" />;
-
   const { dateShort: highestSpendingDayDate } = useDate(
     metrics?.highestSpendingDay?.bucketStartMs ?? 0,
   );
+
+  if (loading)
+    return <StatisticsSectionSkeleton ariaLabel="Métricas secundarias" className="h-56" />;
 
   if (!metrics) return null;
 
