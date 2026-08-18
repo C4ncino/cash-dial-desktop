@@ -82,9 +82,19 @@ fn create_init_state() -> Result<AppState, String> {
 
     state.movement_types = movement_types_results.clone();
 
-    let budget_period_types_results = get_budget_period_types(connection, lang)?;
+    let budget_period_types_results = get_budget_period_types(connection, lang.clone())?;
 
     state.budget_period_types = budget_period_types_results.clone();
+
+    let planning_recurring_types_results =
+        functions::plannings::get_planning_recurring_types_internal(connection, lang.clone())?;
+
+    state.planning_recurring_types = planning_recurring_types_results;
+
+    let planning_statuses_results =
+        functions::plannings::get_planning_statuses_internal(connection, lang)?;
+
+    state.planning_statuses = planning_statuses_results;
 
     Ok(state)
 }
@@ -148,6 +158,18 @@ pub fn run() {
             functions::accounts::pay_credit_card,
             functions::movements::mark_installments_as_paid,
             functions::statistics::get_statistics,
+            functions::plannings::get_planning_recurring_types,
+            functions::plannings::get_planning_statuses,
+            functions::plannings::get_plannings,
+            functions::plannings::get_planning,
+            functions::plannings::get_planning_occurrences,
+            functions::plannings::create_planning,
+            functions::plannings::update_planning,
+            functions::plannings::delete_planning,
+            functions::plannings::activate_planning,
+            functions::plannings::deactivate_planning,
+            functions::plannings::cancel_planning_occurrence,
+            functions::plannings::complete_planning_occurrence,
             export_logs,
             log_frontend_error
         ])

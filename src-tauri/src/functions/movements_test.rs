@@ -134,6 +134,7 @@ pub mod integration {
             None,
             1_788_000_000,
             Some("Salary"),
+            None,
         )
         .unwrap();
 
@@ -158,6 +159,7 @@ pub mod integration {
             None,
             1_788_000_000,
             Some("Groceries"),
+            None,
         )
         .unwrap();
 
@@ -183,6 +185,7 @@ pub mod integration {
             None,
             1_788_000_000,
             Some("Transfer"),
+            None,
         )
         .unwrap();
 
@@ -208,6 +211,7 @@ pub mod integration {
             None,
             1_788_000_000,
             Some("Expense"),
+            None,
         )
         .unwrap();
 
@@ -248,6 +252,7 @@ pub mod integration {
             None,
             1_788_000_000,
             Some("Expense"),
+            None,
         )
         .unwrap();
 
@@ -267,7 +272,7 @@ pub mod integration {
         );
 
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "El tipo de movimiento no se puede cambiar");
+        assert_eq!(result.err().unwrap(), "El tipo de movimiento no se puede cambiar o los datos son incompatibles con la planificación vinculada");
         assert_eq!(get_balance(connection, account_id), 75.0);
     }
 
@@ -289,6 +294,7 @@ pub mod integration {
             None,
             1_788_000_000,
             Some("Income"),
+            None,
         )
         .unwrap();
 
@@ -361,6 +367,7 @@ pub mod integration {
             Some(3),
             tx_time,
             Some("New computer"),
+            None,
         )
         .unwrap();
 
@@ -400,6 +407,7 @@ pub mod integration {
             Some(3),
             tx_time,
             Some("Computer"),
+            None,
         )
         .unwrap();
 
@@ -446,6 +454,7 @@ pub mod integration {
             Some(3),
             tx_time,
             None,
+            None,
         )
         .unwrap();
 
@@ -474,6 +483,7 @@ pub mod integration {
             Some(3),
             tx_time,
             None,
+            None,
         )
         .unwrap();
 
@@ -501,6 +511,7 @@ pub mod integration {
             Some(3),
             tx_time,
             Some("Laptop"),
+            None,
         )
         .unwrap();
 
@@ -530,7 +541,7 @@ pub mod integration {
 
         let movement = add_movement_internal(
             connection, 1, // Income — no installments
-            account_id, None, 1, 1, 500.0, 500.0, None, tx_time, None,
+            account_id, None, 1, 1, 500.0, 500.0, None, tx_time, None, None,
         )
         .unwrap();
 
@@ -567,6 +578,7 @@ pub mod integration {
             None,
             1_788_000_000,
             Some("Test movement"),
+            None,
         )
         .unwrap();
 
@@ -609,6 +621,7 @@ pub mod integration {
             Some(6),
             tx_time,
             Some("Furniture"),
+            None,
         )
         .unwrap();
 
@@ -646,6 +659,7 @@ pub mod integration {
             300.0,
             Some(3),
             tx_time,
+            None,
             None,
         )
         .unwrap();
@@ -685,6 +699,7 @@ pub mod integration {
             Some(3),
             tx_time,
             None,
+            None,
         )
         .unwrap();
 
@@ -719,6 +734,7 @@ pub mod integration {
             300.0,
             Some(3),
             tx_time,
+            None,
             None,
         )
         .unwrap();
@@ -757,6 +773,7 @@ pub mod integration {
             Some(3),
             tx_time,
             None,
+            None,
         )
         .unwrap();
 
@@ -771,5 +788,136 @@ pub mod integration {
         let res = mark_installments_as_paid_internal(connection, vec![inst_id]);
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), vec![movement.id]);
+    }
+
+    #[test]
+    fn test_add_movement_linked_to_planning_completes_occurrence_and_advances() {
+        use crate::functions::plannings::{create_planning_internal, get_planning_internal};
+        use crate::models::plannings::{CreatePlanningRequest, PLANNING_STATUS_COMPLETED, PLANNING_STATUS_PENDING, RECURRING_TYPE_MONTHLY};
+        use crate::utils::recurrence::local_naive_date_to_start_of_day_ms;
+        use chrono::NaiveDate;
+
+        let state = setup();
+        let mut conn = establish_connection(&state.config.database_url);
+        let account_id = insert_account(&mut conn, "Checking Acc", 1000.0);
+
+        let start_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+        let aug_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+        let sep_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 9, 15).unwrap());
+
+        let req = CreatePlanningRequest {
+            type_id: 2, // Expense
+            account_id,
+            category_id: 1,
+            currency_id: 1,
+            name: "Internet Bill".to_string(),
+            amount: 60.0,
+            recurring_type_id: RECURRING_TYPE_MONTHLY,
+            interval_step: 1,
+            start_date: start_ms,
+            end_date: None,
+            week_days: None,
+            month_days: Some(vec![15]),
+            year_days: None,
+        };
+
+        let planning = create_planning_internal(&mut conn, &state, req).unwrap();
+        assert_eq!(planning.current_occurrence.as_ref().unwrap().expected_date, aug_15_ms);
+
+        // Add movement linked to planning
+        let movement = add_movement_internal(
+            &mut conn,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            60.0,
+            60.0,
+            None,
+            aug_15_ms,
+            Some("Internet Payment August"),
+            Some(planning.id),
+        )
+        .unwrap();
+
+        // Check planning now has September 15 as current pending occurrence
+        let updated_planning = get_planning_internal(&mut conn, planning.id).unwrap();
+        let next_occ = updated_planning.current_occurrence.expect("Should advance to September 15");
+        assert_eq!(next_occ.expected_date, sep_15_ms);
+        assert_eq!(next_occ.status_id, PLANNING_STATUS_PENDING);
+
+        // Check August 15 occurrence is completed with movement.id
+        use crate::schema::planning_occurrences;
+        use crate::models::plannings::PlanningOccurrenceRow;
+        let aug_occ = planning_occurrences::table
+            .filter(planning_occurrences::planning_id.eq(planning.id))
+            .filter(planning_occurrences::expected_date.eq(aug_15_ms))
+            .select(PlanningOccurrenceRow::as_select())
+            .first::<PlanningOccurrenceRow>(&mut conn)
+            .unwrap();
+
+        assert_eq!(aug_occ.status_id, PLANNING_STATUS_COMPLETED);
+        assert_eq!(aug_occ.movement_id, Some(movement.id));
+    }
+
+    #[test]
+    fn test_movement_deletion_recovery_restores_occurrence_to_pending() {
+        use crate::functions::plannings::{create_planning_internal, get_planning_internal};
+        use crate::models::plannings::{CreatePlanningRequest, PLANNING_STATUS_PENDING, RECURRING_TYPE_MONTHLY};
+        use crate::utils::recurrence::local_naive_date_to_start_of_day_ms;
+        use chrono::NaiveDate;
+
+        let state = setup();
+        let mut conn = establish_connection(&state.config.database_url);
+        let account_id = insert_account(&mut conn, "Checking Acc 2", 1000.0);
+
+        let start_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+        let aug_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+
+        let req = CreatePlanningRequest {
+            type_id: 2,
+            account_id,
+            category_id: 1,
+            currency_id: 1,
+            name: "Cloud Hosting".to_string(),
+            amount: 100.0,
+            recurring_type_id: RECURRING_TYPE_MONTHLY,
+            interval_step: 1,
+            start_date: start_ms,
+            end_date: None,
+            week_days: None,
+            month_days: Some(vec![15]),
+            year_days: None,
+        };
+
+        let planning = create_planning_internal(&mut conn, &state, req).unwrap();
+
+        // Create movement linking to August 15
+        let movement = add_movement_internal(
+            &mut conn,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            100.0,
+            100.0,
+            None,
+            aug_15_ms,
+            Some("Hosting Aug"),
+            Some(planning.id),
+        )
+        .unwrap();
+
+        // Now delete the movement
+        remove_movement_internal(&mut conn, movement.id).unwrap();
+
+        // The August 15 occurrence must be restored to pending with its original expected_date
+        let planning_after_del = get_planning_internal(&mut conn, planning.id).unwrap();
+        let restored_occ = planning_after_del.current_occurrence.expect("Should have restored occurrence");
+        assert_eq!(restored_occ.expected_date, aug_15_ms);
+        assert_eq!(restored_occ.status_id, PLANNING_STATUS_PENDING);
+        assert_eq!(restored_occ.movement_id, None);
     }
 }

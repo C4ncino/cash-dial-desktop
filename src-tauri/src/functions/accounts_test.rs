@@ -469,6 +469,7 @@ pub mod integration {
             Some(2),
             tx_time,
             None,
+            None,
         )
         .unwrap();
 
@@ -483,6 +484,7 @@ pub mod integration {
             150.0,
             Some(1),
             tx_time,
+            None,
             None,
         )
         .unwrap();

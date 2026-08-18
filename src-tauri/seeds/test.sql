@@ -108,3 +108,24 @@ INSERT INTO budget_history (budget_id, amount_limit, start_date, end_date)
 VALUES
     ((SELECT id FROM budgets WHERE name = 'Monthly Food'), 500.00, 1780531200000, 9223372036854775807),
     ((SELECT id FROM budgets WHERE name = 'Groceries'), 300.00, 1782864000000, 9223372036854775807);
+
+-- Planning seed data: completed history plus an overdue actionable occurrence.
+INSERT INTO planning_recurring_rules (recurring_type_id, interval_step, start_date, end_date, is_active)
+VALUES
+    ((SELECT id FROM planning_recurring_types WHERE key = 'monthly'), 1, 1784073600000, NULL, 1);
+
+INSERT INTO planning_recurring_month_days (recurring_rule_id, day_of_month)
+VALUES
+    ((SELECT id FROM planning_recurring_rules ORDER BY id DESC LIMIT 1), 15);
+
+INSERT INTO plannings (type_id, account_id, category_id, currency_id, name, amount, recurring_rule_id)
+VALUES
+    (2, 1, 3, 1, 'Monthly Groceries Planning', 85.42,
+     (SELECT id FROM planning_recurring_rules ORDER BY id DESC LIMIT 1));
+
+INSERT INTO planning_occurrences (planning_id, movement_id, status_id, expected_date)
+VALUES
+    ((SELECT id FROM plannings WHERE name = 'Monthly Groceries Planning'), 2,
+     (SELECT id FROM planning_status WHERE key = 'completed'), 1784073600000),
+    ((SELECT id FROM plannings WHERE name = 'Monthly Groceries Planning'), NULL,
+     (SELECT id FROM planning_status WHERE key = 'pending'), 1786752000000);

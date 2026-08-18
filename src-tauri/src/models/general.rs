@@ -8,6 +8,7 @@ use crate::models::budgets::BudgetPeriodType;
 use crate::models::categories::Category;
 use crate::models::currencies::Currency;
 use crate::models::movements::MovementType;
+use crate::models::plannings::{PlanningRecurringType, PlanningStatus};
 
 #[derive(Serialize, Default)]
 pub struct AppState {
@@ -18,6 +19,8 @@ pub struct AppState {
     pub categories: Vec<Category>,
     pub movement_types: Vec<MovementType>,
     pub budget_period_types: Vec<BudgetPeriodType>,
+    pub planning_recurring_types: Vec<PlanningRecurringType>,
+    pub planning_statuses: Vec<PlanningStatus>,
 }
 
 #[derive(Debug, Clone, Serialize)]

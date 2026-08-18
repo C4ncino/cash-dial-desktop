@@ -157,14 +157,14 @@ diesel::table! {
         planning_id -> Integer,
         movement_id -> Nullable<Integer>,
         status_id -> Integer,
-        expected_date -> Integer,
+        expected_date -> BigInt,
     }
 }
 
 diesel::table! {
     planning_recurring_month_days (recurring_rule_id, day_of_month) {
         recurring_rule_id -> Integer,
-        day_of_month -> Nullable<Integer>,
+        day_of_month -> Integer,
     }
 }
 
@@ -173,9 +173,8 @@ diesel::table! {
         id -> Integer,
         recurring_type_id -> Integer,
         interval_step -> Integer,
-        max_occurrences_per_day -> Nullable<Integer>,
-        start_date -> Integer,
-        end_date -> Nullable<Integer>,
+        start_date -> BigInt,
+        end_date -> Nullable<BigInt>,
         is_active -> Bool,
     }
 }
@@ -200,15 +199,15 @@ diesel::table! {
 diesel::table! {
     planning_recurring_week_days (recurring_rule_id, day_of_week) {
         recurring_rule_id -> Integer,
-        day_of_week -> Nullable<Integer>,
+        day_of_week -> Integer,
     }
 }
 
 diesel::table! {
     planning_recurring_year_days (recurring_rule_id, month, day_of_month) {
         recurring_rule_id -> Integer,
-        month -> Nullable<Integer>,
-        day_of_month -> Nullable<Integer>,
+        month -> Integer,
+        day_of_month -> Integer,
     }
 }
 
@@ -260,8 +259,11 @@ diesel::joinable!(movements -> movement_types (type_id));
 diesel::joinable!(planning_occurrences -> movements (movement_id));
 diesel::joinable!(planning_occurrences -> planning_status (status_id));
 diesel::joinable!(planning_occurrences -> plannings (planning_id));
+diesel::joinable!(planning_recurring_month_days -> planning_recurring_rules (recurring_rule_id));
 diesel::joinable!(planning_recurring_rules -> planning_recurring_types (recurring_type_id));
 diesel::joinable!(planning_recurring_types_translations -> planning_recurring_types (planning_recurring_type_id));
+diesel::joinable!(planning_recurring_week_days -> planning_recurring_rules (recurring_rule_id));
+diesel::joinable!(planning_recurring_year_days -> planning_recurring_rules (recurring_rule_id));
 diesel::joinable!(planning_status_translations -> planning_status (planning_status_id));
 diesel::joinable!(plannings -> accounts (account_id));
 diesel::joinable!(plannings -> categories (category_id));

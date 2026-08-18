@@ -1,4 +1,5 @@
 pub mod date;
+pub mod recurrence;
 
 pub const SUPPORTED_LANGUAGES: &[&str] = &["es", "en"];
 

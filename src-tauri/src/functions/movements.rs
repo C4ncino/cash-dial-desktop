@@ -50,7 +50,7 @@ pub fn get_movement(
     get_movement_internal(connection, movement_id)
 }
 
-fn get_movement_internal(
+pub(crate) fn get_movement_internal(
     connection: &mut SqliteConnection,
     movement_id_val: i32,
 ) -> Result<Movement, String> {
@@ -127,6 +127,7 @@ pub fn add_movement(
     installments: Option<i32>,
     timestamp: i64,
     description: Option<String>,
+    planning_id: Option<i32>,
 ) -> Result<Movement, String> {
     tracing::debug!("Executing command add_movement type_id={} account_id={}", type_id, account_id);
 
@@ -158,6 +159,7 @@ pub fn add_movement(
         installments,
         timestamp,
         description.as_deref(),
+        planning_id,
     )
 }
 
@@ -169,15 +171,67 @@ pub(crate) fn add_movement_internal(
     category_id: i32,
     currency_id: i32,
     original_amount: f64,
-    account_amount: f64,
+    _account_amount: f64,
     installments: Option<i32>,
     timestamp: i64,
     description: Option<&str>,
+    planning_id: Option<i32>,
 ) -> Result<Movement, String> {
     use crate::schema::movements::dsl::movements;
 
     let row = connection
         .transaction::<MovementRow, diesel::result::Error, _>(|connection| {
+            let mut pending_occ_id_to_complete: Option<i32> = None;
+
+            if let Some(p_id) = planning_id {
+                use crate::functions::plannings::is_category_compatible_db;
+                use crate::models::plannings::{
+                    PlanningOccurrenceRow, PlanningRecurringRuleRow, PlanningRow,
+                    PLANNING_STATUS_PENDING,
+                };
+                use crate::schema::{
+                    planning_occurrences, planning_recurring_rules, plannings,
+                };
+
+                let planning_row = plannings::table
+                    .find(p_id)
+                    .select(PlanningRow::as_select())
+                    .first::<PlanningRow>(connection)?;
+
+                let rule_row = planning_recurring_rules::table
+                    .find(planning_row.recurring_rule_id)
+                    .select(PlanningRecurringRuleRow::as_select())
+                    .first::<PlanningRecurringRuleRow>(connection)?;
+
+                if !rule_row.is_active {
+                    return Err(diesel::result::Error::RollbackTransaction);
+                }
+
+                if planning_row.account_id != account_id
+                    || planning_row.type_id != type_id
+                    || planning_row.currency_id != currency_id
+                {
+                    return Err(diesel::result::Error::RollbackTransaction);
+                }
+
+                if !is_category_compatible_db(connection, category_id, planning_row.category_id) {
+                    return Err(diesel::result::Error::RollbackTransaction);
+                }
+
+                let pending_occ = planning_occurrences::table
+                    .filter(planning_occurrences::planning_id.eq(p_id))
+                    .filter(planning_occurrences::status_id.eq(PLANNING_STATUS_PENDING))
+                    .order(planning_occurrences::expected_date.asc())
+                    .select(PlanningOccurrenceRow::as_select())
+                    .first::<PlanningOccurrenceRow>(connection)
+                    .optional()?;
+
+                match pending_occ {
+                    Some(occ) => pending_occ_id_to_complete = Some(occ.id),
+                    None => return Err(diesel::result::Error::RollbackTransaction),
+                }
+            }
+
             ensure_account_exists(connection, account_id)?;
             if let Some(to_account_id) = to_account_id {
                 ensure_account_exists(connection, to_account_id)?;
@@ -220,11 +274,32 @@ pub(crate) fn add_movement_internal(
                 timestamp,
             )?;
 
+            if let Some(occ_id) = pending_occ_id_to_complete {
+                use crate::functions::plannings::reconcile_current_occurrence;
+                use crate::models::plannings::PLANNING_STATUS_COMPLETED;
+                use crate::schema::planning_occurrences;
+
+                diesel::update(planning_occurrences::table.find(occ_id))
+                    .set((
+                        planning_occurrences::status_id.eq(PLANNING_STATUS_COMPLETED),
+                        planning_occurrences::movement_id.eq(Some(row.id)),
+                    ))
+                    .execute(connection)?;
+
+                if let Some(p_id) = planning_id {
+                    reconcile_current_occurrence(connection, p_id)?;
+                }
+            }
+
             Ok(row)
         })
         .map_err(|e| {
-            tracing::error!("Failed inserting movement: {}", e);
-            e.to_string()
+            if matches!(e, diesel::result::Error::RollbackTransaction) {
+                "El movimiento no es compatible con la planificación seleccionada o la planificación no tiene ocurrencias pendientes".to_string()
+            } else {
+                tracing::error!("Failed inserting movement: {}", e);
+                e.to_string()
+            }
         })?;
 
     tracing::info!("Movement created id={}", row.id);
@@ -290,7 +365,7 @@ fn update_movement_internal(
     category_id: i32,
     currency_id: i32,
     original_amount: f64,
-    account_amount: f64,
+    _account_amount: f64,
     installments: Option<i32>,
     timestamp: i64,
     description: Option<&str>,
@@ -306,6 +381,34 @@ fn update_movement_internal(
 
             if old_row.type_id != type_id {
                 return Err(diesel::result::Error::RollbackTransaction);
+            }
+
+            // Check compatibility if linked to a planning occurrence
+            {
+                use crate::functions::plannings::is_category_compatible_db;
+                use crate::models::plannings::{PlanningOccurrenceRow, PlanningRow};
+                use crate::schema::{planning_occurrences, plannings};
+
+                let linked_occ_opt = planning_occurrences::table
+                    .filter(planning_occurrences::movement_id.eq(Some(id)))
+                    .select(PlanningOccurrenceRow::as_select())
+                    .first::<PlanningOccurrenceRow>(connection)
+                    .optional()?;
+
+                if let Some(linked_occ) = linked_occ_opt {
+                    let planning_row = plannings::table
+                        .find(linked_occ.planning_id)
+                        .select(PlanningRow::as_select())
+                        .first::<PlanningRow>(connection)?;
+
+                    if planning_row.account_id != account_id
+                        || planning_row.type_id != type_id
+                        || planning_row.currency_id != currency_id
+                        || !is_category_compatible_db(connection, category_id, planning_row.category_id)
+                    {
+                        return Err(diesel::result::Error::RollbackTransaction);
+                    }
+                }
             }
 
             ensure_account_exists(connection, account_id)?;
@@ -362,8 +465,8 @@ fn update_movement_internal(
         })
         .map_err(|e| {
             if matches!(e, diesel::result::Error::RollbackTransaction) {
-                tracing::warn!("Rejected movement type change id={}", id);
-                "El tipo de movimiento no se puede cambiar".to_string()
+                tracing::warn!("Rejected movement update due to type change or planning incompatibility id={}", id);
+                "El tipo de movimiento no se puede cambiar o los datos son incompatibles con la planificación vinculada".to_string()
             } else {
                 tracing::error!("Failed updating movement {}: {}", id, e);
                 e.to_string()
@@ -395,9 +498,44 @@ fn remove_movement_internal(connection: &mut SqliteConnection, id: i32) -> Resul
                 .select(MovementRow::as_select())
                 .first::<MovementRow>(connection)?;
 
+            // Check if movement is linked to any planning occurrence
+            use crate::functions::plannings::reconcile_current_occurrence;
+            use crate::models::plannings::{PlanningOccurrenceRow, PLANNING_STATUS_PENDING};
+            use crate::schema::planning_occurrences;
+
+            let linked_occ_opt = planning_occurrences::table
+                .filter(planning_occurrences::movement_id.eq(Some(id)))
+                .select(PlanningOccurrenceRow::as_select())
+                .first::<PlanningOccurrenceRow>(connection)
+                .optional()?;
+
+            if let Some(ref linked_occ) = linked_occ_opt {
+                diesel::update(planning_occurrences::table.find(linked_occ.id))
+                    .set((
+                        planning_occurrences::movement_id.eq(None::<i32>),
+                        planning_occurrences::status_id.eq(PLANNING_STATUS_PENDING),
+                    ))
+                    .execute(connection)?;
+            }
+
             reverse_movement_from_accounts(connection, &old_row)?;
 
-            diesel::delete(movements.find(id)).execute(connection)
+            // Delete installments
+            {
+                use crate::schema::movement_installments::dsl::{
+                    movement_id as inst_movement_id, movement_installments,
+                };
+                diesel::delete(movement_installments.filter(inst_movement_id.eq(id)))
+                    .execute(connection)?;
+            }
+
+            let count = diesel::delete(movements.find(id)).execute(connection)?;
+
+            if let Some(linked_occ) = linked_occ_opt {
+                reconcile_current_occurrence(connection, linked_occ.planning_id)?;
+            }
+
+            Ok(count)
         })
         .map_err(|e| {
             tracing::error!("Failed deleting movement {}: {}", id, e);

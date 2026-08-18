@@ -45,6 +45,8 @@ struct ObligationRow {
     installment_id: i32,
     #[diesel(sql_type = Integer)]
     movement_id: i32,
+    #[diesel(sql_type = Integer)]
+    account_id: i32,
     #[diesel(sql_type = BigInt)]
     due_timestamp: i64,
     #[diesel(sql_type = Double)]
@@ -354,7 +356,7 @@ pub fn obligations(
     currency: i32,
 ) -> Result<Obligations, String> {
     let end = now + 90 * 24 * 60 * 60 * 1000;
-    let rows:Vec<ObligationRow>=sql_query("SELECT mi.id AS installment_id, mi.movement_id, mi.due_timestamp, mi.amount, mi.paid, m.description, m.category_id FROM movement_installments mi JOIN movements m ON m.id=mi.movement_id WHERE m.currency_id=? AND mi.due_timestamp>=? AND mi.due_timestamp<? ORDER BY mi.due_timestamp").bind::<Integer,_>(currency).bind::<BigInt,_>(now).bind::<BigInt,_>(end).load(c).map_err(|e|e.to_string())?;
+    let rows:Vec<ObligationRow>=sql_query("SELECT mi.id AS installment_id, mi.movement_id, m.account_id, mi.due_timestamp, mi.amount, mi.paid, m.description, m.category_id FROM movement_installments mi JOIN movements m ON m.id=mi.movement_id WHERE m.currency_id=? AND mi.due_timestamp>=? AND mi.due_timestamp<? ORDER BY mi.due_timestamp").bind::<Integer,_>(currency).bind::<BigInt,_>(now).bind::<BigInt,_>(end).load(c).map_err(|e|e.to_string())?;
     let sum_until =
         |ms: i64| rows.iter().filter(|r| r.due_timestamp < now + ms).map(|r| r.amount).sum();
     Ok(Obligations {
@@ -368,6 +370,7 @@ pub fn obligations(
             .map(|r| Obligation {
                 installment_id: r.installment_id,
                 movement_id: r.movement_id,
+                account_id: r.account_id,
                 due_timestamp: r.due_timestamp,
                 amount: r.amount,
                 paid: r.paid,
@@ -612,6 +615,7 @@ mod tests {
 
         let result = obligations(&mut c, now, 1).unwrap();
         assert_eq!(result.items.len(), 3);
+        assert!(result.items.iter().all(|item| item.account_id == 1));
         assert_eq!(result.totals.next_7_days, 10.0);
         assert_eq!(result.totals.next_30_days, 30.0);
         assert_eq!(result.totals.next_90_days, 60.0);

@@ -68,6 +68,7 @@ pub struct Categories {
 pub struct Obligation {
     pub installment_id: i32,
     pub movement_id: i32,
+    pub account_id: i32,
     pub due_timestamp: i64,
     pub amount: f64,
     pub paid: bool,

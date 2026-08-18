@@ -644,6 +644,7 @@ pub fn pay_credit_card_internal(
                     None,
                     chrono::Local::now().timestamp_millis(),
                     Some("Pago de tarjeta de crédito"),
+                    None,
                 )
                 .map_err(CreditCardPaymentError::Validation)?;
 
