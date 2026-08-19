@@ -22,6 +22,7 @@ type Movement = {
   currencyId: number;
   originalAmount: number;
   accountAmount: number;
+  conversionRate?: number;
   installments?: number;
   timestamp: number;
   description?: string;

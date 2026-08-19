@@ -57,6 +57,8 @@ pub fn mock_state() -> AppState {
             name: "Peso Mexicano".to_string(),
             symbol: "$".to_string(),
             code: "MXN".to_string(),
+            conversion_rate: 19.7411,
+            conversion_rate_date: Some("2026-08-18".to_string()),
         }],
 
         categories: vec![

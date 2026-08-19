@@ -30,5 +30,18 @@ export async function initStores() {
     planningsStore.getState().populate(),
   ]);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const ratesAreStale = currencyStore
+    .getState()
+    .currencies.some((currency) => currency.conversionRateDate !== today);
+
+  if (ratesAreStale) {
+    try {
+      await currencyStore.getState().refreshRates();
+    } catch (error) {
+      logger.warn("Currency rate refresh failed; using cached rates", error);
+    }
+  }
+
   logger.info("Stores ready...");
 }

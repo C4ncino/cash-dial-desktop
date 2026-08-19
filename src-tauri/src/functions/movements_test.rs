@@ -181,7 +181,7 @@ pub mod integration {
             88,
             1,
             30.0,
-            30.0,
+            25.0,
             None,
             1_788_000_000,
             Some("Transfer"),
@@ -190,7 +190,7 @@ pub mod integration {
         .unwrap();
 
         assert_eq!(get_balance(connection, from_account_id), 70.0);
-        assert_eq!(get_balance(connection, to_account_id), 80.0);
+        assert_eq!(get_balance(connection, to_account_id), 75.0);
     }
 
     #[test]

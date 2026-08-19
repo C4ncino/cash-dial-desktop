@@ -1,10 +1,11 @@
-import { closeTauriDriver, createDriver, deleteDatabase, driver } from "@test/driver";
+import { closeTauriDriver, createDriver, deleteDatabase, driver, waitForHomeReady } from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 describe("Tauri - Budget creation", () => {
   beforeAll(async () => {
     await createDriver();
+    await waitForHomeReady();
   });
 
   afterAll(async () => {
@@ -20,11 +21,8 @@ describe("Tauri - Budget creation", () => {
 
   it("creates a monthly budget", async () => {
     // Wait for application UI to be ready
-    await driver.wait(until.elementLocated(By.css("body")), 10000);
-    await driver.sleep(500);
-
     // Open create budget form
-    const openForm = await driver.findElement(By.id("create-budget-button"));
+    const openForm = await driver.wait(until.elementLocated(By.id("create-budget-button")), 15000);
     await openForm.click();
 
     // Wait for form to load

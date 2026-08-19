@@ -1,10 +1,17 @@
-import { closeTauriDriver, createDriver, deleteDatabase, driver } from "@test/driver";
+import {
+  closeTauriDriver,
+  createDriver,
+  deleteDatabase,
+  driver,
+  waitForHomeReady,
+} from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 describe("Movement E2E", () => {
   beforeAll(async () => {
     await createDriver();
+    await waitForHomeReady();
   });
 
   afterAll(async () => {
@@ -15,13 +22,27 @@ describe("Movement E2E", () => {
   // Helpers
   async function openSpeedDial() {
     const speedDialLocator = By.css(".speed-dial");
-    const classes = await driver.findElement(speedDialLocator).getAttribute("class");
+    const classes = await driver.wait(async () => {
+      try {
+        return await driver.findElement(speedDialLocator).getAttribute("class");
+      } catch {
+        return false;
+      }
+    }, 10000);
 
     if (!classes) return false;
 
     if (!classes.includes("is-open")) {
-      const toggle = await driver.findElement(By.id("speed-dial-toggle"));
-      await toggle.click();
+      await driver.wait(async () => {
+        try {
+          // Locate and click in the same retry. Hydration can replace the
+          // toggle between separate findElement and click calls.
+          await driver.findElement(By.id("speed-dial-toggle")).click();
+          return true;
+        } catch {
+          return false;
+        }
+      }, 10000);
       await driver.wait(async () => {
         try {
           const cls = await driver.findElement(speedDialLocator).getAttribute("class");
@@ -52,10 +73,13 @@ describe("Movement E2E", () => {
         const lastComma = cleaned.lastIndexOf(",");
         const lastDot = cleaned.lastIndexOf(".");
 
-        if (lastComma > lastDot) return Number.parseFloat(cleaned.replace(/\./g, "").replace(/,/g, "."));
+        if (lastComma > lastDot)
+          return Number.parseFloat(cleaned.replace(/\./g, "").replace(/,/g, "."));
         if (lastDot > lastComma) return Number.parseFloat(cleaned.replace(/,/g, ""));
         if (lastComma !== -1) {
-          return Number.parseFloat(cleaned.match(/,\d{2}$/) ? cleaned.replace(/,/g, ".") : cleaned.replace(/,/g, ""));
+          return Number.parseFloat(
+            cleaned.match(/,\d{2}$/) ? cleaned.replace(/,/g, ".") : cleaned.replace(/,/g, ""),
+          );
         }
         return Number.parseFloat(cleaned);
       } catch {
@@ -66,11 +90,8 @@ describe("Movement E2E", () => {
 
   it("creates an income movement and verifies its rendering and details", async () => {
     // wait app UI
-    await driver.wait(until.elementLocated(By.css("body")), 10000);
-
-    await driver.sleep(200);
-
-    const homeLink = await driver.findElement(By.css('a[href="/"]'));
+    await waitForHomeReady();
+    const homeLink = await driver.wait(until.elementLocated(By.css('a[href="/"]')), 15000);
     await homeLink.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -160,10 +181,8 @@ describe("Movement E2E", () => {
 
   it("creates an expense movement and verifies its rendering and details", async () => {
     // wait app UI
-    await driver.wait(until.elementLocated(By.css("body")), 10000);
-    await driver.sleep(200);
-
-    const homeLink = await driver.findElement(By.css('a[href="/"]'));
+    await waitForHomeReady();
+    const homeLink = await driver.wait(until.elementLocated(By.css('a[href="/"]')), 15000);
     await homeLink.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -258,11 +277,8 @@ describe("Movement E2E", () => {
 
   it("creates a transfer movement and verifies its rendering and details", async () => {
     // wait app UI
-    await driver.wait(until.elementLocated(By.css("body")), 10000);
-
-    await driver.sleep(200);
-
-    const homeLink = await driver.findElement(By.css('a[href="/"]'));
+    await waitForHomeReady();
+    const homeLink = await driver.wait(until.elementLocated(By.css('a[href="/"]')), 15000);
     await homeLink.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 

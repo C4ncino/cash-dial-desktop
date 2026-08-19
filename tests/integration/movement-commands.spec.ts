@@ -1,7 +1,7 @@
 import { closeTauriDriver, createDriver, deleteDatabase, invokeCommand } from "@test/driver";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { MOVEMENT_FUNCTIONS } from "@/types/enums";
+import { ACCOUNT_FUNCTIONS, MOVEMENT_FUNCTIONS } from "@/types/enums";
 
 function expectMovementType(value: unknown) {
   expect(value).toEqual(
@@ -157,14 +157,33 @@ describe("Movement Commands", () => {
     });
 
     it("creates a transfer movement", async () => {
+      const destinationAccount = await invokeCommand<Account>(ACCOUNT_FUNCTIONS.add, {
+        name: "USD Transfer Destination",
+        balance: 50.0,
+        typeId: 1,
+        currencyId: 2,
+        creditInfo: null,
+      });
+
+      expect(destinationAccount.currencyId).toBe(2);
+
+      const accountsBefore = await invokeCommand<Account[]>(ACCOUNT_FUNCTIONS.get);
+      const originBefore = accountsBefore.find((account) => account.id === 1)?.balance;
+      const destinationBefore = accountsBefore.find(
+        (account) => account.id === destinationAccount.id,
+      )?.balance;
+
+      expect(originBefore).toEqual(expect.any(Number));
+      expect(destinationBefore).toEqual(expect.any(Number));
+
       const result = await invokeCommand<unknown>(MOVEMENT_FUNCTIONS.add, {
         typeId: 3,
         accountId: 1,
-        toAccountId: 2,
+        toAccountId: destinationAccount.id,
         categoryId: 1,
         currencyId: 1,
         originalAmount: 200.0,
-        accountAmount: 200.0,
+        accountAmount: 180.0,
         installments: null,
         timestamp: 1719705600,
         description: "Transfer to savings",
@@ -175,8 +194,17 @@ describe("Movement Commands", () => {
       const movement = result as Movement;
 
       expect(movement.typeId).toBe(3);
-      expect(movement.toAccountId).toBe(2);
+      expect(movement.toAccountId).toBe(destinationAccount.id);
       expect(movement.originalAmount).toBe(200.0);
+      expect(movement.accountAmount).toBe(180.0);
+
+      const accountsAfter = await invokeCommand<Account[]>(ACCOUNT_FUNCTIONS.get);
+      expect(accountsAfter.find((account) => account.id === 1)?.balance).toBe(
+        originBefore! - 200.0,
+      );
+      expect(accountsAfter.find((account) => account.id === destinationAccount.id)?.balance).toBe(
+        destinationBefore! + 180.0,
+      );
     });
 
     it("creates a movement without description", async () => {

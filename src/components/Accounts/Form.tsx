@@ -6,7 +6,7 @@ import { useStore } from "zustand";
 import FormActions from "@/components/Forms/FormActions";
 import FormErrors from "@/components/Forms/FormErrors";
 import SegmentedControl from "@/components/Forms/SegmentedControl";
-import SelectCurrency from "@/components/Forms/SelectCurrencies";
+import SelectCurrency from "@/components/Forms/SelectCurrency";
 import { logger } from "@/lib/logger";
 import { accountsStore, createAccountFromData, validate } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";

@@ -4,7 +4,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Builder, Capabilities, type WebDriver } from "selenium-webdriver";
+import { Builder, By, Capabilities, until, type WebDriver } from "selenium-webdriver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,6 +60,11 @@ export async function closeTauriDriver() {
 
   // kill the tauri-driver process
   tauriDriver.kill();
+}
+
+/** Wait until the home page has finished mounting its interactive islands. */
+export async function waitForHomeReady() {
+  await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 15000);
 }
 
 function onShutdown(fn: any) {

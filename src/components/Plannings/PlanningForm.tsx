@@ -7,7 +7,7 @@ import FormActions from "@/components/Forms/FormActions";
 import FormErrors from "@/components/Forms/FormErrors";
 import SelectAccounts from "@/components/Forms/SelectAccounts";
 import SelectCategories from "@/components/Forms/SelectCategories";
-import SelectCurrency from "@/components/Forms/SelectCurrencies";
+import SelectCurrency from "@/components/Forms/SelectCurrency";
 import PlanningRecurrenceForm from "@/components/Plannings/PlanningRecurrenceForm";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
@@ -258,7 +258,7 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
 
   return (
     <form
-      className="w-5/6 h-full m-auto space-y-4 bg-zinc-950"
+      className="box-border w-full max-w-lg h-full max-h-[calc(100vh-2rem)] mx-auto p-4 sm:p-6 space-y-4 overflow-y-auto overscroll-contain bg-zinc-950"
       id={formId}
       onSubmit={onSubmit}
       onReset={handleReset}

@@ -276,7 +276,9 @@ fn get_budget_details_list(
     };
     use crate::schema::budget_period_types::dsl::budget_period_types;
     use crate::schema::budgets::dsl::{budgets, id as b_id};
+    use crate::schema::accounts::dsl::{accounts, id as account_id, currency_id as account_currency_id};
     use crate::schema::categories::dsl::categories;
+    use crate::schema::currencies::dsl::{currencies, id as currency_id, conversion_rate};
     use crate::schema::movements::dsl::{
         category_id as m_category_id, movements, timestamp as m_timestamp,
     };
@@ -352,6 +354,19 @@ fn get_budget_details_list(
         Vec::new()
     };
 
+    let account_currencies: std::collections::HashMap<i32, i32> = accounts
+        .select((account_id, account_currency_id))
+        .load::<(i32, i32)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .collect();
+    let currency_rates: std::collections::HashMap<i32, f64> = currencies
+        .select((currency_id, conversion_rate))
+        .load::<(i32, f64)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .collect();
+
     // Build the results
     let mut results = Vec::new();
 
@@ -399,7 +414,30 @@ fn get_budget_details_list(
                     && m.timestamp >= p_start
                     && m.timestamp <= p_end
                 {
-                    amount_spend += m.original_amount;
+                    let account_currency = account_currencies
+                        .get(&m.account_id)
+                        .ok_or_else(|| format!("Missing currency for account {}", m.account_id))?;
+
+                    amount_spend += if *account_currency == row.currency_id {
+                        m.account_amount
+                    } else if m.currency_id == row.currency_id {
+                        m.original_amount
+                    } else {
+                        let movement_rate = *currency_rates
+                            .get(&m.currency_id)
+                            .ok_or_else(|| format!("Missing conversion rate for currency {}", m.currency_id))?;
+                        let budget_rate = *currency_rates
+                            .get(&row.currency_id)
+                            .ok_or_else(|| format!("Missing conversion rate for currency {}", row.currency_id))?;
+                        if !movement_rate.is_finite()
+                            || movement_rate <= 0.0
+                            || !budget_rate.is_finite()
+                            || budget_rate <= 0.0
+                        {
+                            return Err("Invalid currency conversion rate".to_string());
+                        }
+                        m.original_amount * budget_rate / movement_rate
+                    };
                     movement_ids.push(m.id);
                 }
             }

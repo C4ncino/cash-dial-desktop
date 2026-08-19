@@ -16,6 +16,7 @@ export enum ACCOUNT_FUNCTIONS {
 
 export enum CURRENCY_FUNCTIONS {
   get = "get_currencies",
+  refreshRates = "refresh_currency_rates",
 }
 
 export enum CATEGORY_FUNCTIONS {

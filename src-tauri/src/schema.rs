@@ -96,6 +96,7 @@ diesel::table! {
         symbol -> Text,
         code -> Text,
         conversion_rate -> Double,
+        conversion_rate_date -> Nullable<Text>,
     }
 }
 
@@ -145,6 +146,7 @@ diesel::table! {
         currency_id -> Integer,
         original_amount -> Double,
         account_amount -> Double,
+        conversion_rate -> Double,
         installments -> Nullable<Integer>,
         timestamp -> BigInt,
         description -> Nullable<Text>,

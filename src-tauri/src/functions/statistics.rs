@@ -206,6 +206,8 @@ mod tests {
             name: "USD".to_string(),
             symbol: "$".to_string(),
             code: "USD".to_string(),
+            conversion_rate: 1.1576,
+            conversion_rate_date: Some("2026-08-18".to_string()),
         });
 
         let result = validate_statistics_input(100, 200, "day", 2, &state);

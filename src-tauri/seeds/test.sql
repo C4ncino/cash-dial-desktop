@@ -1,8 +1,4 @@
-INSERT INTO currencies (symbol, code)
-VALUES
-    ('$', 'USD');
-
-INSERT INTO accounts (type_id, currency_id, name, balance)
+INSERT OR IGNORE INTO accounts (type_id, currency_id, name, balance)
 VALUES
     (1, 1, 'Efectivo', 200.0),
     (2, 1, 'Débito', 500.0),
@@ -10,17 +6,12 @@ VALUES
     (1, 1, 'Delete this', 1000.0),
     (3, 1, 'Visa Gold', 1500.0);
 
-INSERT INTO accounts_credit_info (account_id, credit_limit, cutoff_day, days_to_pay)
+INSERT OR IGNORE INTO accounts_credit_info (account_id, credit_limit, cutoff_day, days_to_pay)
 VALUES 
     (3, 2000.0, 15, 30),
     (5, 3000.0, 25, 20);
 
-INSERT INTO currencies_translations (currency_id, lang, name)
-VALUES
-    (2, 'es', 'Dólar Americano'),
-    (2, 'en', 'US Dollar');
-
-INSERT INTO movements (
+INSERT OR IGNORE INTO movements (
     id,
     type_id,
     account_id,
@@ -58,7 +49,7 @@ VALUES
 -- Xbox (1 installments on Account 5)
 (8, 2, 5, NULL, 3, 1, 500.00, 500.00, 1, 1751846800000, 'Xbox');
 
-INSERT INTO movement_installments (
+INSERT OR IGNORE INTO movement_installments (
     movement_id,
     installment_number,
     total_installments,
@@ -99,31 +90,31 @@ VALUES
 (8, 1, 1, 500.00, 1755129600000, 0, NULL);
 
 -- Budgets seed data
-INSERT INTO budgets (budget_period_type_id, category_id, currency_id, name)
+INSERT OR IGNORE INTO budgets (budget_period_type_id, category_id, currency_id, name)
 VALUES
     (2, 1, 1, 'Monthly Food'),
     (2, 13, 1, 'Groceries');
 
-INSERT INTO budget_history (budget_id, amount_limit, start_date, end_date)
+INSERT OR IGNORE INTO budget_history (budget_id, amount_limit, start_date, end_date)
 VALUES
     ((SELECT id FROM budgets WHERE name = 'Monthly Food'), 500.00, 1780531200000, 9223372036854775807),
     ((SELECT id FROM budgets WHERE name = 'Groceries'), 300.00, 1782864000000, 9223372036854775807);
 
 -- Planning seed data: completed history plus an overdue actionable occurrence.
-INSERT INTO planning_recurring_rules (recurring_type_id, interval_step, start_date, end_date, is_active)
+INSERT OR IGNORE INTO planning_recurring_rules (recurring_type_id, interval_step, start_date, end_date, is_active)
 VALUES
     ((SELECT id FROM planning_recurring_types WHERE key = 'monthly'), 1, 1784073600000, NULL, 1);
 
-INSERT INTO planning_recurring_month_days (recurring_rule_id, day_of_month)
+INSERT OR IGNORE INTO planning_recurring_month_days (recurring_rule_id, day_of_month)
 VALUES
     ((SELECT id FROM planning_recurring_rules ORDER BY id DESC LIMIT 1), 15);
 
-INSERT INTO plannings (type_id, account_id, category_id, currency_id, name, amount, recurring_rule_id)
+INSERT OR IGNORE INTO plannings (type_id, account_id, category_id, currency_id, name, amount, recurring_rule_id)
 VALUES
     (2, 1, 3, 1, 'Monthly Groceries Planning', 85.42,
      (SELECT id FROM planning_recurring_rules ORDER BY id DESC LIMIT 1));
 
-INSERT INTO planning_occurrences (planning_id, movement_id, status_id, expected_date)
+INSERT OR IGNORE INTO planning_occurrences (planning_id, movement_id, status_id, expected_date)
 VALUES
     ((SELECT id FROM plannings WHERE name = 'Monthly Groceries Planning'), 2,
      (SELECT id FROM planning_status WHERE key = 'completed'), 1784073600000),

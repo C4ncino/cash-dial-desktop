@@ -7,11 +7,13 @@ import FormActions from "@/components/Forms/FormActions";
 import FormErrors from "@/components/Forms/FormErrors";
 import SelectAccounts from "@/components/Forms/SelectAccounts";
 import SelectCategories from "@/components/Forms/SelectCategories";
-import SelectCurrency from "@/components/Forms/SelectCurrencies";
+import SelectCurrency from "@/components/Forms/SelectCurrency";
 import SelectPlanning from "@/components/Movements/SelectPlanning";
+import useMovementCurrencyConversion from "@/hooks/useMovementCurrencyConversion";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { budgetStore } from "@/stores/budgetStore";
+import { currencyStore } from "@/stores/currencyStore";
 import { editStore } from "@/stores/editStore";
 import { createMovementFromData, movementsStore, validateMovement } from "@/stores/movementsStore";
 import { planningsStore } from "@/stores/planningsStore";
@@ -70,16 +72,19 @@ const formatTime = (timestamp: number) => {
 const MovementForm = ({ modalId, movementType }: Props) => {
   const editState = useStore(editStore, (state) => state);
   const accounts = useStore(accountsStore, (state) => state.accounts);
+  const currencies = useStore(currencyStore, (state) => state.currencies) ?? [];
 
   const [errors, setErrors] = useState<string[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<number | undefined>();
+  const [selectedToAccountId, setSelectedToAccountId] = useState<number | undefined>();
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [selectedPlanningId, setSelectedPlanningId] = useState<number | undefined>();
-  const [selectedPlanningOccurrenceId, setSelectedPlanningOccurrenceId] = useState<number | undefined>();
+  const [selectedPlanningOccurrenceId, setSelectedPlanningOccurrenceId] = useState<
+    number | undefined
+  >();
 
-  const selectedPlanning = useStore(
-    planningsStore,
-    (state) => state.plannings.find((planning) => planning.id === selectedPlanningId),
+  const selectedPlanning = useStore(planningsStore, (state) =>
+    state.plannings.find((planning) => planning.id === selectedPlanningId),
   );
 
   const config = MOVEMENT_CONFIG[movementType as keyof typeof MOVEMENT_CONFIG];
@@ -91,11 +96,6 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       modalId === config.editModalId
         ? movementsStore.getState().getById(editState.id)
         : null;
-
-    if (movement) {
-      setSelectedAccountId(movement.accountId);
-      setCategoryId(movement.categoryId);
-    }
 
     return movement;
   }, [editState.id, editState.type, modalId, config.editType, config.editModalId]);
@@ -111,18 +111,62 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
   useEffect(() => {
     setSelectedPlanningId(movement?.planningId);
-  }, [movement?.planningId]);
+    setSelectedToAccountId(movement?.toAccountId);
+  }, [movement?.id]);
+
+  const selectedToAccount = selectedToAccountId
+    ? accounts.find((a) => a.id === selectedToAccountId)
+    : undefined;
+
+  const {
+    setSelectedCurrencyId,
+    originalAmount,
+    setOriginalAmount,
+    accountAmount,
+    onAccountAmountChange,
+    movementCurrencyId,
+    accountCurrency,
+    hasCurrencyConversion,
+    applyEcbRate,
+    resetCurrencyConversion,
+  } = useMovementCurrencyConversion({
+    currencies,
+    movement,
+    selectedPlanning,
+    selectedAccount,
+    selectedToAccount,
+    isTransfer,
+  });
+
+  useEffect(() => {
+    if (!movement) return;
+
+    setSelectedAccountId(movement.accountId);
+    setCategoryId(movement.categoryId);
+    setSelectedToAccountId(movement.toAccountId);
+  }, [movement?.id, movement?.accountId, movement?.categoryId, movement?.toAccountId]);
 
   useEffect(() => {
     const handlePlanningMovement = (event: Event) => {
-      const detail = (event as CustomEvent<{ planningId?: number; occurrenceId?: number }>).detail;
+      const detail = (
+        event as CustomEvent<{
+          planningId?: number;
+          occurrenceId?: number;
+          amount?: number;
+        }>
+      ).detail;
+      if (isTransfer) return;
       if (detail.planningId) setSelectedPlanningId(detail.planningId);
       setSelectedPlanningOccurrenceId(detail.occurrenceId);
+
+      if (typeof detail.amount === "number" && Number.isFinite(detail.amount)) {
+        setOriginalAmount(String(detail.amount));
+      }
     };
 
     window.addEventListener("planning:movement-create", handlePlanningMovement);
     return () => window.removeEventListener("planning:movement-create", handlePlanningMovement);
-  }, []);
+  }, [isTransfer]);
 
   const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -151,7 +195,9 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
     try {
       if (editState.id && editState.type === config.editType) {
-        const updateResult = movementsStore.getState().update(editState.id, movementData) as unknown as Promise<void> | undefined;
+        const updateResult = movementsStore
+          .getState()
+          .update(editState.id, movementData) as unknown as Promise<void> | undefined;
         if (updateResult && typeof (updateResult as Promise<void>).then === "function") {
           await updateResult;
         }
@@ -160,16 +206,24 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
         toast(config.toastUpdated);
       } else {
-        const addResult = movementsStore.getState().add(movementData) as unknown as Promise<Movement> | undefined;
+        const addResult = movementsStore.getState().add(movementData) as unknown as
+          | Promise<Movement>
+          | undefined;
         let createdMovement: Movement | undefined;
-        if (addResult && typeof (addResult as Promise<void>).then === "function") {
+        if (addResult && typeof (addResult as Promise<Movement>).then === "function") {
           createdMovement = await addResult;
         }
 
         if (movementData.planningId && selectedPlanningOccurrenceId) {
-          window.dispatchEvent(new CustomEvent("planning:occurrence-updated", {
-            detail: { planningId: movementData.planningId, occurrenceId: selectedPlanningOccurrenceId, movementId: createdMovement?.id },
-          }));
+          window.dispatchEvent(
+            new CustomEvent("planning:occurrence-updated", {
+              detail: {
+                planningId: movementData.planningId,
+                occurrenceId: selectedPlanningOccurrenceId,
+                movementId: createdMovement?.id,
+              },
+            }),
+          );
         }
 
         budgetStore.getState().refreshAffected(movementData.categoryId, movement?.categoryId);
@@ -182,8 +236,10 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       (e.target as HTMLFormElement).reset();
       setErrors([]);
       setSelectedAccountId(undefined);
+      setSelectedToAccountId(undefined);
       setSelectedPlanningId(undefined);
       setSelectedPlanningOccurrenceId(undefined);
+      resetCurrencyConversion();
       editState.clear();
       closeModal(`#${modalId}`);
     } catch (error) {
@@ -194,12 +250,13 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
   return (
     <form
-      className="w-5/6 h-full m-auto space-y-4 bg-zinc-950"
+      className="box-border w-full max-w-lg h-full max-h-[calc(100vh-2rem)] mx-auto p-4 sm:p-6 space-y-4 overflow-y-auto overscroll-contain bg-zinc-950"
       id={config.formId}
       onSubmit={onSubmit}
       onReset={() => {
         setSelectedAccountId(movement?.accountId);
         setCategoryId(movement?.categoryId);
+        resetCurrencyConversion();
         setErrors([]);
       }}
     >
@@ -209,19 +266,57 @@ const MovementForm = ({ modalId, movementType }: Props) => {
         </label>
         <div className="flex">
           <Input
-            key={`amount-${movement?.id ?? selectedPlanning?.id ?? "new"}`}
             type="number"
             name="amount"
             id="amount"
             required
-            value={movement ? movement.originalAmount : selectedPlanning?.amount ?? "0.00"}
+            value={originalAmount}
+            onChange={(event) => {
+              setOriginalAmount(event.currentTarget.value);
+            }}
             min={0.01}
             step={0.01}
           />
           <SelectCurrency
-            currencyId={selectedPlanning?.currencyId ?? movement?.currencyId}
+            currencyId={movementCurrencyId}
+            value={movementCurrencyId}
+            disabled={Boolean(selectedPlanning) || isTransfer}
+            onChange={(event) => {
+              setSelectedCurrencyId(Number(event.currentTarget.value));
+            }}
           />
+          {(Boolean(selectedPlanning) || isTransfer) && (
+            <input type="hidden" name="currency" value={movementCurrencyId} readOnly />
+          )}
         </div>
+        {hasCurrencyConversion && (
+          <>
+            <label htmlFor="accountAmount" className="text-gray-webui-text">
+              {`Monto en ${accountCurrency?.code ?? "cuenta"}`}
+            </label>
+            <div className="flex">
+              <Input
+                type="number"
+                name="accountAmount"
+                id="accountAmount"
+                required
+                value={accountAmount}
+                min={0.01}
+                step={0.01}
+                onChange={(event) => {
+                  onAccountAmountChange(event.currentTarget.value);
+                }}
+              />
+              <button
+                type="button"
+                className="px-2 text-xs text-blue-400 border border-gray-webui border-l-0"
+                onClick={applyEcbRate}
+              >
+                Auto Completar
+              </button>
+            </div>
+          </>
+        )}
       </fieldset>
 
       <SelectAccounts
@@ -229,6 +324,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
         label={config.accountLabel}
         accountId={selectedPlanning?.accountId ?? movement?.accountId}
         onChange={(id) => setSelectedAccountId(id)}
+        excludeCredit={isTransfer}
       />
 
       {isTransfer && (
@@ -237,6 +333,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
           label="Cuenta Destino"
           accountId={movement?.toAccountId}
           excludeId={selectedAccountId}
+          onChange={(id) => setSelectedToAccountId(id)}
         />
       )}
 

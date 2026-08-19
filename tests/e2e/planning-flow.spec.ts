@@ -1,10 +1,11 @@
-import { closeTauriDriver, createDriver, deleteDatabase, driver } from "@test/driver";
+import { closeTauriDriver, createDriver, deleteDatabase, driver, waitForHomeReady } from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 describe("Planning to linked movement user flow", () => {
   beforeAll(async () => {
     await createDriver();
+    await waitForHomeReady();
   });
 
   afterAll(async () => {
@@ -26,8 +27,7 @@ describe("Planning to linked movement user flow", () => {
   }
 
   it("creates a planning, links a compatible movement, reloads, and cancels the next occurrence", async () => {
-    await driver.wait(until.elementLocated(By.css("body")), 10000);
-    const planningLink = await driver.findElement(By.css('a[href="/planning"]'));
+    const planningLink = await driver.wait(until.elementLocated(By.css('a[href="/planning"]')), 15000);
     await planningLink.click();
     await driver.wait(until.elementLocated(By.id("create-planning-button")), 10000);
     await driver.findElement(By.id("create-planning-button")).click();

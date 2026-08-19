@@ -18,7 +18,12 @@ vi.unmock("@/stores/movementsStore");
 
 import { invoke } from "@tauri-apps/api/core";
 
-import { groupMovementsByDate, movementsStore } from "@/stores/movementsStore";
+import {
+  createMovementFromData,
+  groupMovementsByDate,
+  movementsStore,
+} from "@/stores/movementsStore";
+import { MOVEMENT_FUNCTIONS, MOVEMENT_TYPES } from "@/types/enums";
 
 const mockInvoke = vi.mocked(invoke);
 
@@ -88,14 +93,18 @@ describe("movementsStore", () => {
   });
 
   it("populate loads movements and types", async () => {
-    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce([movement]);
+    mockInvoke
+      .mockResolvedValueOnce([movementType])
+      .mockResolvedValueOnce([movement]);
 
     await movementsStore.getState().populate();
 
     expect(movementsStore.getState().types).toEqual([movementType]);
     expect(movementsStore.getState().byId).toEqual({ [movement.id]: movement });
     expect(movementsStore.getState().allIds).toEqual([movement.id]);
-    expect(movementsStore.getState().byAccount).toEqual({ [movement.accountId]: [movement.id] });
+    expect(movementsStore.getState().byAccount).toEqual({
+      [movement.accountId]: [movement.id],
+    });
   });
 
   it("populate preserves backend ordering in allIds and byAccount", async () => {
@@ -104,7 +113,9 @@ describe("movementsStore", () => {
       { ...movement, id: 2, timestamp: 1719705700 },
       { ...movement, id: 1, timestamp: 1719705600 },
     ];
-    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce(movements);
+    mockInvoke
+      .mockResolvedValueOnce([movementType])
+      .mockResolvedValueOnce(movements);
 
     await movementsStore.getState().populate();
 
@@ -119,7 +130,9 @@ describe("movementsStore", () => {
       id: 5,
       toAccountId: 2,
     };
-    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce([transferMovement]);
+    mockInvoke
+      .mockResolvedValueOnce([movementType])
+      .mockResolvedValueOnce([transferMovement]);
 
     await movementsStore.getState().populate();
 
@@ -162,13 +175,53 @@ describe("movementsStore", () => {
     expect(state.byAccount[3]).toEqual([12]);
   });
 
+  it("does not attach planning data to transfers", () => {
+    const transfer = createMovementFromData(
+      {
+        accountId: "1",
+        toAccountId: "2",
+        categoryId: "0",
+        currency: "1",
+        amount: "100",
+        date: "2026-08-18",
+        time: "12:00",
+        planningId: "7",
+      },
+      MOVEMENT_TYPES.TRANSFER,
+      false,
+    );
+
+    expect(transfer.planningId).toBeUndefined();
+  });
+
+  it("does not send planning data when adding a transfer", async () => {
+    const transferMovement: Movement = {
+      ...movement,
+      id: 13,
+      typeId: MOVEMENT_TYPES.TRANSFER,
+      toAccountId: 2,
+      planningId: 7,
+    };
+    mockInvoke.mockResolvedValue(transferMovement);
+
+    await movementsStore.getState().add(transferMovement);
+
+    expect(mockInvoke).toHaveBeenCalledWith(
+      MOVEMENT_FUNCTIONS.add,
+      expect.objectContaining({ planningId: undefined }),
+    );
+  });
+
   it("passes planningId to Tauri and refreshes the linked planning", async () => {
     const linkedMovement = { ...movement, id: 14, planningId: 7 };
     mockInvoke.mockResolvedValue(linkedMovement);
 
     await movementsStore.getState().add(linkedMovement);
 
-    expect(mockInvoke).toHaveBeenCalledWith("add_movement", expect.objectContaining({ planningId: 7 }));
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "add_movement",
+      expect.objectContaining({ planningId: 7 }),
+    );
     expect(mockPlanningRefresh).toHaveBeenCalledWith(7);
   });
 
@@ -220,7 +273,13 @@ describe("movementsStore", () => {
   });
 
   it("refresh updates stored movements and rebuilds indexes", async () => {
-    const original = { ...movement, id: 1, accountId: 1, description: "Old description", installments: undefined };
+    const original = {
+      ...movement,
+      id: 1,
+      accountId: 1,
+      description: "Old description",
+      installments: undefined,
+    };
     movementsStore.setState({
       byId: { 1: original },
       allIds: [1],
@@ -228,7 +287,12 @@ describe("movementsStore", () => {
       types: [],
     });
 
-    const refreshedMovement = { ...original, accountId: 2, description: "Updated description", installments: undefined };
+    const refreshedMovement = {
+      ...original,
+      accountId: 2,
+      description: "Updated description",
+      installments: undefined,
+    };
     mockInvoke.mockResolvedValueOnce(refreshedMovement);
 
     await movementsStore.getState().refresh([1]);
@@ -240,7 +304,13 @@ describe("movementsStore", () => {
   });
 
   it("refresh adds new movement ids when they are not already present", async () => {
-    const newMovement = { ...movement, id: 10, accountId: 3, description: "New movement", installments: undefined };
+    const newMovement = {
+      ...movement,
+      id: 10,
+      accountId: 3,
+      description: "New movement",
+      installments: undefined,
+    };
     movementsStore.setState({
       byId: {},
       allIds: [],
@@ -288,7 +358,9 @@ describe("movementsStore", () => {
   });
 
   it("indexes contain only numbers (IDs)", async () => {
-    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce([movement]);
+    mockInvoke
+      .mockResolvedValueOnce([movementType])
+      .mockResolvedValueOnce([movement]);
     await movementsStore.getState().populate();
 
     const state = movementsStore.getState();

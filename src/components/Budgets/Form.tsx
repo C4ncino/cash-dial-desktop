@@ -7,7 +7,7 @@ import FormActions from "@/components/Forms/FormActions";
 import FormErrors from "@/components/Forms/FormErrors";
 import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCategories from "@/components/Forms/SelectCategories";
-import SelectCurrency from "@/components/Forms/SelectCurrencies";
+import SelectCurrency from "@/components/Forms/SelectCurrency";
 import { logger } from "@/lib/logger";
 import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";

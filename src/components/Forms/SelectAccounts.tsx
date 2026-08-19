@@ -15,8 +15,6 @@ interface Props {
 const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, disabled, onChange }: Props) => {
   const accounts = useStore(accountsStore, (state) => state.accounts);
 
-  console.log(accounts);
-
   const activeAccounts = accounts.filter((account) => {
     if (!account.isActive) return false;
     if (account.id === excludeId) return false;

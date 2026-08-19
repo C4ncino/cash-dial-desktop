@@ -46,7 +46,7 @@ pub mod integration {
 
         let result = get_currencies(conn, "es".to_string()).unwrap();
 
-        assert_eq!(result.len(), 2);
+        assert_eq!(result.len(), 10);
 
         assert_eq!(result[0].name, "Peso Mexicano");
         assert_eq!(result[0].code, "MXN");
@@ -61,7 +61,7 @@ pub mod integration {
 
         let result = get_currencies(conn, "en".to_string()).unwrap();
 
-        assert_eq!(result.len(), 2);
+        assert_eq!(result.len(), 10);
 
         assert_eq!(result[0].name, "Mexican Peso");
         assert_eq!(result[1].name, "US Dollar");

@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import { useStore } from "zustand";
 
-import SelectCurrency from "@/components/Forms/SelectCurrencies";
+import SelectCurrency from "@/components/Forms/SelectCurrency";
 import useDate from "@/hooks/useDate";
 import { isCurrentPeriod, periodRange, type StatisticsPeriod } from "@/lib/statisticsQuery";
 import { currencyStore } from "@/stores/currencyStore";

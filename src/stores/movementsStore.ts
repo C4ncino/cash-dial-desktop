@@ -108,6 +108,11 @@ export const movementsStore = createStore<
   },
 
   add: async (movement: Movement) => {
+    const planningId =
+      movement.typeId === MOVEMENT_TYPES.TRANSFER ? undefined : movement.planningId;
+
+    console.log(movement);
+
     const createdMovement = (await invoke(MOVEMENT_FUNCTIONS.add, {
       typeId: movement.typeId,
       accountId: movement.accountId,
@@ -119,11 +124,9 @@ export const movementsStore = createStore<
       installments: movement.installments,
       timestamp: movement.timestamp,
       description: movement.description,
-      planningId: movement.planningId,
+      planningId,
     })) as Movement;
-    const newMovement = movement.planningId
-      ? { ...createdMovement, planningId: movement.planningId }
-      : createdMovement;
+    const newMovement = planningId ? { ...createdMovement, planningId } : createdMovement;
 
     if (newMovement.installments) {
       newMovement.installmentsData = (await invoke(MOVEMENT_FUNCTIONS.getInstallments, {
@@ -133,8 +136,8 @@ export const movementsStore = createStore<
 
     logger.info("Movement created", newMovement);
 
-    if (movement.planningId) {
-      await planningsStore.getState().refresh(movement.planningId);
+    if (planningId) {
+      await planningsStore.getState().refresh(planningId);
     }
 
     return set((state) => {
@@ -236,6 +239,14 @@ export function validateMovement(
     errors.push("La cuenta es requerida");
   }
 
+  if (
+    typeof data.currency !== "string" ||
+    data.currency.trim() === "" ||
+    Number(data.currency) <= 0
+  ) {
+    errors.push("La moneda es requerida");
+  }
+
   if (typeof data.categoryId !== "string" || data.categoryId.trim() === "") {
     errors.push("La categoría es requerida");
   }
@@ -283,14 +294,19 @@ export function createMovementFromData(
     categoryId: Number(data.categoryId),
     currencyId: Number(data.currency),
     originalAmount: Number(data.amount),
-    accountAmount: Number(data.amount), // TODO: Currency conversion logic if currencies differ
+    accountAmount: Number(data.accountAmount ?? data.amount),
     installments:
       typeId === MOVEMENT_TYPES.EXPENSE && data.installments && Number(data.installments) > 0
         ? Number(data.installments)
         : undefined,
     timestamp,
     description: data.description ? String(data.description) : undefined,
-    planningId: data.planningId ? Number(data.planningId) : undefined,
+    planningId:
+      typeId === MOVEMENT_TYPES.TRANSFER
+        ? undefined
+        : data.planningId
+          ? Number(data.planningId)
+          : undefined,
   };
 }
 

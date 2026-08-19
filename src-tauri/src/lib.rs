@@ -68,7 +68,7 @@ fn create_init_state() -> Result<AppState, String> {
 
     let currencies_results = get_currencies(connection, lang.clone())?;
 
-    state.currencies = currencies_results.clone();
+    state.currencies = functions::currencies::get_conversions_rate(connection, &currencies_results)?;
 
     let accounts_types_results = get_account_types(connection, lang.clone())?;
 
@@ -138,6 +138,7 @@ pub fn run() {
             functions::accounts::remove_account,
             functions::accounts::get_account_balance,
             functions::currencies::get_currencies,
+            functions::currencies::refresh_currency_rates,
             functions::categories::get_categories,
             functions::movements::add_movement,
             functions::movements::get_movement_types,

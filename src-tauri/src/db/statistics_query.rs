@@ -555,13 +555,13 @@ mod tests {
     fn balance_trend_respects_currency_and_empty_periods() {
         let state = crate::tests::setup();
         let mut c = crate::db::connect::establish_connection(&state.config.database_url);
-        sql_query("INSERT INTO currencies (id,symbol,code) VALUES (4,'€','EUR')")
+        sql_query("INSERT OR IGNORE INTO currencies (id,symbol,code) VALUES (4,'€','EUR')")
             .execute(&mut c)
             .unwrap();
         let start =
             Local.with_ymd_and_hms(2026, 2, 1, 0, 0, 0).single().unwrap().timestamp_millis();
         let end = Local.with_ymd_and_hms(2026, 3, 1, 0, 0, 0).single().unwrap().timestamp_millis();
-        let trend = balance_trend(&mut c, start, end, 4, "month", 0).unwrap();
+        let trend = balance_trend(&mut c, start, end, 3, "month", 0).unwrap();
         assert_eq!(trend.len(), 1);
         assert_eq!(trend[0].balance, 0.0);
     }
@@ -627,7 +627,7 @@ mod tests {
         let mut c = crate::db::connect::establish_connection(&state.config.database_url);
         let start = 1_751_328_000_000_i64;
         let end = 1_751_900_000_000_i64;
-        sql_query("INSERT INTO currencies (id,symbol,code) VALUES (3,'€','EUR')")
+        sql_query("INSERT OR IGNORE INTO currencies (id,symbol,code) VALUES (3,'€','EUR')")
             .execute(&mut c)
             .unwrap();
         sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (902,1,1,1,3,777.0,777.0,1751400000000,'currency test')")

@@ -24,6 +24,7 @@ CREATE TABLE movements (
     currency_id INTEGER NOT NULL,
     original_amount NUMERIC(17,2) NOT NULL CHECK(original_amount >= 0),
     account_amount NUMERIC(17,2) NOT NULL CHECK(account_amount >= 0),
+    conversion_rate NUMERIC(17,8) NOT NULL DEFAULT 1.0,
     installments INTEGER CHECK(installments >= 0),
     timestamp BIGINT NOT NULL,
     description TEXT,

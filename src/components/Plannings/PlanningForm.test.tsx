@@ -2,7 +2,9 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
-import PlanningForm, { validatePlanningForm } from "@/components/Plannings/PlanningForm";
+import PlanningForm, {
+  validatePlanningForm,
+} from "@/components/Plannings/PlanningForm";
 import { accountsStore } from "@/stores/accountsStore";
 import { categoryStore } from "@/stores/categoryStore";
 import { currencyStore } from "@/stores/currencyStore";
@@ -23,7 +25,9 @@ vi.mock("webcoreui", () => ({
 }));
 
 vi.mock("@iconify/react", () => ({
-  Icon: ({ icon }: { icon: string }) => <span data-testid="icon" data-icon={icon} />,
+  Icon: ({ icon }: { icon: string }) => (
+    <span data-testid="icon" data-icon={icon} />
+  ),
 }));
 
 vi.mock("@/components/Forms/SelectCategories", () => ({
@@ -63,7 +67,10 @@ const sampleCreditAccount = {
   creditInfo: { cutoffDay: 15, daysToPay: 20 },
 };
 
-const mockUseStoreState = ({ accounts = [sampleAccount, sampleCreditAccount], editState = {} }: any = {}) => {
+const mockUseStoreState = ({
+  accounts = [sampleAccount, sampleCreditAccount],
+  editState = {},
+}: any = {}) => {
   vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
     if (store === accountsStore) {
       return selector({ accounts });
@@ -79,17 +86,46 @@ const mockUseStoreState = ({ accounts = [sampleAccount, sampleCreditAccount], ed
         categories: [
           { id: 5, fatherId: null, name: "Gym", icon: "gym", color: "#3b82f6" },
         ],
-        getById: (id: number) => ({ id, name: "Gym", icon: "gym", color: "#3b82f6" }),
+        getById: (id: number) => ({
+          id,
+          name: "Gym",
+          icon: "gym",
+          color: "#3b82f6",
+        }),
       });
     }
     if (store === planningsStore) {
       return selector({
         plannings: [],
         recurringTypes: [
-          { id: 1, key: "daily", name: "Diario", singular: "día", plural: "días" },
-          { id: 2, key: "weekly", name: "Semanal", singular: "semana", plural: "semanas" },
-          { id: 3, key: "monthly", name: "Mensual", singular: "mes", plural: "meses" },
-          { id: 4, key: "yearly", name: "Anual", singular: "año", plural: "años" },
+          {
+            id: 1,
+            key: "daily",
+            name: "Diario",
+            singular: "día",
+            plural: "días",
+          },
+          {
+            id: 2,
+            key: "weekly",
+            name: "Semanal",
+            singular: "semana",
+            plural: "semanas",
+          },
+          {
+            id: 3,
+            key: "monthly",
+            name: "Mensual",
+            singular: "mes",
+            plural: "meses",
+          },
+          {
+            id: 4,
+            key: "yearly",
+            name: "Anual",
+            singular: "año",
+            plural: "años",
+          },
         ],
         statuses: [],
         occurrencesByPlanning: {},
@@ -97,7 +133,9 @@ const mockUseStoreState = ({ accounts = [sampleAccount, sampleCreditAccount], ed
     }
     if (store === currencyStore) {
       return selector({
-        currencies: [{ id: 1, name: "Peso Mexicano", symbol: "$", code: "MXN" }],
+        currencies: [
+          { id: 1, name: "Peso Mexicano", symbol: "$", code: "MXN" },
+        ],
       });
     }
     return undefined;
@@ -182,7 +220,9 @@ describe("validatePlanningForm", () => {
       true,
     );
     expect(res.valid).toBe(false);
-    expect(res.errors).toContain("Las cuentas de tarjeta de crédito solo permiten gastos");
+    expect(res.errors).toContain(
+      "Las cuentas de tarjeta de crédito solo permiten gastos",
+    );
   });
 
   it("fails validation when end date is before start date", () => {
@@ -217,14 +257,26 @@ describe("PlanningForm Component", () => {
   it("renders form inputs correctly", () => {
     render(<PlanningForm modalId={MODAL_ID.PLANNING.CREATE} />);
 
-    expect(screen.getByLabelText("Nombre de la planificación")).toBeInTheDocument();
+    expect(document.getElementById(MODAL_ID.PLANNING.CREATE)).toHaveClass(
+      "w-full",
+      "mx-auto",
+      "p-4",
+      "max-h-[calc(100vh-2rem)]",
+      "overflow-y-auto",
+    );
+
+    expect(
+      screen.getByLabelText("Nombre de la planificación"),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Monto Estimado")).toBeInTheDocument();
     expect(screen.getByText("Gasto")).toBeInTheDocument();
     expect(screen.getByText("Ingreso")).toBeInTheDocument();
   });
 
   it("submits create planning payload on valid form submission", async () => {
-    const createSpy = vi.spyOn(planningsStore.getState(), "create").mockResolvedValue({} as any);
+    const createSpy = vi
+      .spyOn(planningsStore.getState(), "create")
+      .mockResolvedValue({} as any);
 
     render(<PlanningForm modalId={MODAL_ID.PLANNING.CREATE} />);
 
@@ -236,7 +288,7 @@ describe("PlanningForm Component", () => {
     });
 
     const form = document.getElementById(MODAL_ID.PLANNING.CREATE);
-    
+
     // Fill account select
     const accountSelect = screen.getByLabelText("Cuenta");
     fireEvent.change(accountSelect, { target: { value: "1" } });

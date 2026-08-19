@@ -8,8 +8,17 @@ import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
 import { planningsStore } from "@/stores/planningsStore";
-import { createMovementFromData, validateMovement } from "@/stores/movementsStore";
-import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
+import { currencyStore } from "@/stores/currencyStore";
+import {
+  createMovementFromData,
+  validateMovement,
+} from "@/stores/movementsStore";
+import {
+  ACCOUNT_TYPES,
+  EDIT_TYPES,
+  MODAL_ID,
+  MOVEMENT_TYPES,
+} from "@/types/enums";
 
 vi.mock("@/stores/budgetStore", () => ({
   budgetStore: {
@@ -21,9 +30,16 @@ vi.mock("@/stores/budgetStore", () => ({
 }));
 
 vi.mock("@/components/Forms/SelectCurrencies", () => ({
-  default: () => (
-    <select name="currency" data-testid="currency-select">
+  default: ({ value, onChange, disabled }: any) => (
+    <select
+      name="currency"
+      data-testid="currency-select"
+      value={value ?? ""}
+      onChange={onChange}
+      disabled={disabled}
+    >
       <option value="1">MXN</option>
+      <option value="2">USD</option>
     </select>
   ),
 }));
@@ -101,6 +117,7 @@ vi.mock("@/stores/accountsStore", () => ({
             id: 2,
             name: "Credit Account",
             type: { id: ACCOUNT_TYPES.CREDIT },
+            currencyId: 2,
             isActive: true,
           };
         }
@@ -108,6 +125,7 @@ vi.mock("@/stores/accountsStore", () => ({
           id: 1,
           name: "Cash Account",
           type: { id: ACCOUNT_TYPES.CASH },
+          currencyId: 1,
           isActive: true,
         };
       },
@@ -122,12 +140,14 @@ const mockAccounts = [
     id: 1,
     name: "Cash Account",
     type: { id: ACCOUNT_TYPES.CASH },
+    currencyId: 1,
     isActive: true,
   },
   {
     id: 2,
     name: "Credit Account",
     type: { id: ACCOUNT_TYPES.CREDIT },
+    currencyId: 2,
     isActive: true,
   },
 ];
@@ -144,7 +164,10 @@ const mockPlanning = {
   currentOccurrence: { statusId: 1, expectedDate: Date.now() },
 };
 
-const mockUseStoreState = ({ accounts = mockAccounts, editState = {} }: any = {}) => {
+const mockUseStoreState = ({
+  accounts = mockAccounts,
+  editState = {},
+}: any = {}) => {
   vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
     if (store === accountsStore) {
       return selector({ accounts });
@@ -159,6 +182,15 @@ const mockUseStoreState = ({ accounts = mockAccounts, editState = {} }: any = {}
 
     if (store === planningsStore) {
       return selector({ plannings: [mockPlanning] });
+    }
+
+    if (store === currencyStore) {
+      return selector({
+        currencies: [
+          { id: 1, code: "MXN", conversionRate: 20 },
+          { id: 2, code: "USD", conversionRate: 1 },
+        ],
+      });
     }
 
     return undefined;
@@ -191,16 +223,30 @@ it("submits planningId and applies the selected planning context", () => {
   const createdMovement = { accountId: 1, originalAmount: 1200, planningId: 7 };
   vi.mocked(createMovementFromData).mockReturnValue(createdMovement as any);
   mockUseStoreState();
-  render(<MovementForm modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE} movementType={MOVEMENT_TYPES.EXPENSE} />);
-  fireEvent.change(screen.getByLabelText(/Planificaci.*opcional/), { target: { value: "7" } });
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText(/Planificaci.*opcional/), {
+    target: { value: "7" },
+  });
   fireEvent.submit(document.getElementById("expense-form")!);
-  expect(createMovementFromData.mock.calls[0][0]).toMatchObject({ planningId: "7" });
+  expect(createMovementFromData.mock.calls[0][0]).toMatchObject({
+    planningId: "7",
+  });
   expect(mockAdd).toHaveBeenCalledWith(createdMovement);
 });
 
 it("populates the amount when completing a planning occurrence", async () => {
   mockUseStoreState();
-  render(<MovementForm modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE} movementType={MOVEMENT_TYPES.EXPENSE} />);
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
 
   fireEvent(
     window,
@@ -210,6 +256,7 @@ it("populates the amount when completing a planning occurrence", async () => {
   );
 
   await waitFor(() => expect(screen.getByLabelText("Monto")).toHaveValue(1200));
+  expect(screen.getByLabelText("Monto")).toHaveAttribute("value", "1200");
 });
 
 it("shows backend planning compatibility errors in the form", async () => {
@@ -217,14 +264,51 @@ it("shows backend planning compatibility errors in the form", async () => {
   vi.mocked(createMovementFromData).mockReturnValue({ planningId: 7 } as any);
   mockAdd.mockRejectedValueOnce(new Error("planning compatibility error"));
   mockUseStoreState();
-  render(<MovementForm modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE} movementType={MOVEMENT_TYPES.EXPENSE} />);
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
   fireEvent.submit(document.getElementById("expense-form")!);
-  await waitFor(() => expect(screen.getByText("planning compatibility error")).toBeInTheDocument());
+  await waitFor(() =>
+    expect(
+      screen.getByText("planning compatibility error"),
+    ).toBeInTheDocument(),
+  );
+});
+
+it("supports ECB conversion and manual account amount overrides", async () => {
+  mockUseStoreState();
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
+
+  fireEvent.change(screen.getByTestId("select-accountId"), {
+    target: { value: "2" },
+  });
+
+  const originalAmount = screen.getByLabelText("Monto");
+  fireEvent.change(originalAmount, { target: { value: "100" } });
+
+  const accountAmount = await screen.findByLabelText("Monto en USD");
+  await waitFor(() => expect(accountAmount).toHaveValue(5));
+
+  fireEvent.change(accountAmount, { target: { value: "5.25" } });
+  expect(accountAmount).toHaveValue(5.25);
+
+  fireEvent.click(screen.getByRole("button", { name: "Auto Completar" }));
+  await waitFor(() => expect(accountAmount).toHaveValue(5));
 });
 
 describe("MovementForm", () => {
   beforeEach(() => {
-    logger.debug("MovementForm test beforeEach: clear mocks and setup store state");
+    logger.debug(
+      "MovementForm test beforeEach: clear mocks and setup store state",
+    );
     vi.clearAllMocks();
 
     mockUseStoreState();
@@ -243,8 +327,20 @@ describe("MovementForm", () => {
       expect(screen.getByLabelText("Cuenta Destino")).toBeInTheDocument();
       expect(screen.getByLabelText("Fecha")).toBeInTheDocument();
       expect(screen.getByLabelText("Hora")).toBeInTheDocument();
-      expect(screen.getByLabelText("Descripción (opcional)")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Descripción (opcional)"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Guardar" }),
+      ).toBeInTheDocument();
+
+      expect(document.getElementById("income-form")).toHaveClass(
+        "w-full",
+        "mx-auto",
+        "p-4",
+        "max-h-[calc(100vh-2rem)]",
+        "overflow-y-auto",
+      );
     });
 
     it("should render category select for income", () => {
@@ -275,7 +371,9 @@ describe("MovementForm", () => {
 
       fireEvent.submit(form!);
 
-      expect(screen.getByText("El monto debe ser un número mayor a 0")).toBeInTheDocument();
+      expect(
+        screen.getByText("El monto debe ser un número mayor a 0"),
+      ).toBeInTheDocument();
       expect(mockAdd).not.toHaveBeenCalled();
     });
 
@@ -310,7 +408,9 @@ describe("MovementForm", () => {
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
       expect(toast).toHaveBeenCalledWith("#income-created");
-      expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.INCOME.CREATE}`);
+      expect(closeModal).toHaveBeenCalledWith(
+        `#${MODAL_ID.MOVEMENT.INCOME.CREATE}`,
+      );
     });
 
     it("should update income when editing", () => {
@@ -363,7 +463,7 @@ describe("MovementForm", () => {
         />,
       );
 
-      expect(screen.getByDisplayValue("150")).toBeInTheDocument();
+      expect(screen.getByLabelText("Monto")).toHaveValue(150);
       expect(screen.getByDisplayValue("Old Movement")).toBeInTheDocument();
     });
   });
@@ -390,7 +490,9 @@ describe("MovementForm", () => {
         />,
       );
 
-      expect(screen.queryByLabelText("Mensualidades (opcional)")).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText("Mensualidades (opcional)"),
+      ).not.toBeInTheDocument();
     });
 
     it("should show installments field when a credit account is selected", () => {
@@ -405,7 +507,9 @@ describe("MovementForm", () => {
         target: { value: "2" },
       });
 
-      expect(screen.getByLabelText("Mensualidades (opcional)")).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Mensualidades (opcional)"),
+      ).toBeInTheDocument();
     });
 
     it("should create expense when form is valid", () => {
@@ -435,7 +539,9 @@ describe("MovementForm", () => {
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
       expect(toast).toHaveBeenCalledWith("#expense-created");
-      expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}`);
+      expect(closeModal).toHaveBeenCalledWith(
+        `#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}`,
+      );
     });
 
     it("should update expense when editing", () => {
@@ -498,6 +604,25 @@ describe("MovementForm", () => {
       expect(screen.queryByLabelText("Categoría")).not.toBeInTheDocument();
     });
 
+    it("uses the origin account currency for the transfer amount", () => {
+      render(
+        <MovementForm
+          modalId={MODAL_ID.MOVEMENT.TRANSFER.CREATE}
+          movementType={MOVEMENT_TYPES.TRANSFER}
+        />,
+      );
+
+      fireEvent.change(screen.getByTestId("select-accountId"), {
+        target: { value: "1" },
+      });
+      fireEvent.change(screen.getByTestId("select-toAccountId"), {
+        target: { value: "2" },
+      });
+
+      expect(screen.getByTestId("currency-select")).toHaveValue("1");
+      expect(screen.getByLabelText("Monto en USD")).toBeInTheDocument();
+    });
+
     it("should create transfer when form is valid", () => {
       vi.mocked(validateMovement).mockReturnValue({
         valid: true,
@@ -524,9 +649,14 @@ describe("MovementForm", () => {
       fireEvent.submit(form!);
 
       expect(createMovementFromData).toHaveBeenCalled();
+      expect(createMovementFromData.mock.calls[0][0]).toMatchObject({
+        currency: "1",
+      });
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
       expect(toast).toHaveBeenCalledWith("#transfer-created");
-      expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}`);
+      expect(closeModal).toHaveBeenCalledWith(
+        `#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}`,
+      );
     });
 
     it("should update transfer when editing", () => {

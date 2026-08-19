@@ -6,10 +6,13 @@ type BasicType = {
 type Currency = BasicType & {
   symbol: string;
   code: string;
+  conversionRate: number;
+  conversionRateDate?: string | null;
 };
 
 type CurrencyStore = {
   currencies: Currency[];
+  refreshRates: () => Promise<void>;
 };
 
 type Actions<T> = {

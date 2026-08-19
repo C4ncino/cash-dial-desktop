@@ -145,6 +145,10 @@ pub fn add_movement(
     )
     .map_err(|e| e.join(", "))?;
 
+    if !account_amount.is_finite() || account_amount <= 0.0 {
+        return Err("El monto en la cuenta debe ser mayor a 0".to_string());
+    }
+
     let connection = &mut establish_connection(&state.config.database_url);
 
     add_movement_internal(
@@ -171,7 +175,7 @@ pub(crate) fn add_movement_internal(
     category_id: i32,
     currency_id: i32,
     original_amount: f64,
-    _account_amount: f64,
+    account_amount: f64,
     installments: Option<i32>,
     timestamp: i64,
     description: Option<&str>,
@@ -237,8 +241,7 @@ pub(crate) fn add_movement_internal(
                 ensure_account_exists(connection, to_account_id)?;
             }
 
-            // TODO: account_amount should be calculated dynamically if currencies differ
-            let final_account_amount = original_amount;
+            let final_account_amount = account_amount;
 
             let new_movement = MovementInsert {
                 type_id,
@@ -257,10 +260,20 @@ pub(crate) fn add_movement_internal(
                 description,
             };
 
-            let row = diesel::insert_into(movements)
+            let inserted_row = diesel::insert_into(movements)
                 .values(&new_movement)
                 .returning(MovementRow::as_returning())
                 .get_result::<MovementRow>(connection)?;
+
+            let effective_rate = if original_amount > 0.0 {
+                final_account_amount / original_amount
+            } else {
+                1.0
+            };
+            diesel::update(movements.find(inserted_row.id))
+                .set(crate::schema::movements::conversion_rate.eq(effective_rate))
+                .execute(connection)?;
+            let row = movements.find(inserted_row.id).select(MovementRow::as_select()).first(connection)?;
 
             apply_movement_to_accounts(connection, &row)?;
 
@@ -294,12 +307,8 @@ pub(crate) fn add_movement_internal(
             Ok(row)
         })
         .map_err(|e| {
-            if matches!(e, diesel::result::Error::RollbackTransaction) {
-                "El movimiento no es compatible con la planificación seleccionada o la planificación no tiene ocurrencias pendientes".to_string()
-            } else {
-                tracing::error!("Failed inserting movement: {}", e);
-                e.to_string()
-            }
+            tracing::error!("Failed inserting movement: {}", e);
+            e.to_string()
         })?;
 
     tracing::info!("Movement created id={}", row.id);
@@ -338,6 +347,10 @@ pub fn update_movement(
     )
     .map_err(|e| e.join(", "))?;
 
+    if !account_amount.is_finite() || account_amount <= 0.0 {
+        return Err("El monto en la cuenta debe ser mayor a 0".to_string());
+    }
+
     let connection = &mut establish_connection(&state.config.database_url);
 
     update_movement_internal(
@@ -365,7 +378,7 @@ fn update_movement_internal(
     category_id: i32,
     currency_id: i32,
     original_amount: f64,
-    _account_amount: f64,
+    account_amount: f64,
     installments: Option<i32>,
     timestamp: i64,
     description: Option<&str>,
@@ -427,8 +440,7 @@ fn update_movement_internal(
                     .execute(connection)?;
             }
 
-            // TODO: account_amount should be calculated dynamically if currencies differ
-            let final_account_amount = original_amount;
+            let final_account_amount = account_amount;
 
             let updated_row = diesel::update(movements.find(id))
                 .set((
@@ -442,6 +454,11 @@ fn update_movement_internal(
                     crate::schema::movements::currency_id.eq(currency_id),
                     crate::schema::movements::original_amount.eq(original_amount),
                     crate::schema::movements::account_amount.eq(final_account_amount),
+                    crate::schema::movements::conversion_rate.eq(if original_amount > 0.0 {
+                        final_account_amount / original_amount
+                    } else {
+                        1.0
+                    }),
                     crate::schema::movements::installments.eq(installments),
                     crate::schema::movements::timestamp.eq(timestamp),
                     crate::schema::movements::description.eq(description),
@@ -614,8 +631,10 @@ fn apply_movement_to_accounts(
             add_to_account_balance(connection, movement.account_id, -movement.account_amount)
         }
         MOVEMENT_TRANSFER_ID => {
-            // TODO: account_amount should be converted if the destination account currency differs from source
-            add_to_account_balance(connection, movement.account_id, -movement.account_amount)?;
+            // For transfers, original_amount is the amount charged to the
+            // origin account and account_amount is what the destination
+            // account actually receives.
+            add_to_account_balance(connection, movement.account_id, -movement.original_amount)?;
             add_to_account_balance(
                 connection,
                 movement.to_account_id.ok_or(diesel::result::Error::NotFound)?,
@@ -638,8 +657,7 @@ fn reverse_movement_from_accounts(
             add_to_account_balance(connection, movement.account_id, movement.account_amount)
         }
         MOVEMENT_TRANSFER_ID => {
-            // TODO: account_amount should be converted if the destination account currency differs from source
-            add_to_account_balance(connection, movement.account_id, movement.account_amount)?;
+            add_to_account_balance(connection, movement.account_id, movement.original_amount)?;
             add_to_account_balance(
                 connection,
                 movement.to_account_id.ok_or(diesel::result::Error::NotFound)?,

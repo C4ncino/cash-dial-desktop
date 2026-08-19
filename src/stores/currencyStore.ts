@@ -14,5 +14,11 @@ export const currencyStore = createStore<
     return set({ currencies });
   },
 
+  refreshRates: async () => {
+    const currencies = (await invoke("refresh_currency_rates")) as Currency[];
+    logger.debug("Currency rates refreshed:", currencies);
+    return set({ currencies });
+  },
+
   getById: (id: number) => get().currencies.find((currency) => currency.id === id),
 }));
