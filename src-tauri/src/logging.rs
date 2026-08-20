@@ -118,7 +118,8 @@ pub fn export_logs_zip() -> anyhow::Result<PathBuf> {
         .filter(|e| e.file_type().is_file())
     {
         let path = entry.path();
-        let name = path.strip_prefix(&log_dir).unwrap().to_string_lossy();
+        let name =
+            path.strip_prefix(&log_dir).map_err(|error| anyhow::anyhow!(error))?.to_string_lossy();
         zip.start_file(name.replace("\\", "/"), options).context("starting file in zip")?;
         let mut f = File::open(path).context("opening log file")?;
         let mut buffer = Vec::new();

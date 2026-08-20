@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, Local, NaiveDate, TimeZone};
+use chrono::{Datelike, Duration, Local, NaiveDate};
 
 use crate::models::plannings::{
     RECURRING_TYPE_DAILY, RECURRING_TYPE_MONTHLY, RECURRING_TYPE_WEEKLY, RECURRING_TYPE_YEARLY,
@@ -20,35 +20,32 @@ pub struct RecurrenceRuleDefinition {
 }
 
 /// Converts a millisecond timestamp to a NaiveDate in the Local timezone.
+#[cfg(test)]
 pub fn timestamp_to_local_naive_date(timestamp_ms: i64) -> NaiveDate {
-    Local
-        .timestamp_millis_opt(timestamp_ms)
-        .single()
-        .map(|dt| dt.date_naive())
-        .unwrap_or_else(|| {
-            // Fallback for timestamps that might map to local boundary edge cases
-            chrono::DateTime::from_timestamp_millis(timestamp_ms)
-                .map(|dt| dt.naive_local().date())
-                .unwrap_or_else(|| NaiveDate::from_ymd_opt(1970, 1, 1).unwrap())
-        })
+    try_timestamp_to_local_naive_date(timestamp_ms).unwrap_or_else(|error| {
+        tracing::error!("{}", error);
+        Local::now().date_naive()
+    })
+}
+
+pub fn try_timestamp_to_local_naive_date(
+    timestamp_ms: i64,
+) -> Result<NaiveDate, crate::domain::date::DateError> {
+    crate::domain::date::ms_to_local_date(timestamp_ms)
 }
 
 /// Converts a NaiveDate at 00:00:00 local time to millisecond timestamp.
 pub fn local_naive_date_to_start_of_day_ms(date: NaiveDate) -> i64 {
-    let naive_datetime = date.and_hms_opt(0, 0, 0).unwrap();
-    Local
-        .from_local_datetime(&naive_datetime)
-        .single()
-        .unwrap_or_else(|| {
-            // For DST transition gaps where midnight might be skipped, pick earliest
-            Local
-                .from_local_datetime(&naive_datetime)
-                .earliest()
-                .unwrap_or_else(|| {
-                    Local.with_ymd_and_hms(date.year(), date.month(), date.day(), 1, 0, 0).unwrap()
-                })
-        })
-        .timestamp_millis()
+    try_local_naive_date_to_start_of_day_ms(date).unwrap_or_else(|error| {
+        tracing::error!("{}", error);
+        i64::MIN
+    })
+}
+
+pub fn try_local_naive_date_to_start_of_day_ms(
+    date: NaiveDate,
+) -> Result<i64, crate::domain::date::DateError> {
+    crate::domain::date::local_date_to_start_ms(date)
 }
 
 /// Returns today's start-of-day timestamp in milliseconds in the Local timezone.
@@ -81,11 +78,7 @@ pub fn calculate_next_occurrence(
     }
 
     // Minimum starting search date is rule.start_date
-    let search_start = if from_date < rule.start_date {
-        rule.start_date
-    } else {
-        from_date
-    };
+    let search_start = if from_date < rule.start_date { rule.start_date } else { from_date };
 
     let is_valid = |candidate: NaiveDate| -> bool {
         if candidate < rule.start_date {
@@ -230,7 +223,9 @@ where
 
     // Fast-forward month_offset
     if search_start > rule.start_date {
-        let total_months = ((search_start.year() - anchor_year) * 12 + (search_start.month() as i32 - anchor_month as i32)).max(0) as u32;
+        let total_months = ((search_start.year() - anchor_year) * 12
+            + (search_start.month() as i32 - anchor_month as i32))
+            .max(0) as u32;
         month_offset = (total_months / step) * step;
     }
 
@@ -244,7 +239,9 @@ where
                 continue;
             }
 
-            if let Some(candidate) = NaiveDate::from_ymd_opt(current_year, current_month, day as u32) {
+            if let Some(candidate) =
+                NaiveDate::from_ymd_opt(current_year, current_month, day as u32)
+            {
                 if let Some(end_date) = rule.end_date {
                     if candidate > end_date {
                         return None;
@@ -298,7 +295,8 @@ where
                 continue;
             }
 
-            if let Some(candidate) = NaiveDate::from_ymd_opt(current_year, month as u32, day as u32) {
+            if let Some(candidate) = NaiveDate::from_ymd_opt(current_year, month as u32, day as u32)
+            {
                 if let Some(end_date) = rule.end_date {
                     if candidate > end_date {
                         return None;

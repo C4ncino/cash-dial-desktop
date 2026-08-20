@@ -449,46 +449,6 @@ describe("Movement Commands", () => {
     });
   });
 
-  describe("mark_installments_as_paid", () => {
-    it("returns movement ids for the paid installments", async () => {
-      const movement = await invokeCommand<Movement>(MOVEMENT_FUNCTIONS.add, {
-        typeId: 2,
-        accountId: 3,
-        toAccountId: null,
-        categoryId: 1,
-        currencyId: 1,
-        originalAmount: 300.0,
-        accountAmount: 300.0,
-        installments: 3,
-        timestamp: 1719705600,
-        description: "Credit card installment test",
-      });
-
-      const installments = await invokeCommand<MovementInstallment[]>(MOVEMENT_FUNCTIONS.getInstallments, {
-        movementId: movement.id,
-      });
-
-      const installmentIds = installments
-        .map((installment) => installment.id)
-        .filter((id): id is number => id !== null && id !== undefined);
-
-      const result = await invokeCommand<number[]>(MOVEMENT_FUNCTIONS.markInstallmentsPaid, {
-        installmentIds,
-      });
-
-      expect(result).toEqual([movement.id]);
-
-      const updatedInstallments = await invokeCommand<MovementInstallment[]>(
-        MOVEMENT_FUNCTIONS.getInstallments,
-        { movementId: movement.id },
-      );
-
-      updatedInstallments.forEach((installment) => {
-        expect(installment.paid).toBe(true);
-      });
-    });
-  });
-
   describe("update_movement", () => {
     it("updates a movement's amount and description", async () => {
       const movements = await invokeCommand<Movement[]>(MOVEMENT_FUNCTIONS.get);

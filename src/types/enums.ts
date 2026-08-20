@@ -31,7 +31,6 @@ export enum MOVEMENT_FUNCTIONS {
   update = "update_movement",
   remove = "remove_movement",
   getInstallments = "get_movement_installments",
-  markInstallmentsPaid = "mark_installments_as_paid",
 }
 
 export enum MOVEMENT_TYPES {

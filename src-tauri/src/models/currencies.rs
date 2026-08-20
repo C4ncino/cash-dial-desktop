@@ -16,7 +16,9 @@ pub struct CurrencyRow {
 #[diesel(table_name = crate::schema::currencies_translations)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct CurrencyTranslationRow {
+    #[allow(dead_code)]
     pub currency_id: i32,
+    #[allow(dead_code)]
     pub lang: String,
     pub name: String,
 }

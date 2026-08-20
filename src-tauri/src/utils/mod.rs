@@ -1,6 +1,12 @@
 pub mod date;
 pub mod recurrence;
 
+pub fn lock_app_state(
+    state: &std::sync::Mutex<crate::models::general::AppState>,
+) -> Result<std::sync::MutexGuard<'_, crate::models::general::AppState>, String> {
+    state.lock().map_err(|_| "El estado de la aplicación no está disponible".to_string())
+}
+
 pub const SUPPORTED_LANGUAGES: &[&str] = &["es", "en"];
 
 pub fn preferred_lang() -> String {

@@ -15,14 +15,12 @@ mod accounts_test;
 
 #[repr(i32)]
 enum AccountTypeEnum {
-    Cash = 1,
-    DebitCard = 2,
     CreditCard = 3,
 }
 
 #[tauri::command]
 pub fn get_account_types(state: State<'_, Mutex<AppState>>) -> Result<Vec<AccountType>, String> {
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     Ok(state.account_types.clone())
 }
@@ -31,7 +29,7 @@ pub fn get_account_types(state: State<'_, Mutex<AppState>>) -> Result<Vec<Accoun
 pub fn get_accounts(state: State<'_, Mutex<AppState>>) -> Result<Vec<Account>, String> {
     tracing::debug!("Executing command get_accounts");
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     let account_types = state.account_types.clone();
 
@@ -44,6 +42,13 @@ fn get_accounts_internal(
     connection: &mut SqliteConnection,
     account_types: &[AccountType],
 ) -> Result<Vec<Account>, String> {
+    get_accounts_service(connection, account_types).map_err(|error| error.to_string())
+}
+
+fn get_accounts_service(
+    connection: &mut SqliteConnection,
+    account_types: &[AccountType],
+) -> Result<Vec<Account>, crate::domain::accounts::AccountError> {
     tracing::debug!("Loading accounts from db");
 
     use crate::schema::accounts::dsl::*;
@@ -52,16 +57,12 @@ fn get_accounts_internal(
     let results = accounts
         .left_join(accounts_credit_info)
         .select((AccountRow::as_select(), Option::<AccountCreditInfoRow>::as_select()))
-        .load::<(AccountRow, Option<AccountCreditInfoRow>)>(connection)
-        .map_err(|e| {
-            tracing::error!("Failed loading accounts: {}", e);
-            e.to_string()
-        })?;
+        .load::<(AccountRow, Option<AccountCreditInfoRow>)>(connection)?;
 
-    Ok(results
+    results
         .into_iter()
         .map(|(row, credit_row)| {
-            let account_type = get_account_type(account_types, row.type_id);
+            let account_type = get_account_type(account_types, row.type_id)?;
 
             let credit_info = credit_row.map(|info| AccountCreditInfo {
                 credit_limit: info.credit_limit,
@@ -69,7 +70,7 @@ fn get_accounts_internal(
                 days_to_pay: info.days_to_pay as u8,
             });
 
-            Account {
+            Ok(Account {
                 id: row.id,
                 r#type: account_type,
                 currency_id: row.currency_id as u8,
@@ -77,9 +78,9 @@ fn get_accounts_internal(
                 balance: row.balance,
                 credit_info,
                 is_active: row.is_active,
-            }
+            })
         })
-        .collect())
+        .collect()
 }
 
 #[tauri::command]
@@ -98,7 +99,7 @@ pub fn add_account(
         currency_id
     );
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     let account_types = {
         validate_account(&state, name, balance, type_id, currency_id, &credit_info).map_err(
@@ -133,8 +134,19 @@ fn add_account_internal(
     currency_id: u8,
     credit_info: Option<AccountCreditInfo>,
 ) -> Result<Account, String> {
-    use crate::schema::accounts::dsl::accounts;
+    add_account_service(connection, account_types, name, balance, type_id, currency_id, credit_info)
+        .map_err(|error| error.to_string())
+}
 
+fn add_account_service(
+    connection: &mut SqliteConnection,
+    account_types: &[AccountType],
+    name: &str,
+    balance: f64,
+    type_id: i32,
+    currency_id: u8,
+    credit_info: Option<AccountCreditInfo>,
+) -> Result<Account, crate::domain::accounts::AccountError> {
     tracing::debug!(
         "Creating account name={} type_id={} currency_id={}",
         name,
@@ -142,37 +154,50 @@ fn add_account_internal(
         currency_id
     );
 
-    let new_account = AccountInsert { type_id, currency_id: currency_id as i32, name, balance };
+    let details = crate::domain::accounts::AccountDetails::new(
+        type_id,
+        balance,
+        credit_info.as_ref().map(|info| (info.credit_limit, info.cutoff_day, info.days_to_pay)),
+    )?;
+    let credit_info = match details {
+        crate::domain::accounts::AccountDetails::Regular => None,
+        crate::domain::accounts::AccountDetails::Credit(details) => Some(AccountCreditInfo {
+            credit_limit: details.credit_limit.value(),
+            cutoff_day: details.cutoff_day,
+            days_to_pay: details.days_to_pay,
+        }),
+    };
 
-    let account_row = diesel::insert_into(accounts)
-        .values(&new_account)
-        .returning(AccountRow::as_returning())
-        .get_result(connection)
-        .map_err(|e| {
-            tracing::error!("Failed inserting account: {}", e);
-            e.to_string()
-        })?;
+    connection
+        .transaction::<Account, crate::domain::accounts::AccountError, _>(|connection| {
+            use crate::schema::accounts::dsl::accounts;
 
-    if let Some(info) = &credit_info {
-        upsert_credit_info(connection, account_row.id, info).map_err(|e| {
-            tracing::error!("Failed upserting credit info for account {}: {}", account_row.id, e);
-            e.to_string()
-        })?;
-    }
+            let new_account =
+                AccountInsert { type_id, currency_id: currency_id as i32, name, balance };
+            let account_row = diesel::insert_into(accounts)
+                .values(&new_account)
+                .returning(AccountRow::as_returning())
+                .get_result(connection)?;
 
-    let account_type = get_account_type(account_types, type_id);
+            if let Some(info) = &credit_info {
+                upsert_credit_info(connection, account_row.id, info)?;
+            }
 
-    tracing::info!("Account created id={} name={}", account_row.id, account_row.name);
-
-    Ok(Account {
-        id: account_row.id,
-        r#type: account_type,
-        currency_id,
-        name: account_row.name,
-        balance: account_row.balance,
-        credit_info,
-        is_active: account_row.is_active,
-    })
+            let account_type = get_account_type(account_types, type_id)?;
+            Ok(Account {
+                id: account_row.id,
+                r#type: account_type,
+                currency_id,
+                name: account_row.name,
+                balance: account_row.balance,
+                credit_info,
+                is_active: account_row.is_active,
+            })
+        })
+        .map_err(|error| {
+            tracing::error!("Failed inserting account: {}", error);
+            error
+        })
 }
 
 #[tauri::command]
@@ -187,7 +212,7 @@ pub fn update_account(
 ) -> Result<Account, String> {
     tracing::debug!("Executing command update_account id={} name={}", id, name);
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     let account_types = {
         validate_account(&state, name, balance, type_id, currency_id, &_credit_info).map_err(
@@ -224,59 +249,84 @@ fn update_account_internal(
     currency_id: u8,
     credit_info: Option<AccountCreditInfo>,
 ) -> Result<Account, String> {
-    use crate::schema::accounts::dsl::accounts;
-
-    tracing::debug!("Updating account id={}", id);
-
-    match &credit_info {
-        Some(info) => {
-            upsert_credit_info(connection, id, info).map_err(|e| {
-                tracing::error!("Failed upserting credit info for update {}: {}", id, e);
-                e.to_string()
-            })?;
-        }
-        None => {
-            delete_credit_info(connection, id).map_err(|e| {
-                tracing::error!("Failed deleting credit info for update {}: {}", id, e);
-                e.to_string()
-            })?;
-        }
-    }
-
-    let account_row = diesel::update(accounts.find(id))
-        .set((
-            crate::schema::accounts::name.eq(name),
-            crate::schema::accounts::balance.eq(balance),
-            crate::schema::accounts::type_id.eq(type_id),
-            crate::schema::accounts::currency_id.eq(currency_id as i32),
-        ))
-        .returning(AccountRow::as_returning())
-        .get_result::<AccountRow>(connection)
-        .map_err(|e| {
-            tracing::error!("Failed updating account {}: {}", id, e);
-            e.to_string()
-        })?;
-
-    let account_type = get_account_type(account_types, account_row.type_id);
-
-    tracing::info!("Account updated id={}", account_row.id);
-
-    Ok(Account {
-        id: account_row.id,
-        r#type: account_type,
-        currency_id: account_row.currency_id as u8,
-        name: account_row.name,
-        balance: account_row.balance,
+    update_account_service(
+        connection,
+        account_types,
+        id,
+        name,
+        balance,
+        type_id,
+        currency_id,
         credit_info,
-        is_active: true,
-    })
+    )
+    .map_err(|error| error.to_string())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn update_account_service(
+    connection: &mut SqliteConnection,
+    account_types: &[AccountType],
+    id: i32,
+    name: &str,
+    balance: f64,
+    type_id: i32,
+    currency_id: u8,
+    credit_info: Option<AccountCreditInfo>,
+) -> Result<Account, crate::domain::accounts::AccountError> {
+    tracing::debug!("Updating account id={}", id);
+    let details = crate::domain::accounts::AccountDetails::new(
+        type_id,
+        balance,
+        credit_info.as_ref().map(|info| (info.credit_limit, info.cutoff_day, info.days_to_pay)),
+    )?;
+    let credit_info = match details {
+        crate::domain::accounts::AccountDetails::Regular => None,
+        crate::domain::accounts::AccountDetails::Credit(details) => Some(AccountCreditInfo {
+            credit_limit: details.credit_limit.value(),
+            cutoff_day: details.cutoff_day,
+            days_to_pay: details.days_to_pay,
+        }),
+    };
+    connection
+        .transaction::<Account, crate::domain::accounts::AccountError, _>(|connection| {
+            use crate::schema::accounts::dsl::accounts;
+
+            match &credit_info {
+                Some(info) => upsert_credit_info(connection, id, info)?,
+                None => delete_credit_info(connection, id)?,
+            }
+
+            let account_row = diesel::update(accounts.find(id))
+                .set((
+                    crate::schema::accounts::name.eq(name),
+                    crate::schema::accounts::balance.eq(balance),
+                    crate::schema::accounts::type_id.eq(type_id),
+                    crate::schema::accounts::currency_id.eq(currency_id as i32),
+                ))
+                .returning(AccountRow::as_returning())
+                .get_result::<AccountRow>(connection)?;
+            let account_type = get_account_type(account_types, account_row.type_id)?;
+            Ok(Account {
+                id: account_row.id,
+                r#type: account_type,
+                currency_id: account_row.currency_id as u8,
+                name: account_row.name,
+                balance: account_row.balance,
+                credit_info,
+                is_active: account_row.is_active,
+            })
+        })
+        .map_err(|error| {
+            tracing::error!("Failed updating account {}: {}", id, error);
+            error
+        })
 }
 
 #[tauri::command]
 pub fn remove_account(state: State<'_, Mutex<AppState>>, id: i32) -> Result<usize, String> {
     tracing::debug!("Executing command remove_account id={}", id);
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     let connection = &mut establish_connection(&state.config.database_url);
 
@@ -284,18 +334,22 @@ pub fn remove_account(state: State<'_, Mutex<AppState>>, id: i32) -> Result<usiz
 }
 
 fn remove_account_internal(connection: &mut SqliteConnection, id: i32) -> Result<usize, String> {
+    remove_account_service(connection, id).map_err(|error| error.to_string())
+}
+
+fn remove_account_service(
+    connection: &mut SqliteConnection,
+    id: i32,
+) -> Result<usize, crate::domain::accounts::AccountError> {
     use crate::schema::accounts::dsl::accounts;
 
     tracing::warn!("Deleting account id={}", id);
 
-    let deleted_count = diesel::delete(accounts.find(id)).execute(connection).map_err(|e| {
-        tracing::error!("Failed deleting account {}: {}", id, e);
-        e.to_string()
-    })?;
+    let deleted_count = diesel::delete(accounts.find(id)).execute(connection)?;
 
     if deleted_count == 0 {
         tracing::warn!("Account id={} not found", id);
-        return Err("Account not found".to_string());
+        return Err(crate::domain::accounts::AccountError::NotFound(id));
     }
 
     tracing::info!("Account deleted id={} count={}", id, deleted_count);
@@ -307,7 +361,7 @@ fn remove_account_internal(connection: &mut SqliteConnection, id: i32) -> Result
 pub fn get_account_balance(state: State<'_, Mutex<AppState>>, id: i32) -> Result<f64, String> {
     tracing::debug!("Executing command get_account_balance id={}", id);
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
     let connection = &mut establish_connection(&state.config.database_url);
 
     get_account_balance_internal(connection, id)
@@ -317,16 +371,27 @@ fn get_account_balance_internal(
     connection: &mut SqliteConnection,
     account_id: i32,
 ) -> Result<f64, String> {
-    use crate::schema::accounts::dsl::{accounts, balance};
-
-    accounts.find(account_id).select(balance).first::<f64>(connection).map_err(|e| {
-        tracing::error!("Failed getting account balance for id {}: {}", account_id, e);
-        e.to_string()
-    })
+    get_account_balance_service(connection, account_id).map_err(|error| error.to_string())
 }
 
-fn get_account_type(account_types: &[AccountType], type_id: i32) -> AccountType {
-    account_types.iter().find(|t| t.id == type_id).unwrap().clone()
+fn get_account_balance_service(
+    connection: &mut SqliteConnection,
+    account_id: i32,
+) -> Result<f64, crate::domain::accounts::AccountError> {
+    use crate::schema::accounts::dsl::{accounts, balance};
+
+    accounts.find(account_id).select(balance).first::<f64>(connection).map_err(Into::into)
+}
+
+fn get_account_type(
+    account_types: &[AccountType],
+    type_id: i32,
+) -> Result<AccountType, crate::domain::accounts::AccountError> {
+    account_types
+        .iter()
+        .find(|account_type| account_type.id == type_id)
+        .cloned()
+        .ok_or(crate::domain::accounts::AccountError::UnknownType(type_id))
 }
 
 fn validate_account(
@@ -382,6 +447,8 @@ fn validate_account(
                 errors.push("Las tarjetas de crédito requieren información de crédito".to_string());
             }
         }
+    } else if credit_info.is_some() {
+        errors.push("La información de crédito solo aplica a tarjetas de crédito".to_string());
     }
 
     if errors.is_empty() {
@@ -444,7 +511,7 @@ pub fn get_credit_cards_next_payment(
     state: State<'_, Mutex<AppState>>,
     account_id: i32,
 ) -> Result<crate::models::accounts::CreditCardNextPayment, String> {
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
     let connection = &mut establish_connection(&state.config.database_url);
 
     get_credit_card_next_payment_internal(connection, account_id)
@@ -454,6 +521,14 @@ pub fn get_credit_card_next_payment_internal(
     connection: &mut SqliteConnection,
     account_id_val: i32,
 ) -> Result<crate::models::accounts::CreditCardNextPayment, String> {
+    get_credit_card_next_payment_service(connection, account_id_val)
+        .map_err(|error| error.to_string())
+}
+
+fn get_credit_card_next_payment_service(
+    connection: &mut SqliteConnection,
+    account_id_val: i32,
+) -> Result<crate::models::accounts::CreditCardNextPayment, crate::domain::accounts::AccountError> {
     use crate::schema::accounts::dsl::{accounts, id as acc_id};
     use crate::schema::accounts_credit_info::dsl::accounts_credit_info;
 
@@ -462,11 +537,15 @@ pub fn get_credit_card_next_payment_internal(
         .filter(acc_id.eq(account_id_val))
         .select((AccountRow::as_select(), Option::<AccountCreditInfoRow>::as_select()))
         .first::<(AccountRow, Option<AccountCreditInfoRow>)>(connection)
-        .map_err(|e| format!("Account with ID {} not found: {}", account_id_val, e))?;
+        .map_err(|error| match error {
+            diesel::result::Error::NotFound => {
+                crate::domain::accounts::AccountError::NotFound(account_id_val)
+            }
+            other => other.into(),
+        })?;
 
-    let credit_info = credit_info_row.ok_or_else(|| {
-        format!("Account with ID {} is not a credit card or lacks credit info", account_id_val)
-    })?;
+    let credit_info = credit_info_row
+        .ok_or(crate::domain::accounts::AccountError::NotCreditCard(account_id_val))?;
 
     use crate::models::movements::MovementInstallmentRow;
     use crate::schema::movement_installments::dsl::{movement_installments, paid};
@@ -477,16 +556,15 @@ pub fn get_credit_card_next_payment_internal(
         .filter(mov_account_id.eq(account_id_val))
         .filter(paid.eq(false))
         .select(MovementInstallmentRow::as_select())
-        .load::<MovementInstallmentRow>(connection)
-        .map_err(|e| format!("Failed to load installments: {}", e))?;
+        .load::<MovementInstallmentRow>(connection)?;
 
     if unpaid_installments.is_empty() {
         let now_ms = chrono::Local::now().timestamp_millis();
-        let payment_date = crate::utils::date::calculate_credit_payment_date(
+        let payment_date = crate::utils::date::try_calculate_credit_payment_date(
             now_ms,
             credit_info.cutoff_day as u32,
             credit_info.days_to_pay as u32,
-        );
+        )?;
         return Ok(crate::models::accounts::CreditCardNextPayment {
             account_id: account_id_val,
             payment_date,
@@ -495,37 +573,35 @@ pub fn get_credit_card_next_payment_internal(
         });
     }
 
-    let min_due = unpaid_installments.iter().map(|inst| inst.due_timestamp).min().unwrap();
-
-    let cycle_installments: Vec<&MovementInstallmentRow> =
-        unpaid_installments.iter().filter(|inst| inst.due_timestamp == min_due).collect();
-
-    use std::collections::HashMap;
-    let mut movements_map: HashMap<i32, (Vec<i32>, f64)> = HashMap::new();
-    for inst in cycle_installments {
-        let inst_id = inst.id.unwrap_or(0);
-        let entry = movements_map.entry(inst.movement_id).or_insert((Vec::new(), 0.0));
-        entry.0.push(inst_id);
-        entry.1 += inst.amount;
-    }
-
-    let mut movements_list = movements_map
+    let installments = unpaid_installments
         .into_iter()
-        .map(|(mov_id, (ids, amt))| crate::models::accounts::CreditCardPaymentMovement {
-            movement_id: mov_id,
-            installment_ids: ids,
-            amount: amt,
+        .map(|installment| {
+            Ok(crate::domain::accounts::PaymentInstallment {
+                id: installment
+                    .id
+                    .ok_or(crate::domain::accounts::AccountError::MissingInstallmentId)?,
+                movement_id: installment.movement_id,
+                amount: installment.amount,
+                due_timestamp: installment.due_timestamp,
+            })
         })
-        .collect::<Vec<_>>();
-
-    movements_list.sort_by_key(|m| m.movement_id);
-
-    let total_amount: f64 = movements_list.iter().map(|m| m.amount).sum();
+        .collect::<Result<Vec<_>, crate::domain::accounts::AccountError>>()?;
+    let breakdown = crate::domain::accounts::calculate_next_payment(&installments)
+        .ok_or(crate::domain::accounts::AccountError::NoPendingInstallments)?;
+    let movements_list = breakdown
+        .movements
+        .into_iter()
+        .map(|movement| crate::models::accounts::CreditCardPaymentMovement {
+            movement_id: movement.movement_id,
+            installment_ids: movement.installment_ids,
+            amount: movement.amount,
+        })
+        .collect();
 
     Ok(crate::models::accounts::CreditCardNextPayment {
         account_id: account_id_val,
-        payment_date: min_due,
-        total_amount,
+        payment_date: breakdown.payment_date,
+        total_amount: breakdown.total_amount,
         movements: movements_list,
     })
 }
@@ -533,6 +609,7 @@ pub fn get_credit_card_next_payment_internal(
 #[derive(Debug)]
 enum CreditCardPaymentError {
     Db(diesel::result::Error),
+    Movement(crate::domain::movements::MovementError),
     Validation(String),
 }
 
@@ -542,10 +619,17 @@ impl From<diesel::result::Error> for CreditCardPaymentError {
     }
 }
 
+impl From<crate::domain::movements::MovementError> for CreditCardPaymentError {
+    fn from(error: crate::domain::movements::MovementError) -> Self {
+        Self::Movement(error)
+    }
+}
+
 impl std::fmt::Display for CreditCardPaymentError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             CreditCardPaymentError::Db(e) => write!(f, "Error de base de datos: {}", e),
+            CreditCardPaymentError::Movement(e) => write!(f, "{}", e),
             CreditCardPaymentError::Validation(msg) => write!(f, "{}", msg),
         }
     }
@@ -558,7 +642,7 @@ pub fn pay_credit_card(
     payments: Vec<crate::models::accounts::CreditCardPaymentRequest>,
     installment_ids: Vec<i32>,
 ) -> Result<CreditCardPaymentResult, String> {
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
     let connection = &mut establish_connection(&state.config.database_url);
 
     pay_credit_card_internal(connection, credit_account_id, payments, installment_ids)
@@ -626,11 +710,8 @@ pub fn pay_credit_card_internal(
                 ));
             }
 
-            let installment_options = unique_installment_ids
-                .iter()
-                .copied()
-                .map(Some)
-                .collect::<Vec<_>>();
+            let installment_options =
+                unique_installment_ids.iter().copied().map(Some).collect::<Vec<_>>();
             let selected_installments = movement_installments
                 .filter(installment_id.eq_any(&installment_options))
                 .select(MovementInstallmentRow::as_select())
@@ -646,7 +727,9 @@ pub fn pay_credit_card_internal(
                 ));
             }
             let expected_due = selected_installments[0].due_timestamp;
-            if selected_installments.iter().any(|installment| installment.due_timestamp != expected_due)
+            if selected_installments
+                .iter()
+                .any(|installment| installment.due_timestamp != expected_due)
             {
                 return Err(CreditCardPaymentError::Validation(
                     "Las mensualidades deben pertenecer al mismo periodo de pago".to_string(),
@@ -658,7 +741,9 @@ pub fn pay_credit_card_internal(
                 .map(|installment| installment.movement_id)
                 .collect::<HashSet<_>>();
             let movement_accounts = movements
-                .filter(movement_id.eq_any(selected_movement_ids.iter().copied().collect::<Vec<_>>()))
+                .filter(
+                    movement_id.eq_any(selected_movement_ids.iter().copied().collect::<Vec<_>>()),
+                )
                 .select((movement_id, movement_account_id))
                 .load::<(i32, i32)>(connection)?
                 .into_iter()
@@ -672,18 +757,22 @@ pub fn pay_credit_card_internal(
             }
 
             let expected_total = selected_installments.iter().map(|item| item.amount).sum::<f64>();
-            if payments.iter().any(|payment| {
-                !payment.original_amount.is_finite()
-                    || payment.original_amount <= 0.0
-                    || !payment.account_amount.is_finite()
-                    || payment.account_amount <= 0.0
-            }) {
-                return Err(CreditCardPaymentError::Validation(
-                    "El monto del pago debe ser mayor a 0".to_string(),
-                ));
+            let expected_total_cents = crate::domain::money::Money::from_delta(expected_total)
+                .map_err(|error| CreditCardPaymentError::Validation(error.to_string()))?
+                .rounded_minor_units();
+            let mut payment_total = 0.0;
+            for payment in &payments {
+                crate::domain::money::OriginalAmount::new(payment.original_amount)
+                    .map_err(|error| CreditCardPaymentError::Validation(error.to_string()))?;
+                let account_amount =
+                    crate::domain::money::AccountAmount::new(payment.account_amount)
+                        .map_err(|error| CreditCardPaymentError::Validation(error.to_string()))?;
+                payment_total += account_amount.value();
             }
-            let payment_total = payments.iter().map(|payment| payment.account_amount).sum::<f64>();
-            if !payment_total.is_finite() || (payment_total - expected_total).abs() >= 0.005 {
+            let payment_total_cents = crate::domain::money::Money::from_delta(payment_total)
+                .map_err(|error| CreditCardPaymentError::Validation(error.to_string()))?
+                .rounded_minor_units();
+            if payment_total_cents != expected_total_cents {
                 return Err(CreditCardPaymentError::Validation(
                     "El monto total debe cubrir exactamente las mensualidades seleccionadas"
                         .to_string(),
@@ -691,19 +780,9 @@ pub fn pay_credit_card_internal(
             }
 
             let mut seen_sources = HashSet::new();
-            let mut transfer_movement_ids = Vec::new();
+            let mut movement_inputs = Vec::with_capacity(payments.len());
 
             for payment in &payments {
-                if !payment.original_amount.is_finite()
-                    || payment.original_amount <= 0.0
-                    || !payment.account_amount.is_finite()
-                    || payment.account_amount <= 0.0
-                {
-                    return Err(CreditCardPaymentError::Validation(
-                        "El monto del pago debe ser mayor a 0".to_string(),
-                    ));
-                }
-
                 if payment.from_account_id == credit_account_id_val {
                     return Err(CreditCardPaymentError::Validation(
                         "La cuenta de origen no puede ser la tarjeta pagada".to_string(),
@@ -732,31 +811,33 @@ pub fn pay_credit_card_internal(
                     .select(acc_currency_id)
                     .first::<i32>(connection)?;
 
-                let created_movement = crate::functions::movements::add_movement_internal(
-                    connection,
-                    3, // MOVEMENT_TRANSFER_ID
+                movement_inputs.push(crate::domain::movements::MovementInput::new(
+                    crate::domain::movements::TRANSFER_ID,
                     payment.from_account_id,
                     Some(credit_account_id_val),
-                    4, // TRANSFER_CATEGORY_ID
+                    crate::domain::movements::TRANSFER_CATEGORY_ID,
                     source_currency_id,
                     payment.original_amount,
                     payment.account_amount,
                     None,
                     chrono::Local::now().timestamp_millis(),
-                    Some("Pago de tarjeta de crédito"),
+                    Some("Pago de tarjeta de crédito".to_string()),
                     None,
-                )
-                .map_err(CreditCardPaymentError::Validation)?;
+                )?);
+            }
 
+            let mut transfer_movement_ids = Vec::with_capacity(movement_inputs.len());
+            for input in &movement_inputs {
+                let created_movement =
+                    crate::functions::movements::create_movement_in_transaction(connection, input)?;
                 transfer_movement_ids.push(created_movement.id);
             }
 
             let paid_movement_ids =
-                crate::functions::movements::mark_installments_as_paid_internal(
+                crate::functions::movements::mark_installments_as_paid_in_transaction(
                     connection,
-                    unique_installment_ids,
-                )
-                .map_err(CreditCardPaymentError::Validation)?;
+                    &unique_installment_ids,
+                )?;
 
             Ok(CreditCardPaymentResult { transfer_movement_ids, paid_movement_ids })
         })

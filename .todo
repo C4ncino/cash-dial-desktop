@@ -1,6 +1,19 @@
 General:
-    ☐ Add CI file
-        ☐ Run tests
+    ✔ Add CI file @done(26-08-20 07:26)
+        ✔ Run tests @done(26-08-20 07:26)
         ☐ Add SonarQube for coverage and bugs
         ☐ Add checkmarx for vulnerabilities
         ☐ Add build for release when merge to main
+Optimization:
+    ☐ Create a single command on get
+    ☐ Optimize movements loading how to load them in chucks, start with three months and bring more info id needed
+Tests:
+    Component:
+    Integration:
+Features:
+    ☐ i8n verify the state of i8n in all repo and make a strategy to add at least english and Spanish
+    ☐ Display both source/original and account/card amounts for converted credit-card payments
+    ☐ Check dev an testing data for credit cards to reflect the actual due dates
+    ☐ Front end refractor
+    ☐ Align styles with whit blurry effect
+    ☐ format all code with biome

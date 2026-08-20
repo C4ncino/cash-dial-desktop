@@ -45,8 +45,12 @@ pub struct PlanningRecurringType {
     pub plural: String,
 }
 
-impl From<(PlanningRecurringTypeRow, PlanningRecurringTypeTranslationRow)> for PlanningRecurringType {
-    fn from((item, translation): (PlanningRecurringTypeRow, PlanningRecurringTypeTranslationRow)) -> Self {
+impl From<(PlanningRecurringTypeRow, PlanningRecurringTypeTranslationRow)>
+    for PlanningRecurringType
+{
+    fn from(
+        (item, translation): (PlanningRecurringTypeRow, PlanningRecurringTypeTranslationRow),
+    ) -> Self {
         Self {
             id: item.id,
             key: item.key,
@@ -90,12 +94,7 @@ pub struct PlanningStatus {
 
 impl From<(PlanningStatusRow, PlanningStatusTranslationRow)> for PlanningStatus {
     fn from((item, translation): (PlanningStatusRow, PlanningStatusTranslationRow)) -> Self {
-        Self {
-            id: item.id,
-            key: item.key,
-            color: item.color,
-            name: translation.name,
-        }
+        Self { id: item.id, key: item.key, color: item.color, name: translation.name }
     }
 }
 
@@ -255,7 +254,8 @@ pub struct PlanningOccurrence {
 
 impl PlanningOccurrence {
     pub fn from_row(row: PlanningOccurrenceRow, today_start_ms: i64) -> Self {
-        let is_overdue = row.status_id == PLANNING_STATUS_PENDING && row.expected_date < today_start_ms;
+        let is_overdue =
+            row.status_id == PLANNING_STATUS_PENDING && row.expected_date < today_start_ms;
         Self {
             id: row.id,
             planning_id: row.planning_id,

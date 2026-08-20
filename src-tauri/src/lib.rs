@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use tauri::{Manager, State};
 
 mod db;
+mod domain;
 mod functions;
 mod logging;
 mod models;
@@ -20,7 +21,7 @@ use crate::models::general::AppState;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn initialize(state: State<'_, Mutex<AppState>>) -> Result<bool, String> {
-    let mut state = state.lock().unwrap();
+    let mut state = utils::lock_app_state(&state)?;
 
     state.initialized = true;
 
@@ -29,7 +30,7 @@ fn initialize(state: State<'_, Mutex<AppState>>) -> Result<bool, String> {
 
 #[tauri::command]
 fn get_initialize_state(state: State<'_, Mutex<AppState>>) -> Result<bool, String> {
-    let state = state.lock().unwrap();
+    let state = utils::lock_app_state(&state)?;
 
     Ok(state.initialized)
 }
@@ -58,7 +59,7 @@ fn create_init_state() -> Result<AppState, String> {
 
     let mut state = AppState::default();
 
-    state.config = models::general::Config::from_env().unwrap();
+    state.config = models::general::Config::from_env().map_err(|error| error.to_string())?;
 
     let lang = utils::preferred_lang();
 
@@ -68,7 +69,8 @@ fn create_init_state() -> Result<AppState, String> {
 
     let currencies_results = get_currencies(connection, lang.clone())?;
 
-    state.currencies = functions::currencies::get_conversions_rate(connection, &currencies_results)?;
+    state.currencies =
+        functions::currencies::get_conversions_rate(connection, &currencies_results)?;
 
     let accounts_types_results = get_account_types(connection, lang.clone())?;
 
@@ -157,7 +159,6 @@ pub fn run() {
             functions::budgets::get_affected_budget_ids,
             functions::accounts::get_credit_cards_next_payment,
             functions::accounts::pay_credit_card,
-            functions::movements::mark_installments_as_paid,
             functions::statistics::get_statistics,
             functions::plannings::get_planning_recurring_types,
             functions::plannings::get_planning_statuses,

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct CategoryRow {
     pub id: i32,
+    #[allow(dead_code)]
     pub key: String,
     pub father_id: Option<i32>,
     pub icon: String,
@@ -16,7 +17,9 @@ pub struct CategoryRow {
 #[diesel(table_name = crate::schema::categories_translations)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct CategoryTranslationRow {
+    #[allow(dead_code)]
     pub category_id: i32,
+    #[allow(dead_code)]
     pub lang: String,
     pub name: String,
 }

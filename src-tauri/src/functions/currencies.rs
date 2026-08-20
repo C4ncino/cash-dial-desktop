@@ -11,7 +11,7 @@ use crate::models::{currencies::Currency, general::AppState};
 pub fn get_currencies(state: State<'_, Mutex<AppState>>) -> Result<Vec<Currency>, String> {
     tracing::debug!("Executing command get_accounts");
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     Ok(state.currencies.clone())
 }
@@ -37,8 +37,12 @@ pub(crate) fn parse_ecb_rates(xml: &str) -> Result<(String, HashMap<String, f64>
                 for attribute in event.attributes().with_checks(false) {
                     let attribute = attribute.map_err(|error| error.to_string())?;
                     match attribute.key.as_ref() {
-                        b"time" => time = Some(String::from_utf8_lossy(&attribute.value).to_string()),
-                        b"currency" => code = Some(String::from_utf8_lossy(&attribute.value).to_string()),
+                        b"time" => {
+                            time = Some(String::from_utf8_lossy(&attribute.value).to_string())
+                        }
+                        b"currency" => {
+                            code = Some(String::from_utf8_lossy(&attribute.value).to_string())
+                        }
                         b"rate" => {
                             rate = Some(
                                 String::from_utf8_lossy(&attribute.value)
@@ -54,7 +58,7 @@ pub(crate) fn parse_ecb_rates(xml: &str) -> Result<(String, HashMap<String, f64>
                     date = Some(time);
                 }
                 if let (Some(code), Some(rate)) = (code, rate) {
-                    if !rate.is_finite() || rate <= 0.0 {
+                    if crate::domain::money::ConversionRate::new(rate).is_err() {
                         return Err(format!("Invalid ECB rate for {code}"));
                     }
                     rates.insert(code, rate);
@@ -98,9 +102,7 @@ pub fn get_conversions_rate(
         .build()
         .and_then(|client| client.get(ECB_RATES_URL).send())
     {
-        Ok(response) => response
-            .error_for_status()
-            .and_then(|response| response.text()),
+        Ok(response) => response.error_for_status().and_then(|response| response.text()),
         Err(error) => Err(error),
     };
 
@@ -155,7 +157,7 @@ pub async fn refresh_currency_rates(
 ) -> Result<Vec<Currency>, String> {
     let today = Utc::now().date_naive().to_string();
     let (database_url, currencies) = {
-        let state = state.lock().unwrap();
+        let state = crate::utils::lock_app_state(&state)?;
         (state.config.database_url.clone(), state.currencies.clone())
     };
 
@@ -181,7 +183,7 @@ pub async fn refresh_currency_rates(
     let mut connection = crate::db::connect::establish_connection(&database_url);
     persist_rates(&mut connection, &date, &rates)?;
 
-    let mut state = state.lock().unwrap();
+    let mut state = crate::utils::lock_app_state(&state)?;
     for currency in &mut state.currencies {
         if let Some(rate) = rates.get(&currency.code) {
             currency.conversion_rate = *rate;

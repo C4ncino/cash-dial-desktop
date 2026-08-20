@@ -75,17 +75,7 @@ pub struct BudgetHistoryInsert {
     pub end_date: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct Budget {
-    pub id: i32,
-    pub budget_period_type_id: i32,
-    pub category_id: i32,
-    pub currency_id: i32,
-    pub name: String,
-    pub start_date: i64,
-}
-
+#[cfg(test)]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct BudgetHistory {
@@ -96,6 +86,7 @@ pub struct BudgetHistory {
     pub end_date: i64,
 }
 
+#[cfg(test)]
 impl From<BudgetHistoryRow> for BudgetHistory {
     fn from(row: BudgetHistoryRow) -> Self {
         Self {

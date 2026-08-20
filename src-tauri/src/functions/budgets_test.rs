@@ -279,7 +279,7 @@ pub mod integration {
         let budget_detail = get_budget_internal(
             connection,
             budget.id,
-            get_ms_from_naive(Local::now().date_naive()),
+            get_ms_from_naive(Local::now().date_naive()).unwrap(),
         )
         .unwrap();
 
@@ -511,10 +511,8 @@ pub mod integration {
             .id;
 
         let start_date = Local.with_ymd_and_hms(2026, 6, 4, 0, 0, 0).unwrap().timestamp_millis();
-        let budget = create_budget_internal(
-            connection, 2, 1, 2, "USD Food", 100.0, start_date,
-        )
-        .unwrap();
+        let budget =
+            create_budget_internal(connection, 2, 1, 2, "USD Food", 100.0, start_date).unwrap();
 
         diesel::insert_into(crate::schema::movements::table)
             .values(&MovementInsert {
@@ -526,7 +524,10 @@ pub mod integration {
                 original_amount: 100.0,
                 account_amount: 100.0,
                 installments: None,
-                timestamp: Local.with_ymd_and_hms(2026, 6, 10, 12, 0, 0).unwrap().timestamp_millis(),
+                timestamp: Local
+                    .with_ymd_and_hms(2026, 6, 10, 12, 0, 0)
+                    .unwrap()
+                    .timestamp_millis(),
                 description: Some("MXN expense in USD budget"),
             })
             .returning(MovementRow::as_returning())
@@ -564,8 +565,8 @@ pub mod integration {
             .unwrap()
             .id;
         let start = Local.with_ymd_and_hms(2026, 6, 1, 0, 0, 0).unwrap().timestamp_millis();
-        let budget = create_budget_internal(connection, 2, 1, 2, "USD budget", 50.0, start)
-            .unwrap();
+        let budget =
+            create_budget_internal(connection, 2, 1, 2, "USD budget", 50.0, start).unwrap();
         diesel::insert_into(crate::schema::movements::table)
             .values(&MovementInsert {
                 type_id: 2,

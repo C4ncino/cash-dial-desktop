@@ -4,7 +4,10 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use crate::db;
 use crate::models::general::Environment;
 
+pub mod accounts;
 pub mod connect;
+pub mod movements;
+pub mod plannings;
 pub mod query;
 pub mod statistics_query;
 

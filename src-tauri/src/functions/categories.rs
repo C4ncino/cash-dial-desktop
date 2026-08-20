@@ -7,7 +7,7 @@ use crate::models::{categories::Category, general::AppState};
 pub fn get_categories(state: State<'_, Mutex<AppState>>) -> Result<Vec<Category>, String> {
     tracing::debug!("Executing command get_categories");
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     Ok(state.categories.clone())
 }

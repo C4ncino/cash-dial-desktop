@@ -1,8 +1,8 @@
-use chrono::NaiveDate;
 use super::*;
 use crate::models::plannings::{
     RECURRING_TYPE_DAILY, RECURRING_TYPE_MONTHLY, RECURRING_TYPE_WEEKLY, RECURRING_TYPE_YEARLY,
 };
+use chrono::NaiveDate;
 
 #[test]
 fn test_daily_recurrence_interval_1() {

@@ -12,10 +12,10 @@
     "tauri": "tauri",
     "format": "biome format --write .",
     "test": "vitest run src",
-    "build:test": "pnpm tauri build --debug --no-bundle",
+    "build:test": "cross-env-shell VITE_TEST_MODE=true pnpm tauri build --debug --no-bundle",
     "test:e2e": "pnpm run build:test && cross-env DATABASE_URL=./e2e-test.sqlite vitest run tests/e2e --fileParallelism=false",
     "test:e2e:fast": "cross-env DATABASE_URL=./e2e-test.sqlite vitest run tests/e2e --fileParallelism=false",
-    "test:integration": "cross-env-shell VITE_TEST_MODE=true pnpm run build:test && cross-env DATABASE_URL=./integration-tests-front.sqlite vitest run tests/integration --fileParallelism=false",
+    "test:integration": "pnpm run build:test && cross-env DATABASE_URL=./integration-tests-front.sqlite vitest run tests/integration --fileParallelism=false",
     "test:integration:fast": "cross-env DATABASE_URL=./integration-tests-front.sqlite vitest run tests/integration --fileParallelism=false"
   },
   "dependencies": {

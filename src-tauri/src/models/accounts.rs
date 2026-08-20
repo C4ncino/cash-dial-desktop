@@ -14,7 +14,9 @@ pub struct AccountTypeRow {
 #[diesel(table_name = crate::schema::account_types_translations)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct AccountTypeTranslationRow {
+    #[allow(dead_code)]
     pub account_type_id: i32,
+    #[allow(dead_code)]
     pub lang: String,
     pub name: String,
 }

@@ -11,7 +11,7 @@ pub mod unit {
     fn get_account_type_returns_correct_type() {
         let account_types = mock_state().account_types;
 
-        let result = get_account_type(&account_types, 3);
+        let result = get_account_type(&account_types, 3).unwrap();
 
         assert_eq!(result.id, 3);
         assert_eq!(result.name, "Credit Card");
@@ -34,11 +34,8 @@ pub mod unit {
             assert!(validate_account(&state, "Wallet", balance, 1, 1, &None).is_err());
         }
 
-        let credit_info = Some(AccountCreditInfo {
-            credit_limit: f64::NAN,
-            cutoff_day: 15,
-            days_to_pay: 20,
-        });
+        let credit_info =
+            Some(AccountCreditInfo { credit_limit: f64::NAN, cutoff_day: 15, days_to_pay: 20 });
         assert!(validate_account(
             &state,
             "Visa",
@@ -768,10 +765,7 @@ pub mod integration {
 
         let next_payment = get_credit_card_next_payment_internal(connection, cc.id).unwrap();
         assert_eq!(next_payment.total_amount, 300.0);
-        assert_eq!(
-            next_payment.movements[0].installment_ids,
-            installment_ids
-        );
+        assert_eq!(next_payment.movements[0].installment_ids, installment_ids);
     }
 
     #[test]

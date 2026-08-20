@@ -1,10 +1,15 @@
 use crate::models::statistics::*;
-use chrono::{Datelike, Duration, Local, NaiveDate, TimeZone, Utc};
+use chrono::{Datelike, Duration, Local, TimeZone, Utc};
 use diesel::prelude::*;
 use diesel::sql_query;
 use diesel::sql_types::{BigInt, Bool, Double, Integer, Nullable, Text};
 use diesel::sqlite::SqliteConnection;
 use std::collections::{HashMap, HashSet};
+
+use crate::domain::date::DateError;
+use crate::domain::statistics::StatisticsError;
+
+type StatisticsResult<T> = Result<T, StatisticsError>;
 
 const INCOME: i32 = 1;
 const EXPENSE: i32 = 2;
@@ -73,12 +78,12 @@ pub fn overview(
     start: i64,
     end: i64,
     currency: i32,
-) -> Result<(f64, f64), String> {
+) -> StatisticsResult<(f64, f64)> {
     let row: AmountRow = sql_query("SELECT COALESCE(SUM(CASE WHEN type_id=1 THEN original_amount ELSE 0 END),0) AS amount FROM movements WHERE currency_id=? AND timestamp>=? AND timestamp<?")
-        .bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).get_result(c).map_err(|e| e.to_string())?;
+        .bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).get_result(c)?;
     let income = row.amount.unwrap_or(0.0);
     let row: AmountRow = sql_query("SELECT COALESCE(SUM(CASE WHEN type_id=2 THEN original_amount ELSE 0 END),0) AS amount FROM movements WHERE currency_id=? AND timestamp>=? AND timestamp<?")
-        .bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).get_result(c).map_err(|e| e.to_string())?;
+        .bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).get_result(c)?;
     Ok((income, row.amount.unwrap_or(0.0)))
 }
 
@@ -89,7 +94,7 @@ pub fn timeseries_grouped(
     currency: i32,
     granularity: &str,
     origin: i64,
-) -> Result<Vec<TimeSeriesPoint>, String> {
+) -> StatisticsResult<Vec<TimeSeriesPoint>> {
     let bucket = match granularity {
         "day" => "strftime('%s', date(timestamp/1000, 'unixepoch', 'localtime')) * 1000",
         // SQLite's `weekday 1` rolls Mondays forward, so calculate the
@@ -97,7 +102,7 @@ pub fn timeseries_grouped(
         "week" => "strftime('%s', date(timestamp/1000, 'unixepoch', 'localtime', '-' || ((CAST(strftime('%w', datetime(timestamp/1000, 'unixepoch', 'localtime')) AS INTEGER) + 6) % 7) || ' days')) * 1000",
         "month" => "strftime('%s', date(timestamp/1000, 'unixepoch', 'localtime', 'start of month')) * 1000",
         "year" => "strftime('%s', date(timestamp/1000, 'unixepoch', 'localtime', 'start of year')) * 1000",
-        _ => return Err("Invalid granularity: allowed values are day, week, month, year".into()),
+        _ => return Err(StatisticsError::InvalidGranularity(granularity.to_string())),
     };
     let _ = origin; // SQLite localtime provides the application's local-day alignment.
     let sql = format!("SELECT {bucket} AS bucket_start_ms, COALESCE(SUM(CASE WHEN type_id=1 THEN original_amount ELSE 0 END),0) AS income, COALESCE(SUM(CASE WHEN type_id=2 THEN original_amount ELSE 0 END),0) AS expense FROM movements WHERE currency_id=? AND timestamp>=? AND timestamp<? AND type_id IN (1,2) GROUP BY bucket_start_ms ORDER BY bucket_start_ms");
@@ -105,11 +110,10 @@ pub fn timeseries_grouped(
         .bind::<Integer, _>(currency)
         .bind::<BigInt, _>(start)
         .bind::<BigInt, _>(end)
-        .load::<SeriesRow>(c)
-        .map_err(|e| e.to_string())?;
+        .load::<SeriesRow>(c)?;
     let values: HashMap<i64, TimeSeriesPoint> = rows
         .into_iter()
-        .map(|r| {
+        .map(|r| -> StatisticsResult<(i64, TimeSeriesPoint)> {
             let income = r.income.unwrap_or(0.0);
             let expense = r.expense.unwrap_or(0.0);
             // SQLite's strftime returns UTC epoch milliseconds for a local date.
@@ -118,7 +122,7 @@ pub fn timeseries_grouped(
             let sql_date = Utc
                 .timestamp_millis_opt(r.bucket_start_ms)
                 .single()
-                .expect("valid SQL bucket timestamp")
+                .ok_or(DateError::InvalidTimestamp(r.bucket_start_ms))?
                 .date_naive();
             let bucket_date = match granularity {
                 "week" => {
@@ -126,20 +130,18 @@ pub fn timeseries_grouped(
                 }
                 _ => sql_date,
             };
-            let bucket_start_ms = Local
-                .from_local_datetime(&bucket_date.and_hms_opt(0, 0, 0).unwrap())
-                .single()
-                .or_else(|| {
-                    Local.from_local_datetime(&bucket_date.and_hms_opt(0, 0, 0).unwrap()).earliest()
-                })
-                .expect("valid local bucket timestamp")
-                .timestamp_millis();
-            (
+            let bucket_start_ms = crate::domain::date::local_date_to_start_ms(bucket_date)?;
+            Ok((
                 bucket_start_ms,
-                TimeSeriesPoint { bucket_start_ms, income, expense, net: income - expense },
-            )
+                TimeSeriesPoint {
+                    bucket_start_ms,
+                    income,
+                    expense,
+                    net: crate::domain::statistics::net_cash_flow(income, expense),
+                },
+            ))
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
 
     // SQL returns only populated buckets. Fill the complete calendar range so
     // charts show zero-value days/weeks/months/years as well.
@@ -147,30 +149,24 @@ pub fn timeseries_grouped(
         .timestamp_millis_opt(start)
         .single()
         .or_else(|| Local.timestamp_millis_opt(start).earliest())
-        .ok_or("Invalid start timestamp")?
+        .ok_or(DateError::InvalidTimestamp(start))?
         .date_naive();
     let end_date = Local
         .timestamp_millis_opt(end - 1)
         .single()
         .or_else(|| Local.timestamp_millis_opt(end - 1).earliest())
-        .ok_or("Invalid end timestamp")?
+        .ok_or(DateError::InvalidTimestamp(end - 1))?
         .date_naive();
     let mut date = match granularity {
         "day" => start_date,
         "week" => start_date - Duration::days(start_date.weekday().num_days_from_monday() as i64),
-        "month" => NaiveDate::from_ymd_opt(start_date.year(), start_date.month(), 1)
-            .ok_or("Invalid start date")?,
-        "year" => NaiveDate::from_ymd_opt(start_date.year(), 1, 1).ok_or("Invalid start date")?,
-        _ => return Err("Invalid granularity: allowed values are day, week, month, year".into()),
+        "month" => crate::domain::date::date(start_date.year(), start_date.month(), 1)?,
+        "year" => crate::domain::date::date(start_date.year(), 1, 1)?,
+        _ => return Err(StatisticsError::InvalidGranularity(granularity.to_string())),
     };
     let mut result = Vec::new();
     loop {
-        let bucket_start_ms = Local
-            .from_local_datetime(&date.and_hms_opt(0, 0, 0).ok_or("Invalid bucket date")?)
-            .single()
-            .or_else(|| Local.from_local_datetime(&date.and_hms_opt(0, 0, 0).unwrap()).earliest())
-            .ok_or("Invalid bucket timestamp")?
-            .timestamp_millis();
+        let bucket_start_ms = crate::domain::date::local_date_to_start_ms(date)?;
         if bucket_start_ms >= end {
             break;
         }
@@ -185,13 +181,12 @@ pub fn timeseries_grouped(
             "week" => date + Duration::days(7),
             "month" => {
                 if date.month() == 12 {
-                    NaiveDate::from_ymd_opt(date.year() + 1, 1, 1).ok_or("Invalid next month")?
+                    crate::domain::date::date(date.year() + 1, 1, 1)?
                 } else {
-                    NaiveDate::from_ymd_opt(date.year(), date.month() + 1, 1)
-                        .ok_or("Invalid next month")?
+                    crate::domain::date::date(date.year(), date.month() + 1, 1)?
                 }
             }
-            "year" => NaiveDate::from_ymd_opt(date.year() + 1, 1, 1).ok_or("Invalid next year")?,
+            "year" => crate::domain::date::date(date.year() + 1, 1, 1)?,
             _ => unreachable!(),
         };
         if date > end_date + Duration::days(8) {
@@ -211,20 +206,17 @@ pub fn balance_trend(
     currency: i32,
     granularity: &str,
     origin: i64,
-) -> Result<Vec<BalanceTrendPoint>, String> {
+) -> StatisticsResult<Vec<BalanceTrendPoint>> {
     let opening: AmountRow = sql_query("SELECT COALESCE(SUM(CASE WHEN type_id=1 THEN original_amount WHEN type_id=2 THEN -original_amount ELSE 0 END),0) AS amount FROM movements WHERE currency_id=? AND timestamp<?")
         .bind::<Integer,_>(currency)
         .bind::<BigInt,_>(start)
-        .get_result(c)
-        .map_err(|e| e.to_string())?;
+        .get_result(c)?;
 
-    let mut balance = opening.amount.unwrap_or(0.0);
-    Ok(timeseries_grouped(c, start, end, currency, granularity, origin)?
+    let series = timeseries_grouped(c, start, end, currency, granularity, origin)?;
+    let points = series.iter().map(|point| (point.bucket_start_ms, point.net)).collect::<Vec<_>>();
+    Ok(crate::domain::statistics::cumulative_balances(opening.amount.unwrap_or(0.0), &points)
         .into_iter()
-        .map(|point| {
-            balance += point.net;
-            BalanceTrendPoint { bucket_start_ms: point.bucket_start_ms, balance }
-        })
+        .map(|(bucket_start_ms, balance)| BalanceTrendPoint { bucket_start_ms, balance })
         .collect())
 }
 
@@ -235,41 +227,36 @@ pub fn categories_aggregation(
     currency: i32,
     root: Option<i32>,
     include_descendants: bool,
-) -> Result<(Vec<HierarchicalCategory>, Vec<CategoryEntry>, f64), String> {
-    let cats: Vec<CategoryRow> = sql_query("SELECT c.id, COALESCE(t.name,c.key) AS name, c.father_id AS parent_id FROM categories c LEFT JOIN categories_translations t ON t.category_id=c.id AND t.lang='en'").load(c).map_err(|e| e.to_string())?;
-    let amounts: Vec<CategoryAmountRow> = sql_query("SELECT category_id, SUM(original_amount) AS amount FROM movements WHERE type_id=2 AND currency_id=? AND timestamp>=? AND timestamp<? GROUP BY category_id").bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).load(c).map_err(|e| e.to_string())?;
+) -> StatisticsResult<(Vec<HierarchicalCategory>, Vec<CategoryEntry>, f64)> {
+    let cats: Vec<CategoryRow> = sql_query("SELECT c.id, COALESCE(t.name,c.key) AS name, c.father_id AS parent_id FROM categories c LEFT JOIN categories_translations t ON t.category_id=c.id AND t.lang='en'").load(c)?;
+    let amounts: Vec<CategoryAmountRow> = sql_query("SELECT category_id, SUM(original_amount) AS amount FROM movements WHERE type_id=2 AND currency_id=? AND timestamp>=? AND timestamp<? GROUP BY category_id").bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).load(c)?;
     let mut direct: HashMap<i32, f64> =
         amounts.into_iter().map(|r| (r.category_id, r.amount.unwrap_or(0.0))).collect();
     let by_id: HashMap<i32, CategoryRow> = cats
         .iter()
         .map(|r| (r.id, CategoryRow { id: r.id, name: r.name.clone(), parent_id: r.parent_id }))
         .collect();
-    let allowed = root.map(|id| {
-        let mut s = HashSet::from([id]);
-        if include_descendants {
-            let mut changed = true;
-            while changed {
-                changed = false;
-                for x in &cats {
-                    if x.parent_id.map(|p| s.contains(&p)).unwrap_or(false) && s.insert(x.id) {
-                        changed = true;
-                    }
-                }
+    let hierarchy = crate::domain::categories::CategoryHierarchy::new(
+        cats.iter().map(|category| (category.id, category.parent_id)),
+    );
+    let allowed = root
+        .map(|id| {
+            if include_descendants {
+                hierarchy.descendant_ids(id).map(|ids| ids.into_iter().collect::<HashSet<_>>())
+            } else {
+                Ok(HashSet::from([id]))
             }
-        }
-        s
-    });
+        })
+        .transpose()?;
     if let Some(ref set) = allowed {
         direct.retain(|id, _| set.contains(id));
     }
     let mut rolled = direct.clone();
     for id in direct.keys().copied().collect::<Vec<_>>() {
-        let mut p = by_id.get(&id).and_then(|x| x.parent_id);
-        while let Some(parent) = p {
+        for parent in hierarchy.ancestor_ids(id)?.into_iter().skip(1) {
             if allowed.as_ref().map(|s| s.contains(&parent)).unwrap_or(true) {
                 *rolled.entry(parent).or_insert(0.0) += direct.get(&id).copied().unwrap_or(0.0);
             }
-            p = by_id.get(&parent).and_then(|x| x.parent_id);
         }
     }
     let total: f64 = direct.values().sum();
@@ -288,7 +275,7 @@ pub fn categories_aggregation(
                 name: x.name.clone(),
                 parent_id: x.parent_id,
                 amount: *amount,
-                percent_of_total: if total > 0.0 { *amount / total * 100.0 } else { 0.0 },
+                percent_of_total: crate::domain::statistics::percentage(*amount, total),
                 is_virtual: false,
             })
         })
@@ -300,11 +287,11 @@ pub fn categories_aggregation(
             name: "General".to_string(),
             parent_id: Some(parent),
             amount: *amount,
-            percent_of_total: if total > 0.0 { *amount / total * 100.0 } else { 0.0 },
+            percent_of_total: crate::domain::statistics::percentage(*amount, total),
             is_virtual: true,
         })
     }));
-    flat.sort_by(|a, b| b.amount.partial_cmp(&a.amount).unwrap_or(std::cmp::Ordering::Equal));
+    flat.sort_by(|a, b| b.amount.total_cmp(&a.amount));
     fn tree(
         id: i32,
         by: &HashMap<i32, CategoryRow>,
@@ -325,19 +312,19 @@ pub fn categories_aggregation(
                 name: "General".to_string(),
                 parent_id: Some(id),
                 amount: *amount,
-                percent_of_total: if total > 0.0 { *amount / total * 100.0 } else { 0.0 },
+                percent_of_total: crate::domain::statistics::percentage(*amount, total),
                 is_virtual: true,
                 children: Vec::new(),
             });
         }
-        children.sort_by(|a, b| b.amount.partial_cmp(&a.amount).unwrap());
+        children.sort_by(|a, b| b.amount.total_cmp(&a.amount));
         let amount = rolled.get(&id).copied().unwrap_or(0.0);
         HierarchicalCategory {
             category_id: id,
             name: x.name.clone(),
             parent_id: x.parent_id,
             amount,
-            percent_of_total: if total > 0.0 { amount / total * 100.0 } else { 0.0 },
+            percent_of_total: crate::domain::statistics::percentage(amount, total),
             is_virtual: false,
             children,
         }
@@ -354,17 +341,15 @@ pub fn obligations(
     c: &mut SqliteConnection,
     now: i64,
     currency: i32,
-) -> Result<Obligations, String> {
+) -> StatisticsResult<Obligations> {
     let end = now + 90 * 24 * 60 * 60 * 1000;
-    let rows:Vec<ObligationRow>=sql_query("SELECT mi.id AS installment_id, mi.movement_id, m.account_id, mi.due_timestamp, mi.amount, mi.paid, m.description, m.category_id FROM movement_installments mi JOIN movements m ON m.id=mi.movement_id WHERE m.currency_id=? AND mi.due_timestamp>=? AND mi.due_timestamp<? ORDER BY mi.due_timestamp").bind::<Integer,_>(currency).bind::<BigInt,_>(now).bind::<BigInt,_>(end).load(c).map_err(|e|e.to_string())?;
-    let sum_until =
-        |ms: i64| rows.iter().filter(|r| r.due_timestamp < now + ms).map(|r| r.amount).sum();
+    let rows:Vec<ObligationRow>=sql_query("SELECT mi.id AS installment_id, mi.movement_id, m.account_id, mi.due_timestamp, mi.amount, mi.paid, m.description, m.category_id FROM movement_installments mi JOIN movements m ON m.id=mi.movement_id WHERE m.currency_id=? AND mi.due_timestamp>=? AND mi.due_timestamp<? ORDER BY mi.due_timestamp").bind::<Integer,_>(currency).bind::<BigInt,_>(now).bind::<BigInt,_>(end).load(c)?;
+    let obligation_values =
+        rows.iter().map(|row| (row.due_timestamp, row.amount)).collect::<Vec<_>>();
+    let (next_7_days, next_30_days, next_90_days) =
+        crate::domain::statistics::obligation_totals(now, &obligation_values);
     Ok(Obligations {
-        totals: ObligationTotals {
-            next_7_days: sum_until(7 * 24 * 60 * 60 * 1000),
-            next_30_days: sum_until(30 * 24 * 60 * 60 * 1000),
-            next_90_days: sum_until(90 * 24 * 60 * 60 * 1000),
-        },
+        totals: ObligationTotals { next_7_days, next_30_days, next_90_days },
         items: rows
             .into_iter()
             .map(|r| Obligation {
@@ -386,53 +371,48 @@ pub fn secondary_metrics(
     start: i64,
     end: i64,
     currency: i32,
-) -> Result<SecondaryMetrics, String> {
+) -> StatisticsResult<SecondaryMetrics> {
     use crate::schema::movements::dsl::*;
     let movement_count = movements
         .filter(currency_id.eq(currency))
         .filter(timestamp.ge(start))
         .filter(timestamp.lt(end))
         .count()
-        .get_result::<i64>(c)
-        .map_err(|e| e.to_string())? as i32;
+        .get_result::<i64>(c)? as i32;
     let transaction_count = movements
         .filter(type_id.eq(INCOME).or(type_id.eq(EXPENSE)))
         .filter(currency_id.eq(currency))
         .filter(timestamp.ge(start))
         .filter(timestamp.lt(end))
         .count()
-        .get_result::<i64>(c)
-        .map_err(|e| e.to_string())? as i32;
+        .get_result::<i64>(c)? as i32;
     let avg_expense: Option<f64> = movements
         .filter(type_id.eq(EXPENSE))
         .filter(currency_id.eq(currency))
         .filter(timestamp.ge(start))
         .filter(timestamp.lt(end))
         .select(diesel::dsl::avg(original_amount))
-        .first(c)
-        .map_err(|e| e.to_string())?;
+        .first(c)?;
     let total: f64 = movements
         .filter(type_id.eq(EXPENSE))
         .filter(currency_id.eq(currency))
         .filter(timestamp.ge(start))
         .filter(timestamp.lt(end))
         .select(diesel::dsl::sum(original_amount))
-        .first::<Option<f64>>(c)
-        .map_err(|e| e.to_string())?
+        .first::<Option<f64>>(c)?
         .unwrap_or(0.0);
-    let days = ((end - start) + 86_400_000 - 1) / 86_400_000;
     let highest = timeseries_grouped(c, start, end, currency, "day", 0)?
         .into_iter()
         .map(|p| (p.bucket_start_ms, p.expense))
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+        .max_by(|a, b| a.1.total_cmp(&b.1))
         .filter(|x| x.1 > 0.0)
         .map(|(bucket_start_ms, amount)| HighestSpendingDay { bucket_start_ms, amount });
-    let largest:Option<LargestRow>=sql_query("SELECT id AS movement_id, original_amount AS amount, timestamp FROM movements WHERE type_id=2 AND currency_id=? AND timestamp>=? AND timestamp<? ORDER BY original_amount DESC, timestamp ASC LIMIT 1").bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).get_result(c).optional().map_err(|e|e.to_string())?;
+    let largest:Option<LargestRow>=sql_query("SELECT id AS movement_id, original_amount AS amount, timestamp FROM movements WHERE type_id=2 AND currency_id=? AND timestamp>=? AND timestamp<? ORDER BY original_amount DESC, timestamp ASC LIMIT 1").bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).get_result(c).optional()?;
     Ok(SecondaryMetrics {
         movement_count,
         transaction_count,
         avg_expense,
-        avg_daily_spending: if days > 0 { total / days as f64 } else { 0.0 },
+        avg_daily_spending: crate::domain::statistics::average_daily_spending(total, start, end),
         highest_spending_day: highest,
         largest_expense: largest.map(|r| LargestExpense {
             movement_id: r.movement_id,

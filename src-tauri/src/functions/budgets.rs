@@ -1,9 +1,12 @@
 use crate::db::connect::establish_connection;
-use chrono::{Datelike, Duration, Local, NaiveDate, TimeZone};
+#[cfg(test)]
+use chrono::TimeZone;
+use chrono::{Datelike, Duration, Local, NaiveDate};
 use diesel::prelude::*;
 use std::sync::Mutex;
 use tauri::State;
 
+use crate::domain::budgets::{BudgetError, BudgetPeriod, BudgetUpdateStrategy};
 use crate::models::categories::CategoryRow;
 use crate::models::{
     budgets::{
@@ -12,7 +15,6 @@ use crate::models::{
     },
     general::AppState,
 };
-use crate::utils::date::last_day_of_month_or_clamp;
 
 #[cfg(test)]
 #[path = "./budgets_test.rs"]
@@ -23,7 +25,7 @@ pub fn get_budget_period_types(
     state: State<'_, Mutex<AppState>>,
 ) -> Result<Vec<BudgetPeriodType>, String> {
     tracing::debug!("Executing command get_budget_period_types");
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
     Ok(state.budget_period_types.clone())
 }
 
@@ -31,22 +33,26 @@ pub fn get_budget_period_types(
 pub fn get_all_budgets(state: State<'_, Mutex<AppState>>) -> Result<Vec<BudgetDetails>, String> {
     tracing::debug!("Executing command get_all_budgets");
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     let connection = &mut establish_connection(&state.config.database_url);
 
-    get_all_budgets_internal(connection, get_ms_from_naive(Local::now().date_naive()))
+    let today_ms =
+        get_ms_from_naive(Local::now().date_naive()).map_err(|error| error.to_string())?;
+    get_all_budgets_internal(connection, today_ms)
 }
 
 #[tauri::command]
 pub fn get_budget(state: State<'_, Mutex<AppState>>, id: i32) -> Result<BudgetDetails, String> {
     tracing::debug!("Executing command get_budget id={}", id);
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     let connection = &mut establish_connection(&state.config.database_url);
 
-    get_budget_internal(connection, id, get_ms_from_naive(Local::now().date_naive()))
+    let today_ms =
+        get_ms_from_naive(Local::now().date_naive()).map_err(|error| error.to_string())?;
+    get_budget_internal(connection, id, today_ms)
 }
 
 #[tauri::command]
@@ -67,7 +73,7 @@ pub fn create_budget(
         currency_id
     );
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     validate_budget(&state, &name, amount_limit, budget_period_type_id, category_id, currency_id)
         .map_err(|e| {
@@ -85,19 +91,23 @@ pub fn create_budget(
         &name,
         amount_limit,
         start_date,
-    )?;
+    )
+    .map_err(|error| error.to_string())?;
 
-    get_budget_internal(connection, new_budget.id, get_ms_from_naive(Local::now().date_naive()))
+    let today_ms =
+        get_ms_from_naive(Local::now().date_naive()).map_err(|error| error.to_string())?;
+    get_budget_internal(connection, new_budget.id, today_ms)
 }
 
 #[tauri::command]
 pub fn delete_budget(state: State<'_, Mutex<AppState>>, id: i32) -> Result<usize, String> {
     tracing::debug!("Executing command delete_budget id={}", id);
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
     let connection = &mut establish_connection(&state.config.database_url);
 
-    let deleted_count = delete_budget_internal(connection, id)?;
+    let deleted_count =
+        delete_budget_internal(connection, id).map_err(|error| error.to_string())?;
 
     if deleted_count == 0 {
         tracing::warn!("Budget id={} not found", id);
@@ -122,25 +132,28 @@ pub fn update_budget_amount(
         update_type
     );
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
-    if !amount_limit.is_finite() || amount_limit < 0.0 {
-        return Err("El límite de presupuesto debe ser mayor o igual a 0".to_string());
-    }
+    crate::domain::money::Money::non_negative(amount_limit)
+        .map_err(|_| BudgetError::InvalidAmount.to_string())?;
 
     let connection = &mut establish_connection(&state.config.database_url);
 
-    let today_ms = get_ms_from_naive(Local::now().date_naive());
+    let today_ms =
+        get_ms_from_naive(Local::now().date_naive()).map_err(|error| error.to_string())?;
 
-    let updated_budget = match update_type.as_str() {
-        "correct" => correct_budget_internal(connection, id, amount_limit),
-        "today" => change_budget_from_today_internal(connection, id, amount_limit, today_ms),
-        "next_period" => change_budget_next_period_internal(connection, id, amount_limit, today_ms),
-        _ => {
-            Err("Invalid update type. Allowed values: 'correct', 'today', 'next_period'."
-                .to_string())
+    let strategy =
+        BudgetUpdateStrategy::try_from(update_type.as_str()).map_err(|error| error.to_string())?;
+    let updated_budget = match strategy {
+        BudgetUpdateStrategy::Correct => correct_budget_internal(connection, id, amount_limit),
+        BudgetUpdateStrategy::FromToday => {
+            change_budget_from_today_internal(connection, id, amount_limit, today_ms)
         }
-    }?;
+        BudgetUpdateStrategy::NextPeriod => {
+            change_budget_next_period_internal(connection, id, amount_limit, today_ms)
+        }
+    }
+    .map_err(|error| error.to_string())?;
 
     get_budget_internal(connection, updated_budget.id, today_ms)
 }
@@ -153,7 +166,7 @@ pub fn update_budget_name(
 ) -> Result<String, String> {
     tracing::debug!("Executing command update_budget_name id={} name={}", id, name,);
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
 
     if name.trim().chars().count() > 50 {
         return Err("El nombre debe tener máximo 50 caracteres".to_string());
@@ -161,7 +174,7 @@ pub fn update_budget_name(
 
     let connection = &mut establish_connection(&state.config.database_url);
 
-    change_budget_name(connection, id, name)
+    change_budget_name(connection, id, name).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -176,7 +189,7 @@ pub fn get_affected_budget_ids(
         previous_category_id
     );
 
-    let state = state.lock().unwrap();
+    let state = crate::utils::lock_app_state(&state)?;
     let categories_hierarchy: Vec<(i32, Option<i32>)> =
         state.categories.iter().map(|c| (c.id, c.father_id)).collect();
 
@@ -193,41 +206,27 @@ pub fn get_affected_budget_ids(
 // --- Internal Business Logic Functions ---
 
 fn get_descendant_categories(start_id: i32, all_categories: &[CategoryRow]) -> Vec<i32> {
-    let mut descendants = vec![start_id];
-    let mut to_process = vec![start_id];
-
-    while !to_process.is_empty() {
-        let mut next_level = Vec::new();
-        for parent_id in to_process {
-            for cat in all_categories {
-                if cat.father_id == Some(parent_id) {
-                    if !descendants.contains(&cat.id) {
-                        descendants.push(cat.id);
-                        next_level.push(cat.id);
-                    }
-                }
-            }
-        }
-        to_process = next_level;
-    }
-
-    descendants
+    crate::domain::categories::CategoryHierarchy::new(
+        all_categories.iter().map(|category| (category.id, category.father_id)),
+    )
+    .descendant_ids(start_id)
+    .unwrap_or_default()
 }
 
-fn get_ms_from_naive(date: NaiveDate) -> i64 {
-    Local
-        .from_local_datetime(&date.and_hms_opt(0, 0, 0).unwrap())
-        .single()
-        .unwrap()
-        .timestamp_millis()
+fn get_ms_from_naive(date: NaiveDate) -> Result<i64, crate::domain::date::DateError> {
+    crate::domain::date::local_date_to_start_ms(date)
 }
 
-pub fn generate_periods(start_date_ms: i64, period_type: &str, today_ms: i64) -> Vec<(i64, i64)> {
-    let start_date = Local.timestamp_millis_opt(start_date_ms).unwrap().date_naive();
-    let today_date = Local.timestamp_millis_opt(today_ms).unwrap().date_naive();
+pub fn generate_periods(
+    start_date_ms: i64,
+    period_type: BudgetPeriod,
+    today_ms: i64,
+) -> Result<Vec<(i64, i64)>, BudgetError> {
+    let start_date = crate::domain::date::ms_to_local_date(start_date_ms)?;
+    let today_date = crate::domain::date::ms_to_local_date(today_ms)?;
 
     if today_date < start_date {
-        return Vec::new();
+        return Ok(Vec::new());
     }
 
     let mut periods = Vec::new();
@@ -236,21 +235,21 @@ pub fn generate_periods(start_date_ms: i64, period_type: &str, today_ms: i64) ->
 
     loop {
         let next_start_date = match period_type {
-            "weekly" => current_start_date + Duration::days(7),
-            "monthly" => {
+            BudgetPeriod::Weekly => current_start_date + Duration::days(7),
+            BudgetPeriod::Monthly => {
                 index += 1;
-                add_months(start_date, index)
+                add_months(start_date, index)?
             }
-            "yearly" => {
+            BudgetPeriod::Yearly => {
                 index += 1;
-                add_years(start_date, index)
+                add_years(start_date, index)?
             }
-            _ => current_start_date + Duration::days(1),
+            BudgetPeriod::Daily => current_start_date + Duration::days(1),
         };
 
-        let current_start_ms = get_ms_from_naive(current_start_date);
+        let current_start_ms = get_ms_from_naive(current_start_date)?;
 
-        let next_start_ms = get_ms_from_naive(next_start_date);
+        let next_start_ms = get_ms_from_naive(next_start_date)?;
 
         periods.push((current_start_ms, next_start_ms - 1));
 
@@ -261,33 +260,35 @@ pub fn generate_periods(start_date_ms: i64, period_type: &str, today_ms: i64) ->
         current_start_date = next_start_date;
     }
 
-    periods
+    Ok(periods)
 }
 
 fn get_budget_details_list(
     connection: &mut SqliteConnection,
     budget_ids: Option<Vec<i32>>,
     today_ms: i64,
-) -> Result<Vec<BudgetDetails>, String> {
+) -> Result<Vec<BudgetDetails>, BudgetError> {
     use crate::models::categories::CategoryRow;
     use crate::models::movements::MovementRow;
+    use crate::schema::accounts::dsl::{
+        accounts, currency_id as account_currency_id, id as account_id,
+    };
     use crate::schema::budget_history::dsl::{
         budget_history, budget_id as bh_budget_id, start_date as bh_start_date,
     };
     use crate::schema::budget_period_types::dsl::budget_period_types;
     use crate::schema::budgets::dsl::{budgets, id as b_id};
-    use crate::schema::accounts::dsl::{accounts, id as account_id, currency_id as account_currency_id};
     use crate::schema::categories::dsl::categories;
-    use crate::schema::currencies::dsl::{currencies, id as currency_id, conversion_rate};
+    use crate::schema::currencies::dsl::{conversion_rate, currencies, id as currency_id};
     use crate::schema::movements::dsl::{
         category_id as m_category_id, movements, timestamp as m_timestamp,
     };
 
     // 1. Load budgets
     let budget_rows = if let Some(ref ids) = budget_ids {
-        budgets.filter(b_id.eq_any(ids)).load::<BudgetRow>(connection).map_err(|e| e.to_string())?
+        budgets.filter(b_id.eq_any(ids)).load::<BudgetRow>(connection)?
     } else {
-        budgets.load::<BudgetRow>(connection).map_err(|e| e.to_string())?
+        budgets.load::<BudgetRow>(connection)?
     };
 
     if budget_rows.is_empty() {
@@ -300,8 +301,7 @@ fn get_budget_details_list(
     let history_rows = budget_history
         .filter(bh_budget_id.eq_any(&loaded_budget_ids))
         .order(bh_start_date.asc())
-        .load::<BudgetHistoryRow>(connection)
-        .map_err(|e| e.to_string())?;
+        .load::<BudgetHistoryRow>(connection)?;
 
     // Group histories by budget_id
     let mut histories_by_budget: std::collections::HashMap<i32, Vec<BudgetHistoryRow>> =
@@ -311,7 +311,7 @@ fn get_budget_details_list(
     }
 
     // 3. Load all categories to traverse hierarchy
-    let all_categories = categories.load::<CategoryRow>(connection).map_err(|e| e.to_string())?;
+    let all_categories = categories.load::<CategoryRow>(connection)?;
 
     // Group budgets by category_id to collect needed categories
     let mut category_to_descendants: std::collections::HashMap<i32, Vec<i32>> =
@@ -336,9 +336,8 @@ fn get_budget_details_list(
     }
 
     // 4. Load period type keys for budgets
-    let period_types = budget_period_types
-        .load::<crate::models::budgets::BudgetPeriodTypeRow>(connection)
-        .map_err(|e| e.to_string())?;
+    let period_types =
+        budget_period_types.load::<crate::models::budgets::BudgetPeriodTypeRow>(connection)?;
     let period_type_map: std::collections::HashMap<i32, String> =
         period_types.into_iter().map(|t| (t.id, t.key)).collect();
 
@@ -348,22 +347,19 @@ fn get_budget_details_list(
         movements
             .filter(m_category_id.eq_any(cat_ids_vec))
             .filter(m_timestamp.ge(min_start_date))
-            .load::<MovementRow>(connection)
-            .map_err(|e| e.to_string())?
+            .load::<MovementRow>(connection)?
     } else {
         Vec::new()
     };
 
     let account_currencies: std::collections::HashMap<i32, i32> = accounts
         .select((account_id, account_currency_id))
-        .load::<(i32, i32)>(connection)
-        .map_err(|e| e.to_string())?
+        .load::<(i32, i32)>(connection)?
         .into_iter()
         .collect();
     let currency_rates: std::collections::HashMap<i32, f64> = currencies
         .select((currency_id, conversion_rate))
-        .load::<(i32, f64)>(connection)
-        .map_err(|e| e.to_string())?
+        .load::<(i32, f64)>(connection)?
         .into_iter()
         .collect();
 
@@ -373,7 +369,7 @@ fn get_budget_details_list(
     for row in budget_rows {
         let hist_list = match histories_by_budget.get(&row.id) {
             Some(list) if !list.is_empty() => list,
-            _ => return Err(format!("No history found for budget {}", row.id)),
+            _ => return Err(BudgetError::MissingHistory(row.id)),
         };
 
         let initial_history = &hist_list[0];
@@ -387,10 +383,11 @@ fn get_budget_details_list(
 
         let period_type_key = period_type_map
             .get(&row.budget_period_type_id)
-            .ok_or_else(|| format!("Unknown period type id: {}", row.budget_period_type_id))?;
+            .ok_or(BudgetError::MissingPeriodType(row.budget_period_type_id))?;
+        let period_type = BudgetPeriod::try_from(period_type_key.as_str())?;
 
         // Generate periods from start_date_val to today_ms
-        let period_ranges = generate_periods(start_date_val, period_type_key, today_ms);
+        let period_ranges = generate_periods(start_date_val, period_type, today_ms)?;
 
         let descendant_cats =
             category_to_descendants.get(&row.category_id).cloned().unwrap_or_default();
@@ -414,30 +411,16 @@ fn get_budget_details_list(
                     && m.timestamp >= p_start
                     && m.timestamp <= p_end
                 {
-                    let account_currency = account_currencies
-                        .get(&m.account_id)
-                        .ok_or_else(|| format!("Missing currency for account {}", m.account_id))?;
-
-                    amount_spend += if *account_currency == row.currency_id {
-                        m.account_amount
-                    } else if m.currency_id == row.currency_id {
-                        m.original_amount
-                    } else {
-                        let movement_rate = *currency_rates
-                            .get(&m.currency_id)
-                            .ok_or_else(|| format!("Missing conversion rate for currency {}", m.currency_id))?;
-                        let budget_rate = *currency_rates
-                            .get(&row.currency_id)
-                            .ok_or_else(|| format!("Missing conversion rate for currency {}", row.currency_id))?;
-                        if !movement_rate.is_finite()
-                            || movement_rate <= 0.0
-                            || !budget_rate.is_finite()
-                            || budget_rate <= 0.0
-                        {
-                            return Err("Invalid currency conversion rate".to_string());
-                        }
-                        m.original_amount * budget_rate / movement_rate
-                    };
+                    amount_spend += crate::domain::budgets::movement_amount_in_budget_currency(
+                        m.account_id,
+                        account_currencies.get(&m.account_id).copied(),
+                        m.currency_id,
+                        row.currency_id,
+                        m.original_amount,
+                        m.account_amount,
+                        currency_rates.get(&m.currency_id).copied(),
+                        currency_rates.get(&row.currency_id).copied(),
+                    )?;
                     movement_ids.push(m.id);
                 }
             }
@@ -461,7 +444,7 @@ fn get_all_budgets_internal(
     connection: &mut SqliteConnection,
     today_ms: i64,
 ) -> Result<Vec<BudgetDetails>, String> {
-    get_budget_details_list(connection, None, today_ms)
+    get_budget_details_list(connection, None, today_ms).map_err(|error| error.to_string())
 }
 
 fn get_budget_internal(
@@ -469,9 +452,9 @@ fn get_budget_internal(
     budget_id_val: i32,
     today_ms: i64,
 ) -> Result<BudgetDetails, String> {
-    let mut details_list =
-        get_budget_details_list(connection, Some(vec![budget_id_val]), today_ms)?;
-    details_list.pop().ok_or_else(|| "Budget not found".to_string())
+    let mut details_list = get_budget_details_list(connection, Some(vec![budget_id_val]), today_ms)
+        .map_err(|error| error.to_string())?;
+    details_list.pop().ok_or_else(|| BudgetError::NotFound(budget_id_val).to_string())
 }
 
 fn create_budget_internal(
@@ -482,86 +465,71 @@ fn create_budget_internal(
     name: &str,
     amount_limit_val: f64,
     start_date_val: i64,
-) -> Result<BudgetRow, String> {
+) -> Result<BudgetRow, BudgetError> {
     use crate::schema::budget_history::dsl::budget_history;
     use crate::schema::budgets::dsl::budgets;
 
-    connection
-        .transaction::<BudgetRow, diesel::result::Error, _>(|connection| {
-            let new_budget = BudgetInsert { budget_period_type_id, category_id, currency_id, name };
+    connection.transaction::<BudgetRow, BudgetError, _>(|connection| {
+        let new_budget = BudgetInsert { budget_period_type_id, category_id, currency_id, name };
 
-            let budget_row = diesel::insert_into(budgets)
-                .values(&new_budget)
-                .returning(BudgetRow::as_returning())
-                .get_result::<BudgetRow>(connection)?;
+        let budget_row = diesel::insert_into(budgets)
+            .values(&new_budget)
+            .returning(BudgetRow::as_returning())
+            .get_result::<BudgetRow>(connection)?;
 
-            let new_history = BudgetHistoryInsert {
-                budget_id: budget_row.id,
-                amount_limit: amount_limit_val,
-                start_date: start_date_val,
-                end_date: i64::MAX,
-            };
+        let new_history = BudgetHistoryInsert {
+            budget_id: budget_row.id,
+            amount_limit: amount_limit_val,
+            start_date: start_date_val,
+            end_date: i64::MAX,
+        };
 
-            diesel::insert_into(budget_history).values(&new_history).execute(connection)?;
+        diesel::insert_into(budget_history).values(&new_history).execute(connection)?;
 
-            Ok(budget_row)
-        })
-        .map_err(|e| {
-            tracing::error!("Failed creating budget in transaction: {}", e);
-            e.to_string()
-        })
+        Ok(budget_row)
+    })
 }
 
 fn delete_budget_internal(
     connection: &mut SqliteConnection,
     budget_id_val: i32,
-) -> Result<usize, String> {
+) -> Result<usize, BudgetError> {
     use crate::schema::budget_history::dsl::{budget_history, budget_id as bh_budget_id};
     use crate::schema::budgets::dsl::budgets;
 
-    connection
-        .transaction::<usize, diesel::result::Error, _>(|connection| {
-            // Delete history first
-            diesel::delete(budget_history.filter(bh_budget_id.eq(budget_id_val)))
-                .execute(connection)?;
+    connection.transaction::<usize, BudgetError, _>(|connection| {
+        // Delete history first
+        diesel::delete(budget_history.filter(bh_budget_id.eq(budget_id_val)))
+            .execute(connection)?;
 
-            let deleted_count = diesel::delete(budgets.find(budget_id_val)).execute(connection)?;
+        let deleted_count = diesel::delete(budgets.find(budget_id_val)).execute(connection)?;
 
-            Ok(deleted_count)
-        })
-        .map_err(|e| {
-            tracing::error!("Failed deleting budget: {}", e);
-            e.to_string()
-        })
+        Ok(deleted_count)
+    })
 }
 
 fn correct_budget_internal(
     connection: &mut SqliteConnection,
     budget_id_val: i32,
     new_amount: f64,
-) -> Result<BudgetRow, String> {
+) -> Result<BudgetRow, BudgetError> {
     use crate::schema::budget_history::dsl::{
         amount_limit as bh_amount_limit, budget_history, budget_id as bh_budget_id, end_date,
     };
     use crate::schema::budgets::dsl::budgets;
 
-    connection
-        .transaction::<BudgetRow, diesel::result::Error, _>(|connection| {
-            // Update the active history record (where end_date is i64::MAX)
-            diesel::update(
-                budget_history.filter(bh_budget_id.eq(budget_id_val)).filter(end_date.eq(i64::MAX)),
-            )
-            .set(bh_amount_limit.eq(new_amount))
-            .execute(connection)?;
+    connection.transaction::<BudgetRow, BudgetError, _>(|connection| {
+        // Update the active history record (where end_date is i64::MAX)
+        diesel::update(
+            budget_history.filter(bh_budget_id.eq(budget_id_val)).filter(end_date.eq(i64::MAX)),
+        )
+        .set(bh_amount_limit.eq(new_amount))
+        .execute(connection)?;
 
-            let budget_row = budgets.find(budget_id_val).first::<BudgetRow>(connection)?;
+        let budget_row = budgets.find(budget_id_val).first::<BudgetRow>(connection)?;
 
-            Ok(budget_row)
-        })
-        .map_err(|e| {
-            tracing::error!("Failed correcting budget: {}", e);
-            e.to_string()
-        })
+        Ok(budget_row)
+    })
 }
 
 fn change_budget_from_today_internal(
@@ -569,54 +537,47 @@ fn change_budget_from_today_internal(
     budget_id_val: i32,
     new_amount: f64,
     today_ms: i64,
-) -> Result<BudgetRow, String> {
+) -> Result<BudgetRow, BudgetError> {
     use crate::schema::budget_history::dsl::{
         budget_history, budget_id as bh_budget_id, end_date, start_date,
     };
     use crate::schema::budgets::dsl::budgets;
 
-    connection
-        .transaction::<BudgetRow, diesel::result::Error, _>(|connection| {
-            // Delete any history records starting at or after today_ms
-            diesel::delete(
-                budget_history
-                    .filter(bh_budget_id.eq(budget_id_val))
-                    .filter(start_date.ge(today_ms)),
-            )
-            .execute(connection)?;
+    connection.transaction::<BudgetRow, BudgetError, _>(|connection| {
+        // Delete any history records starting at or after today_ms
+        diesel::delete(
+            budget_history.filter(bh_budget_id.eq(budget_id_val)).filter(start_date.ge(today_ms)),
+        )
+        .execute(connection)?;
 
-            // Find the remaining history record with the largest start_date (must be < today_ms)
-            let prev_record_opt = budget_history
-                .filter(bh_budget_id.eq(budget_id_val))
-                .order(start_date.desc())
-                .first::<BudgetHistoryRow>(connection)
-                .optional()?;
+        // Find the remaining history record with the largest start_date (must be < today_ms)
+        let prev_record_opt = budget_history
+            .filter(bh_budget_id.eq(budget_id_val))
+            .order(start_date.desc())
+            .first::<BudgetHistoryRow>(connection)
+            .optional()?;
 
-            if let Some(prev_record) = prev_record_opt {
-                // Close it at today_ms - 1
-                diesel::update(budget_history.find(prev_record.id))
-                    .set(end_date.eq(today_ms - 1))
-                    .execute(connection)?;
-            }
+        if let Some(prev_record) = prev_record_opt {
+            // Close it at today_ms - 1
+            diesel::update(budget_history.find(prev_record.id))
+                .set(end_date.eq(today_ms - 1))
+                .execute(connection)?;
+        }
 
-            // Insert new active history record starting today
-            let new_history = BudgetHistoryInsert {
-                budget_id: budget_id_val,
-                amount_limit: new_amount,
-                start_date: today_ms,
-                end_date: i64::MAX,
-            };
+        // Insert new active history record starting today
+        let new_history = BudgetHistoryInsert {
+            budget_id: budget_id_val,
+            amount_limit: new_amount,
+            start_date: today_ms,
+            end_date: i64::MAX,
+        };
 
-            diesel::insert_into(budget_history).values(&new_history).execute(connection)?;
+        diesel::insert_into(budget_history).values(&new_history).execute(connection)?;
 
-            let budget_row = budgets.find(budget_id_val).first::<BudgetRow>(connection)?;
+        let budget_row = budgets.find(budget_id_val).first::<BudgetRow>(connection)?;
 
-            Ok(budget_row)
-        })
-        .map_err(|e| {
-            tracing::error!("Failed changing budget from today: {}", e);
-            e.to_string()
-        })
+        Ok(budget_row)
+    })
 }
 
 fn change_budget_next_period_internal(
@@ -624,89 +585,80 @@ fn change_budget_next_period_internal(
     budget_id_val: i32,
     new_amount: f64,
     today_ms: i64,
-) -> Result<BudgetRow, String> {
+) -> Result<BudgetRow, BudgetError> {
     use crate::schema::budget_history::dsl::{
         budget_history, budget_id as bh_budget_id, end_date, start_date,
     };
     use crate::schema::budget_period_types::dsl::{budget_period_types, key as bpt_key};
     use crate::schema::budgets::dsl::budgets;
 
-    connection
-        .transaction::<BudgetRow, diesel::result::Error, _>(|connection| {
-            let budget_row = budgets.find(budget_id_val).first::<BudgetRow>(connection)?;
+    connection.transaction::<BudgetRow, BudgetError, _>(|connection| {
+        let budget_row = budgets.find(budget_id_val).first::<BudgetRow>(connection)?;
 
-            let period_type_key = budgets
-                .find(budget_id_val)
-                .inner_join(budget_period_types)
-                .select(bpt_key)
-                .first::<String>(connection)?;
+        let period_type_key = budgets
+            .find(budget_id_val)
+            .inner_join(budget_period_types)
+            .select(bpt_key)
+            .first::<String>(connection)?;
 
-            let initial_history = budget_history
+        let initial_history = budget_history
+            .filter(bh_budget_id.eq(budget_id_val))
+            .order(start_date.asc())
+            .first::<BudgetHistoryRow>(connection)?;
+
+        // Calculate next period start
+        let period_type = BudgetPeriod::try_from(period_type_key.as_str())?;
+        let next_period_start =
+            calculate_next_period_start(initial_history.start_date, period_type, today_ms)?;
+
+        // Delete any history records starting at or after next_period_start
+        diesel::delete(
+            budget_history
                 .filter(bh_budget_id.eq(budget_id_val))
-                .order(start_date.asc())
-                .first::<BudgetHistoryRow>(connection)?;
+                .filter(start_date.ge(next_period_start)),
+        )
+        .execute(connection)?;
 
-            // Calculate next period start
-            let next_period_start =
-                calculate_next_period_start(initial_history.start_date, &period_type_key, today_ms);
+        // Find the remaining history record with the largest start_date (must be < next_period_start)
+        let prev_record_opt = budget_history
+            .filter(bh_budget_id.eq(budget_id_val))
+            .order(start_date.desc())
+            .first::<BudgetHistoryRow>(connection)
+            .optional()?;
 
-            // Delete any history records starting at or after next_period_start
-            diesel::delete(
-                budget_history
-                    .filter(bh_budget_id.eq(budget_id_val))
-                    .filter(start_date.ge(next_period_start)),
-            )
-            .execute(connection)?;
+        if let Some(prev_record) = prev_record_opt {
+            // Close it at next_period_start - 1
+            diesel::update(budget_history.find(prev_record.id))
+                .set(end_date.eq(next_period_start - 1))
+                .execute(connection)?;
+        }
 
-            // Find the remaining history record with the largest start_date (must be < next_period_start)
-            let prev_record_opt = budget_history
-                .filter(bh_budget_id.eq(budget_id_val))
-                .order(start_date.desc())
-                .first::<BudgetHistoryRow>(connection)
-                .optional()?;
+        // Insert new active history record starting at next_period_start
+        let new_history = BudgetHistoryInsert {
+            budget_id: budget_id_val,
+            amount_limit: new_amount,
+            start_date: next_period_start,
+            end_date: i64::MAX,
+        };
 
-            if let Some(prev_record) = prev_record_opt {
-                // Close it at next_period_start - 1
-                diesel::update(budget_history.find(prev_record.id))
-                    .set(end_date.eq(next_period_start - 1))
-                    .execute(connection)?;
-            }
+        diesel::insert_into(budget_history).values(&new_history).execute(connection)?;
 
-            // Insert new active history record starting at next_period_start
-            let new_history = BudgetHistoryInsert {
-                budget_id: budget_id_val,
-                amount_limit: new_amount,
-                start_date: next_period_start,
-                end_date: i64::MAX,
-            };
-
-            diesel::insert_into(budget_history).values(&new_history).execute(connection)?;
-
-            Ok(budget_row)
-        })
-        .map_err(|e| {
-            tracing::error!("Failed changing budget next period: {}", e);
-            e.to_string()
-        })
+        Ok(budget_row)
+    })
 }
 
 fn change_budget_name(
     connection: &mut SqliteConnection,
     budget_id: i32,
     name: String,
-) -> Result<String, String> {
+) -> Result<String, BudgetError> {
     use crate::schema::budgets::dsl::{budgets, id, name as b_name};
 
-    connection
-        .transaction(|connection| {
-            diesel::update(budgets.filter(id.eq(budget_id)))
-                .set(b_name.eq(name.clone()))
-                .execute(connection)
-        })
-        .map_err(|e| {
-            tracing::error!("Failed updating budget name in transaction: {}", e);
-            e.to_string()
-        })?;
+    connection.transaction(|connection| {
+        diesel::update(budgets.filter(id.eq(budget_id)))
+            .set(b_name.eq(name.clone()))
+            .execute(connection)
+    })?;
 
     return Ok(name);
 }
@@ -750,7 +702,7 @@ fn get_affected_budget_ids_internal(
 }
 // --- Date and Period Helper Functions ---
 
-fn add_months(date: NaiveDate, months: i32) -> NaiveDate {
+fn add_months(date: NaiveDate, months: i32) -> Result<NaiveDate, BudgetError> {
     let mut year = date.year();
     let mut month = date.month() as i32 + months;
     while month > 12 {
@@ -762,52 +714,56 @@ fn add_months(date: NaiveDate, months: i32) -> NaiveDate {
         month += 12;
     }
     let day = date.day();
-    last_day_of_month_or_clamp(year, month as u32, day)
+    Ok(crate::domain::date::last_day_of_month_or_clamp(year, month as u32, day)?)
 }
 
-fn add_years(date: NaiveDate, years: i32) -> NaiveDate {
+fn add_years(date: NaiveDate, years: i32) -> Result<NaiveDate, BudgetError> {
     let year = date.year() + years;
     let month = date.month();
     let day = date.day();
-    last_day_of_month_or_clamp(year, month, day)
+    Ok(crate::domain::date::last_day_of_month_or_clamp(year, month, day)?)
 }
 
-pub fn calculate_next_period_start(start_date_ms: i64, period_type: &str, today_ms: i64) -> i64 {
-    let start_date = Local.timestamp_millis_opt(start_date_ms).unwrap().date_naive();
-    let today_date = Local.timestamp_millis_opt(today_ms).unwrap().date_naive();
+pub fn calculate_next_period_start(
+    start_date_ms: i64,
+    period_type: BudgetPeriod,
+    today_ms: i64,
+) -> Result<i64, BudgetError> {
+    let start_date = crate::domain::date::ms_to_local_date(start_date_ms)?;
+    let today_date = crate::domain::date::ms_to_local_date(today_ms)?;
 
     if today_date < start_date {
-        return start_date_ms;
+        return Ok(start_date_ms);
     }
 
     let next_date = match period_type {
-        "weekly" => {
+        BudgetPeriod::Weekly => {
             let days_diff = (today_date - start_date).num_days();
             let weeks = days_diff / 7;
             start_date + Duration::days((weeks + 1) * 7)
         }
-        "monthly" => {
+        BudgetPeriod::Monthly => {
             let mut next = start_date;
             let mut months = 0;
             while next <= today_date {
                 months += 1;
-                next = add_months(start_date, months);
+                next = add_months(start_date, months)?;
             }
             next
         }
-        "yearly" => {
+        BudgetPeriod::Yearly => {
             let mut next = start_date;
             let mut years = 0;
             while next <= today_date {
                 years += 1;
-                next = add_years(start_date, years);
+                next = add_years(start_date, years)?;
             }
             next
         }
-        _ => today_date + Duration::days(1),
+        BudgetPeriod::Daily => today_date + Duration::days(1),
     };
 
-    get_ms_from_naive(next_date)
+    Ok(get_ms_from_naive(next_date)?)
 }
 
 // --- Validation Functions ---
@@ -830,7 +786,7 @@ fn validate_budget(
         errors.push("El nombre debe tener máximo 50 caracteres".to_string());
     }
 
-    if !amount_limit.is_finite() || amount_limit < 0.0 {
+    if crate::domain::money::Money::non_negative(amount_limit).is_err() {
         errors.push("El límite de presupuesto debe ser mayor o igual a 0".to_string());
     }
 
@@ -854,32 +810,7 @@ fn validate_budget(
 }
 
 fn get_ancestor_category_ids(start_id: i32, categories: &[(i32, Option<i32>)]) -> Vec<i32> {
-    if !categories.iter().any(|(id, _)| *id == start_id) {
-        return Vec::new();
-    }
-
-    let mut ancestors = vec![start_id];
-    let mut current_id = start_id;
-    let max_depth = 100;
-    let mut depth = 0;
-
-    while depth < max_depth {
-        if let Some((_, father_id)) = categories.iter().find(|(id, _)| *id == current_id) {
-            if let Some(parent_id) = father_id {
-                // Prevent duplicate ancestors or cycle loops
-                if ancestors.contains(parent_id) {
-                    break;
-                }
-                ancestors.push(*parent_id);
-                current_id = *parent_id;
-                depth += 1;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-
-    ancestors
+    crate::domain::categories::CategoryHierarchy::new(categories.iter().copied())
+        .ancestor_ids_until_cycle(start_id)
+        .unwrap_or_default()
 }

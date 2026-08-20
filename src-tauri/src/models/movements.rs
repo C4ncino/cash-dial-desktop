@@ -13,7 +13,9 @@ pub struct MovementTypeRow {
 #[diesel(table_name = crate::schema::movement_types_translations)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct MovementTypeTranslationRow {
+    #[allow(dead_code)]
     pub movement_type_id: i32,
+    #[allow(dead_code)]
     pub lang: String,
     pub name: String,
 }

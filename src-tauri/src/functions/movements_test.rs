@@ -95,17 +95,9 @@ pub mod unit {
             assert!(validate_movement(&state, 2, 1, None, 1, 1, amount, Some(1)).is_err());
         }
         for installments in [0, 49, i32::MAX] {
-            assert!(validate_movement(
-                &state,
-                2,
-                1,
-                None,
-                1,
-                1,
-                100.0,
-                Some(installments),
-            )
-            .is_err());
+            assert!(
+                validate_movement(&state, 2, 1, None, 1, 1, 100.0, Some(installments),).is_err()
+            );
         }
         assert!(validate_movement(&state, 2, 1, None, 1, 1, 100.0, Some(1)).is_ok());
         assert!(validate_movement(&state, 2, 1, None, 1, 1, 100.0, Some(48)).is_ok());
@@ -143,12 +135,7 @@ pub mod integration {
         use crate::schema::accounts::dsl::accounts;
 
         diesel::insert_into(accounts)
-            .values(&AccountInsert {
-                type_id: 1,
-                currency_id,
-                name: account_name,
-                balance: value,
-            })
+            .values(&AccountInsert { type_id: 1, currency_id, name: account_name, balance: value })
             .returning(AccountRow::as_returning())
             .get_result::<AccountRow>(connection)
             .unwrap()
@@ -280,13 +267,33 @@ pub mod integration {
         let expense_account = insert_account_with_currency(connection, "USD expense", 1000.0, 2);
 
         add_movement_internal(
-            connection, 1, income_account, None, 1, 1, 100.0, 1800.0, None,
-            1_788_000_000, Some("USD income"), None,
+            connection,
+            1,
+            income_account,
+            None,
+            1,
+            1,
+            100.0,
+            1800.0,
+            None,
+            1_788_000_000,
+            Some("USD income"),
+            None,
         )
         .unwrap();
         add_movement_internal(
-            connection, 2, expense_account, None, 1, 1, 20.0, 360.0, None,
-            1_788_000_001, Some("USD expense"), None,
+            connection,
+            2,
+            expense_account,
+            None,
+            1,
+            1,
+            20.0,
+            360.0,
+            None,
+            1_788_000_001,
+            Some("USD expense"),
+            None,
         )
         .unwrap();
 
@@ -301,15 +308,35 @@ pub mod integration {
         let account_id = insert_account_with_currency(connection, "USD update", 1000.0, 2);
 
         let movement = add_movement_internal(
-            connection, 2, account_id, None, 1, 1, 10.0, 180.0, None,
-            1_788_000_000, Some("Initial expense"), None,
+            connection,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            10.0,
+            180.0,
+            None,
+            1_788_000_000,
+            Some("Initial expense"),
+            None,
         )
         .unwrap();
         assert_eq!(get_balance(connection, account_id), 820.0);
 
         update_movement_internal(
-            connection, movement.id, 2, account_id, None, 1, 1, 20.0, 360.0, None,
-            1_788_000_001, Some("Updated expense"),
+            connection,
+            movement.id,
+            2,
+            account_id,
+            None,
+            1,
+            1,
+            20.0,
+            360.0,
+            None,
+            1_788_000_001,
+            Some("Updated expense"),
         )
         .unwrap();
         assert_eq!(get_balance(connection, account_id), 640.0);
@@ -583,6 +610,7 @@ pub mod integration {
     #[diesel(table_name = crate::schema::movement_installments)]
     struct MovementInstallmentRow {
         id: Option<i32>,
+        #[allow(dead_code)]
         movement_id: i32,
         installment_number: i32,
         total_installments: i32,
@@ -692,8 +720,7 @@ pub mod integration {
         assert!((amounts.iter().sum::<f64>() - 180.01).abs() < f64::EPSILON);
 
         let payment = crate::functions::accounts::get_credit_card_next_payment_internal(
-            connection,
-            account_id,
+            connection, account_id,
         )
         .unwrap();
         assert_eq!(payment.total_amount, 60.0);
@@ -1107,7 +1134,10 @@ pub mod integration {
     #[test]
     fn test_add_movement_linked_to_planning_completes_occurrence_and_advances() {
         use crate::functions::plannings::{create_planning_internal, get_planning_internal};
-        use crate::models::plannings::{CreatePlanningRequest, PLANNING_STATUS_COMPLETED, PLANNING_STATUS_PENDING, RECURRING_TYPE_MONTHLY};
+        use crate::models::plannings::{
+            CreatePlanningRequest, PLANNING_STATUS_COMPLETED, PLANNING_STATUS_PENDING,
+            RECURRING_TYPE_MONTHLY,
+        };
         use crate::utils::recurrence::local_naive_date_to_start_of_day_ms;
         use chrono::NaiveDate;
 
@@ -1115,9 +1145,12 @@ pub mod integration {
         let mut conn = establish_connection(&state.config.database_url);
         let account_id = insert_account(&mut conn, "Checking Acc", 1000.0);
 
-        let start_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
-        let aug_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
-        let sep_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 9, 15).unwrap());
+        let start_ms =
+            local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+        let aug_15_ms =
+            local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+        let sep_15_ms =
+            local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 9, 15).unwrap());
 
         let req = CreatePlanningRequest {
             type_id: 2, // Expense
@@ -1162,8 +1195,8 @@ pub mod integration {
         assert_eq!(next_occ.status_id, PLANNING_STATUS_PENDING);
 
         // Check August 15 occurrence is completed with movement.id
-        use crate::schema::planning_occurrences;
         use crate::models::plannings::PlanningOccurrenceRow;
+        use crate::schema::planning_occurrences;
         let aug_occ = planning_occurrences::table
             .filter(planning_occurrences::planning_id.eq(planning.id))
             .filter(planning_occurrences::expected_date.eq(aug_15_ms))
@@ -1178,7 +1211,9 @@ pub mod integration {
     #[test]
     fn test_movement_deletion_recovery_restores_occurrence_to_pending() {
         use crate::functions::plannings::{create_planning_internal, get_planning_internal};
-        use crate::models::plannings::{CreatePlanningRequest, PLANNING_STATUS_PENDING, RECURRING_TYPE_MONTHLY};
+        use crate::models::plannings::{
+            CreatePlanningRequest, PLANNING_STATUS_PENDING, RECURRING_TYPE_MONTHLY,
+        };
         use crate::utils::recurrence::local_naive_date_to_start_of_day_ms;
         use chrono::NaiveDate;
 
@@ -1186,8 +1221,10 @@ pub mod integration {
         let mut conn = establish_connection(&state.config.database_url);
         let account_id = insert_account(&mut conn, "Checking Acc 2", 1000.0);
 
-        let start_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
-        let aug_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+        let start_ms =
+            local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+        let aug_15_ms =
+            local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
 
         let req = CreatePlanningRequest {
             type_id: 2,
@@ -1229,7 +1266,8 @@ pub mod integration {
 
         // The August 15 occurrence must be restored to pending with its original expected_date
         let planning_after_del = get_planning_internal(&mut conn, planning.id).unwrap();
-        let restored_occ = planning_after_del.current_occurrence.expect("Should have restored occurrence");
+        let restored_occ =
+            planning_after_del.current_occurrence.expect("Should have restored occurrence");
         assert_eq!(restored_occ.expected_date, aug_15_ms);
         assert_eq!(restored_occ.status_id, PLANNING_STATUS_PENDING);
         assert_eq!(restored_occ.movement_id, None);

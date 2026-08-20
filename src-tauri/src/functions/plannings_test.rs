@@ -40,7 +40,8 @@ fn test_create_daily_planning_generates_initial_occurrence() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 10).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 10).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
@@ -58,7 +59,8 @@ fn test_create_daily_planning_generates_initial_occurrence() {
         year_days: None,
     };
 
-    let planning = create_planning_internal(&mut conn, &state, req).expect("Failed to create planning");
+    let planning =
+        create_planning_internal(&mut conn, &state, req).expect("Failed to create planning");
     assert_eq!(planning.name, "Daily Coffee");
     assert!(planning.current_occurrence.is_some());
 
@@ -72,8 +74,10 @@ fn test_create_monthly_planning_generates_initial_occurrence() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
-    let expected_15th_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+    let expected_15th_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
@@ -91,7 +95,8 @@ fn test_create_monthly_planning_generates_initial_occurrence() {
         year_days: None,
     };
 
-    let planning = create_planning_internal(&mut conn, &state, req).expect("Failed to create monthly planning");
+    let planning = create_planning_internal(&mut conn, &state, req)
+        .expect("Failed to create monthly planning");
     let occ = planning.current_occurrence.expect("Should have initial occurrence");
     assert_eq!(occ.expected_date, expected_15th_ms);
     assert_eq!(occ.status_id, PLANNING_STATUS_PENDING);
@@ -102,9 +107,12 @@ fn test_cancel_occurrence_advances_to_next_occurrence() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
-    let expected_15th_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
-    let expected_28th_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 28).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+    let expected_15th_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+    let expected_28th_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 28).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
@@ -142,7 +150,8 @@ fn test_deactivate_and_reactivate_planning() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 1).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 1).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
@@ -180,7 +189,8 @@ fn test_validation_rejects_credit_card_income() {
     let mut conn = establish_connection(&state.config.database_url);
 
     // Account 3 is a credit card
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 1).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 1).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_INCOME_ID, // Income not allowed on credit card
@@ -200,7 +210,9 @@ fn test_validation_rejects_credit_card_income() {
 
     let result = create_planning_internal(&mut conn, &state, req);
     assert!(result.is_err());
-    assert!(result.unwrap_err().contains("tarjetas de crédito solo permiten planificaciones de tipo gasto"));
+    assert!(result
+        .unwrap_err()
+        .contains("tarjetas de crédito solo permiten planificaciones de tipo gasto"));
 }
 
 #[test]
@@ -208,9 +220,12 @@ fn test_update_planning_recalculates_pending_occurrence() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 7, 1).unwrap());
-    let expected_15th_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 7, 15).unwrap());
-    let expected_20th_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 7, 20).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 7, 1).unwrap());
+    let expected_15th_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 7, 15).unwrap());
+    let expected_20th_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 7, 20).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
@@ -257,9 +272,12 @@ fn test_complete_occurrence_directly_and_advances() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
-    let expected_15th_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
-    let expected_28th_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 28).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+    let expected_15th_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+    let expected_28th_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 28).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
@@ -300,17 +318,14 @@ fn test_complete_occurrence_directly_and_advances() {
     .unwrap();
 
     // Complete the occurrence
-    let completed = complete_planning_occurrence_internal(&mut conn, &state, initial_occ.id, movement.id).unwrap();
+    let completed =
+        complete_planning_occurrence_internal(&mut conn, &state, initial_occ.id, movement.id)
+            .unwrap();
     assert_eq!(completed.status_id, PLANNING_STATUS_COMPLETED);
     assert_eq!(completed.movement_id, Some(movement.id));
 
-    assert!(complete_planning_occurrence_internal(
-        &mut conn,
-        &state,
-        initial_occ.id,
-        movement.id,
-    )
-    .is_err());
+    assert!(complete_planning_occurrence_internal(&mut conn, &state, initial_occ.id, movement.id,)
+        .is_err());
     assert!(cancel_planning_occurrence_internal(&mut conn, initial_occ.id).is_err());
     assert!(cancel_planning_occurrence_internal(&mut conn, 999_999).is_err());
 
@@ -318,8 +333,7 @@ fn test_complete_occurrence_directly_and_advances() {
     let updated_planning = get_planning_internal(&mut conn, planning.id).unwrap();
     let next_occ = updated_planning.current_occurrence.unwrap();
     assert_eq!(next_occ.expected_date, expected_28th_ms);
-    assert!(complete_planning_occurrence_internal(&mut conn, &state, next_occ.id, 999_999)
-        .is_err());
+    assert!(complete_planning_occurrence_internal(&mut conn, &state, next_occ.id, 999_999).is_err());
     let after_failure = get_planning_internal(&mut conn, planning.id).unwrap();
     assert_eq!(after_failure.current_occurrence.unwrap().id, next_occ.id);
 }
@@ -329,9 +343,12 @@ fn test_multiple_pending_occurrences_returns_oldest_pending() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
-    let aug_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
-    let sep_15_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 9, 15).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+    let aug_15_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap());
+    let sep_15_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 9, 15).unwrap());
 
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
@@ -385,7 +402,8 @@ fn test_delete_planning_removes_occurrences_preserves_movements() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
 
-    let start_date_ms = local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
+    let start_date_ms =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 8, 10).unwrap());
     let req = CreatePlanningRequest {
         type_id: MOVEMENT_EXPENSE_ID,
         account_id: 1,
