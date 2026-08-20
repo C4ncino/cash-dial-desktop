@@ -47,6 +47,24 @@ describe("PlanningRecurrenceForm", () => {
     expect(baseProps.onYearDaysChange).toHaveBeenCalledWith([]);
   });
 
+  it("clears weekday selections when switching from weekly to monthly", () => {
+    render(
+      <PlanningRecurrenceForm
+        {...baseProps}
+        recurringTypeId={PLANNINGS_RECURRING_TYPES.WEEKLY}
+        weekDays={[0, 2]}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Mensual"));
+
+    expect(baseProps.onRecurringTypeChange).toHaveBeenCalledWith(
+      PLANNINGS_RECURRING_TYPES.MONTHLY,
+    );
+    expect(baseProps.onWeekDaysChange).toHaveBeenCalledWith([]);
+    expect(baseProps.onYearDaysChange).toHaveBeenCalledWith([]);
+  });
+
   it("renders weekday picker when weekly type is active and toggles days", () => {
     render(
       <PlanningRecurrenceForm

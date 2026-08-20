@@ -93,9 +93,7 @@ describe("movementsStore", () => {
   });
 
   it("populate loads movements and types", async () => {
-    mockInvoke
-      .mockResolvedValueOnce([movementType])
-      .mockResolvedValueOnce([movement]);
+    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce([movement]);
 
     await movementsStore.getState().populate();
 
@@ -113,9 +111,7 @@ describe("movementsStore", () => {
       { ...movement, id: 2, timestamp: 1719705700 },
       { ...movement, id: 1, timestamp: 1719705600 },
     ];
-    mockInvoke
-      .mockResolvedValueOnce([movementType])
-      .mockResolvedValueOnce(movements);
+    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce(movements);
 
     await movementsStore.getState().populate();
 
@@ -130,9 +126,7 @@ describe("movementsStore", () => {
       id: 5,
       toAccountId: 2,
     };
-    mockInvoke
-      .mockResolvedValueOnce([movementType])
-      .mockResolvedValueOnce([transferMovement]);
+    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce([transferMovement]);
 
     await movementsStore.getState().populate();
 
@@ -358,9 +352,7 @@ describe("movementsStore", () => {
   });
 
   it("indexes contain only numbers (IDs)", async () => {
-    mockInvoke
-      .mockResolvedValueOnce([movementType])
-      .mockResolvedValueOnce([movement]);
+    mockInvoke.mockResolvedValueOnce([movementType]).mockResolvedValueOnce([movement]);
     await movementsStore.getState().populate();
 
     const state = movementsStore.getState();
@@ -368,6 +360,27 @@ describe("movementsStore", () => {
     Object.values(state.byAccount).forEach((ids) => {
       expect(ids.every((id) => typeof id === "number")).toBe(true);
     });
+  });
+
+  it("keeps movement rows and indexes unchanged when mutations fail", async () => {
+    movementsStore.setState({
+      byId: { [movement.id]: movement },
+      allIds: [movement.id],
+      byAccount: { [movement.accountId]: [movement.id] },
+      types: [movementType],
+    });
+    const before = movementsStore.getState();
+    for (const mutation of [
+      () => movementsStore.getState().add(movement),
+      () => movementsStore.getState().update(movement.id, movement),
+      () => movementsStore.getState().remove(movement.id),
+    ]) {
+      mockInvoke.mockRejectedValueOnce(new Error("mutation failed"));
+      await expect(mutation()).rejects.toThrow("mutation failed");
+      expect(movementsStore.getState().byId).toEqual(before.byId);
+      expect(movementsStore.getState().allIds).toEqual(before.allIds);
+      expect(movementsStore.getState().byAccount).toEqual(before.byAccount);
+    }
   });
 });
 

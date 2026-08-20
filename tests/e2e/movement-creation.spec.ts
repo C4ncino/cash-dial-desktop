@@ -1,22 +1,15 @@
-import {
-  closeTauriDriver,
-  createDriver,
-  deleteDatabase,
-  driver,
-  waitForHomeReady,
-} from "@test/driver";
-import { By, Key, until } from "selenium-webdriver";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { closeTauriDriver, createDriver, driver, waitForHomeReady } from "@test/driver";
+import { By, Key, until, type WebElement } from "selenium-webdriver";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("Movement E2E", () => {
-  beforeAll(async () => {
-    await createDriver();
+  beforeEach(async () => {
+    await createDriver({ freshDatabase: true });
     await waitForHomeReady();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await closeTauriDriver();
-    deleteDatabase();
   });
 
   // Helpers
@@ -65,7 +58,7 @@ describe("Movement E2E", () => {
 
   async function getAccountBalance(accountId: number): Promise<number> {
     const cardLocator = By.css(`a[href="/account?id=${accountId}"]`);
-    return driver.wait(async () => {
+    return driver.wait<number>(async () => {
       try {
         const card = await driver.findElement(cardLocator);
         const balanceText = await card.findElement(By.css("strong")).getText();
@@ -88,6 +81,22 @@ describe("Movement E2E", () => {
     }, 10000);
   }
 
+  async function getAccountBalanceByName(name: string): Promise<number> {
+    const card = await driver.wait(
+      until.elementLocated(
+        By.xpath(`//a[starts-with(@href, '/account?id=') and contains(., '${name}')]`),
+      ),
+      10000,
+    );
+    const balanceText = await card.findElement(By.css("strong")).getText();
+    const cleaned = balanceText.replace(/[^\d.,-]/g, "");
+    const lastComma = cleaned.lastIndexOf(",");
+    const lastDot = cleaned.lastIndexOf(".");
+    if (lastComma > lastDot)
+      return Number.parseFloat(cleaned.replace(/\./g, "").replace(/,/g, "."));
+    return Number.parseFloat(cleaned.replace(/,/g, ""));
+  }
+
   it("creates an income movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
@@ -105,7 +114,7 @@ describe("Movement E2E", () => {
     const incomeAmountInput = await driver.findElement(By.css('#income-form input[name="amount"]'));
     await clearAndType(incomeAmountInput, "150.00");
 
-    const incomeAccountSelect = await driver.findElement(
+    await driver.findElement(
       By.css('#income-form select[name="accountId"]'),
     );
     const incomeAccountOption = await driver.wait(
@@ -198,7 +207,7 @@ describe("Movement E2E", () => {
     );
     await clearAndType(expenseAmountInput, "45.50");
 
-    const expenseAccountSelect = await driver.findElement(
+    await driver.findElement(
       By.css('#expense-form select[name="accountId"]'),
     );
     const expenseAccountOption = await driver.wait(
@@ -229,8 +238,6 @@ describe("Movement E2E", () => {
       By.css('#expense-form button[type="submit"]'),
     );
     await expenseSubmitBtn.click();
-    await driver.sleep(500);
-
     // Verify it renders on movements list page
     const movementsLink = await driver.findElement(By.css('a[href="/movements"]'));
     await movementsLink.click();
@@ -295,7 +302,7 @@ describe("Movement E2E", () => {
     );
     await clearAndType(transferAmountInput, "100.00");
 
-    const transferAccountSelect = await driver.findElement(
+    await driver.findElement(
       By.css('#transfer-form select[name="accountId"]'),
     );
     const transferAccountOption = await driver.wait(
@@ -322,8 +329,6 @@ describe("Movement E2E", () => {
       By.css('#transfer-form button[type="submit"]'),
     );
     await transferSubmitBtn.click();
-    await driver.sleep(500);
-
     // Verify it renders on movements list page
     const movementsLink = await driver.findElement(By.css('a[href="/movements"]'));
     await movementsLink.click();
@@ -369,5 +374,78 @@ describe("Movement E2E", () => {
     const finalDestBalance = await getAccountBalance(2);
     expect(finalSourceBalance).toBeCloseTo(initialSourceBalance - 100.0, 2);
     expect(finalDestBalance).toBeCloseTo(initialDestBalance + 100.0, 2);
+  });
+
+  it("creates a cross-currency transfer with distinct charged and received amounts", async () => {
+    await driver.get("http://tauri.localhost/");
+    await waitForHomeReady();
+
+    const initialSourceBalance = await getAccountBalanceByName("USD Wallet");
+    const initialDestinationBalance = await getAccountBalance(1);
+
+    await openSpeedDial();
+    await driver.findElement(By.id("create-transfer-dialog-button")).click();
+    await driver.wait(until.elementLocated(By.id("transfer-form")), 5000);
+
+    const amount = await driver.findElement(By.css('#transfer-form input[name="amount"]'));
+    await clearAndType(amount, "10.00");
+
+    const source = await driver.findElement(By.css('#transfer-form select[name="accountId"]'));
+    await source.findElement(By.xpath('.//option[contains(., "USD Wallet")]')).click();
+
+    const destination = await driver.findElement(
+      By.css('#transfer-form select[name="toAccountId"]'),
+    );
+    await destination.findElement(By.xpath('.//option[contains(., "Efectivo")]')).click();
+
+    const accountAmount = await driver.wait(
+      until.elementLocated(By.css('#transfer-form input[name="accountAmount"]')),
+      5000,
+    );
+    await clearAndType(accountAmount, "180.00");
+    await driver
+      .findElement(By.css('#transfer-form input[name="description"]'))
+      .sendKeys("E2E Cross Currency Transfer");
+    await driver.findElement(By.css('#transfer-form button[type="submit"]')).click();
+
+    await driver.wait(until.elementLocated(By.css('a[href="/movements"]')), 10000);
+    await driver.findElement(By.css('a[href="/movements"]')).click();
+    await driver.wait(
+      until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
+      10000,
+    );
+
+    const movement = await driver.wait<WebElement>(async () => {
+      const cards = await driver.findElements(By.css('a[href^="/movement?id="]'));
+      for (const card of cards) {
+        const text = await card.getText();
+        if (text.includes("10") && text.includes("USD Wallet")) return card;
+      }
+      return false;
+    }, 10000);
+    await movement.click();
+    await driver.wait(
+      until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),
+      10000,
+    );
+    const details = await driver.findElement(By.css("body")).getText();
+    expect(details).toContain("E2E Cross Currency Transfer");
+    expect(details).toMatch(/10[.,]00/);
+    expect(details).toContain("USD Wallet");
+    expect(details).toContain("Efectivo");
+
+    await driver.navigate().refresh();
+    await driver.wait(
+      until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),
+      10000,
+    );
+    expect(await driver.findElement(By.css("body")).getText()).toContain(
+      "E2E Cross Currency Transfer",
+    );
+
+    await driver.get("http://tauri.localhost/");
+    await waitForHomeReady();
+    expect(await getAccountBalanceByName("USD Wallet")).toBeCloseTo(initialSourceBalance - 10, 2);
+    expect(await getAccountBalance(1)).toBeCloseTo(initialDestinationBalance + 180, 2);
   });
 });

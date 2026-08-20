@@ -24,6 +24,7 @@ const initialCurrencyId = 1;
 const initialPeriod: StatisticsPeriod = "month";
 const initialPeriodStartMs = startOfPeriod(new Date(), initialPeriod);
 const initialRange = periodRange(initialPeriodStartMs, initialPeriod);
+let latestRequestId = 0;
 
 export const statisticsStore = createStore<StatisticsStore & StatisticsActions>((set, get) => ({
   selectedCurrencyId: initialCurrencyId,
@@ -92,17 +93,18 @@ export const statisticsStore = createStore<StatisticsStore & StatisticsActions>(
   },
 
   fetchStatistics: async () => {
+    const requestId = ++latestRequestId;
     const { periodStartMs, periodEndMs, selectedCurrencyId, granularity } = get();
     if (selectedCurrencyId === null) {
       const error = "Select a currency to view statistics";
-      set({ error, loading: false });
+      if (requestId === latestRequestId) set({ error, loading: false });
       return null;
     }
 
     const key = cacheKey(periodStartMs, periodEndMs, selectedCurrencyId, granularity);
     const cached = get().cache[key];
     if (cached) {
-      set({ response: cached, error: null, loading: false });
+      if (requestId === latestRequestId) set({ response: cached, error: null, loading: false });
       return cached;
     }
 
@@ -116,29 +118,28 @@ export const statisticsStore = createStore<StatisticsStore & StatisticsActions>(
         options: null,
       })) as StatisticsResponse;
 
-      console.log("a", {
-        startMs: periodStartMs,
-        endMs: periodEndMs,
-        currencyId: selectedCurrencyId,
-        granularity,
-        options: null,
-      });
-
       set((state) => ({
-        response,
+        response: requestId === latestRequestId ? response : state.response,
         cache: { ...state.cache, [key]: response },
-        loading: false,
-        error: null,
+        loading: requestId === latestRequestId ? false : state.loading,
+        error: requestId === latestRequestId ? null : state.error,
       }));
       return response;
     } catch (error) {
       logger.error("Failed to load statistics", error);
-      set({
-        loading: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      if (requestId === latestRequestId) {
+        set({
+          loading: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
       return null;
     }
+  },
+
+  invalidate: () => {
+    latestRequestId += 1;
+    set({ cache: {}, response: null, loading: false, error: null });
   },
 
   clearError: () => set({ error: null }),

@@ -5,6 +5,7 @@ use tauri::State;
 
 use crate::models::accounts::{
     Account, AccountCreditInfo, AccountCreditInfoRow, AccountInsert, AccountRow, AccountType,
+    CreditCardPaymentResult,
 };
 use crate::models::general::AppState;
 
@@ -346,6 +347,10 @@ fn validate_account(
         errors.push("El nombre debe tener máximo 25 caracteres".to_string());
     }
 
+    if !balance.is_finite() {
+        errors.push("El saldo debe ser un número válido".to_string());
+    }
+
     if !state.account_types.iter().any(|t| t.id == type_id) {
         errors.push("El tipo de cuenta no existe".to_string());
     }
@@ -357,7 +362,7 @@ fn validate_account(
     if type_id == AccountTypeEnum::CreditCard as i32 {
         match credit_info {
             Some(info) => {
-                if info.credit_limit <= 0.0 {
+                if !info.credit_limit.is_finite() || info.credit_limit <= 0.0 {
                     errors.push("El límite de crédito debe ser mayor a 0".to_string());
                 }
 
@@ -450,9 +455,7 @@ pub fn get_credit_card_next_payment_internal(
     account_id_val: i32,
 ) -> Result<crate::models::accounts::CreditCardNextPayment, String> {
     use crate::schema::accounts::dsl::{accounts, id as acc_id};
-    use crate::schema::accounts_credit_info::dsl::{
-        account_id as info_acc_id, accounts_credit_info,
-    };
+    use crate::schema::accounts_credit_info::dsl::accounts_credit_info;
 
     let (_account_row, credit_info_row) = accounts
         .left_join(accounts_credit_info)
@@ -466,7 +469,7 @@ pub fn get_credit_card_next_payment_internal(
     })?;
 
     use crate::models::movements::MovementInstallmentRow;
-    use crate::schema::movement_installments::dsl::{due_timestamp, movement_installments, paid};
+    use crate::schema::movement_installments::dsl::{movement_installments, paid};
     use crate::schema::movements::dsl::{account_id as mov_account_id, movements};
 
     let unpaid_installments = movement_installments
@@ -553,29 +556,40 @@ pub fn pay_credit_card(
     state: State<'_, Mutex<AppState>>,
     credit_account_id: i32,
     payments: Vec<crate::models::accounts::CreditCardPaymentRequest>,
-) -> Result<Vec<i32>, String> {
+    installment_ids: Vec<i32>,
+) -> Result<CreditCardPaymentResult, String> {
     let state = state.lock().unwrap();
     let connection = &mut establish_connection(&state.config.database_url);
 
-    pay_credit_card_internal(connection, credit_account_id, payments)
+    pay_credit_card_internal(connection, credit_account_id, payments, installment_ids)
 }
 
 pub fn pay_credit_card_internal(
     connection: &mut SqliteConnection,
     credit_account_id_val: i32,
     payments: Vec<crate::models::accounts::CreditCardPaymentRequest>,
-) -> Result<Vec<i32>, String> {
-    if payments.is_empty() {
-        return Ok(vec![]);
+    installment_ids: Vec<i32>,
+) -> Result<CreditCardPaymentResult, String> {
+    if payments.is_empty() || installment_ids.is_empty() {
+        return Err("El pago requiere al menos una cuenta de origen y una mensualidad".to_string());
     }
 
     connection
-        .transaction::<Vec<i32>, CreditCardPaymentError, _>(|connection| {
+        .transaction::<CreditCardPaymentResult, CreditCardPaymentError, _>(|connection| {
+            use std::collections::{HashMap, HashSet};
+
+            use crate::models::movements::MovementInstallmentRow;
             use crate::schema::accounts::dsl::{
                 accounts, currency_id as acc_currency_id, id as acc_id,
             };
             use crate::schema::accounts_credit_info::dsl::{
                 account_id as info_acc_id, accounts_credit_info,
+            };
+            use crate::schema::movement_installments::dsl::{
+                id as installment_id, movement_installments,
+            };
+            use crate::schema::movements::dsl::{
+                account_id as movement_account_id, id as movement_id, movements,
             };
 
             // 1. Validate credit card account exists and is a credit card
@@ -603,17 +617,104 @@ pub fn pay_credit_card_internal(
                 }
             }
 
+            let mut unique_installment_ids = installment_ids.clone();
+            unique_installment_ids.sort_unstable();
+            unique_installment_ids.dedup();
+            if unique_installment_ids.len() != installment_ids.len() {
+                return Err(CreditCardPaymentError::Validation(
+                    "No se puede pagar la misma mensualidad dos veces".to_string(),
+                ));
+            }
+
+            let installment_options = unique_installment_ids
+                .iter()
+                .copied()
+                .map(Some)
+                .collect::<Vec<_>>();
+            let selected_installments = movement_installments
+                .filter(installment_id.eq_any(&installment_options))
+                .select(MovementInstallmentRow::as_select())
+                .load::<MovementInstallmentRow>(connection)?;
+            if selected_installments.len() != unique_installment_ids.len() {
+                return Err(CreditCardPaymentError::Validation(
+                    "Una o más mensualidades no existen".to_string(),
+                ));
+            }
+            if selected_installments.iter().any(|installment| installment.paid) {
+                return Err(CreditCardPaymentError::Validation(
+                    "Una o más mensualidades ya fueron pagadas".to_string(),
+                ));
+            }
+            let expected_due = selected_installments[0].due_timestamp;
+            if selected_installments.iter().any(|installment| installment.due_timestamp != expected_due)
+            {
+                return Err(CreditCardPaymentError::Validation(
+                    "Las mensualidades deben pertenecer al mismo periodo de pago".to_string(),
+                ));
+            }
+
+            let selected_movement_ids = selected_installments
+                .iter()
+                .map(|installment| installment.movement_id)
+                .collect::<HashSet<_>>();
+            let movement_accounts = movements
+                .filter(movement_id.eq_any(selected_movement_ids.iter().copied().collect::<Vec<_>>()))
+                .select((movement_id, movement_account_id))
+                .load::<(i32, i32)>(connection)?
+                .into_iter()
+                .collect::<HashMap<_, _>>();
+            if movement_accounts.len() != selected_movement_ids.len()
+                || movement_accounts.values().any(|account_id| *account_id != credit_account_id_val)
+            {
+                return Err(CreditCardPaymentError::Validation(
+                    "Las mensualidades no pertenecen a la tarjeta seleccionada".to_string(),
+                ));
+            }
+
+            let expected_total = selected_installments.iter().map(|item| item.amount).sum::<f64>();
+            if payments.iter().any(|payment| {
+                !payment.original_amount.is_finite()
+                    || payment.original_amount <= 0.0
+                    || !payment.account_amount.is_finite()
+                    || payment.account_amount <= 0.0
+            }) {
+                return Err(CreditCardPaymentError::Validation(
+                    "El monto del pago debe ser mayor a 0".to_string(),
+                ));
+            }
+            let payment_total = payments.iter().map(|payment| payment.account_amount).sum::<f64>();
+            if !payment_total.is_finite() || (payment_total - expected_total).abs() >= 0.005 {
+                return Err(CreditCardPaymentError::Validation(
+                    "El monto total debe cubrir exactamente las mensualidades seleccionadas"
+                        .to_string(),
+                ));
+            }
+
+            let mut seen_sources = HashSet::new();
             let mut transfer_movement_ids = Vec::new();
 
             for payment in &payments {
-                // 2. Validate payment amount
-                if payment.amount <= 0.0 {
+                if !payment.original_amount.is_finite()
+                    || payment.original_amount <= 0.0
+                    || !payment.account_amount.is_finite()
+                    || payment.account_amount <= 0.0
+                {
                     return Err(CreditCardPaymentError::Validation(
                         "El monto del pago debe ser mayor a 0".to_string(),
                     ));
                 }
 
-                // 3. Validate source account exists
+                if payment.from_account_id == credit_account_id_val {
+                    return Err(CreditCardPaymentError::Validation(
+                        "La cuenta de origen no puede ser la tarjeta pagada".to_string(),
+                    ));
+                }
+                if !seen_sources.insert(payment.from_account_id) {
+                    return Err(CreditCardPaymentError::Validation(
+                        "No se puede usar la misma cuenta de origen dos veces".to_string(),
+                    ));
+                }
+
                 let source_exists = accounts
                     .filter(acc_id.eq(payment.from_account_id))
                     .count()
@@ -626,7 +727,6 @@ pub fn pay_credit_card_internal(
                     )));
                 }
 
-                // 4. Create transfer movement
                 let source_currency_id = accounts
                     .filter(acc_id.eq(payment.from_account_id))
                     .select(acc_currency_id)
@@ -639,8 +739,8 @@ pub fn pay_credit_card_internal(
                     Some(credit_account_id_val),
                     4, // TRANSFER_CATEGORY_ID
                     source_currency_id,
-                    payment.amount,
-                    payment.amount,
+                    payment.original_amount,
+                    payment.account_amount,
                     None,
                     chrono::Local::now().timestamp_millis(),
                     Some("Pago de tarjeta de crédito"),
@@ -651,7 +751,14 @@ pub fn pay_credit_card_internal(
                 transfer_movement_ids.push(created_movement.id);
             }
 
-            Ok(transfer_movement_ids)
+            let paid_movement_ids =
+                crate::functions::movements::mark_installments_as_paid_internal(
+                    connection,
+                    unique_installment_ids,
+                )
+                .map_err(CreditCardPaymentError::Validation)?;
+
+            Ok(CreditCardPaymentResult { transfer_movement_ids, paid_movement_ids })
         })
         .map_err(|e| e.to_string())
 }

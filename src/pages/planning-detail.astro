@@ -49,7 +49,7 @@ import DetailLayout from "@/layouts/DetailLayout.astro";
       const movementModalId = typeId === MOVEMENT_TYPES.INCOME
         ? MODAL_ID.MOVEMENT.INCOME.CREATE
         : MODAL_ID.MOVEMENT.EXPENSE.CREATE;
-      modal(`#${movementModalId}`).open();
+      modal(`#${movementModalId}`)?.open();
     }) as EventListener);
   });
 </script>

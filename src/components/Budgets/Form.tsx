@@ -8,6 +8,7 @@ import FormErrors from "@/components/Forms/FormErrors";
 import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCategories from "@/components/Forms/SelectCategories";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
+import useSubmissionGuard from "@/hooks/useSubmissionGuard";
 import { logger } from "@/lib/logger";
 import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";
@@ -46,6 +47,7 @@ const BudgetForm = ({ modalId }: Props) => {
   const periodTypes = useStore(budgetStore, (s) => s.periodTypes);
 
   const [errors, setErrors] = useState<string[]>([]);
+  const { submitting, begin, finish, isMounted } = useSubmissionGuard();
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [selectedPeriodType, setSelectedPeriodType] = useState<number | null>(
     periodTypes.length > 0 ? periodTypes[0].id : null,
@@ -77,7 +79,8 @@ const BudgetForm = ({ modalId }: Props) => {
 
   const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
     logger.debug("Budget form data:", data);
@@ -95,6 +98,8 @@ const BudgetForm = ({ modalId }: Props) => {
       return;
     }
 
+    if (!begin()) return;
+
     try {
       if (budget) {
         // Editing: update name and amount limit (amount update uses a secondary modal to pick update type)
@@ -103,14 +108,16 @@ const BudgetForm = ({ modalId }: Props) => {
 
         if (name !== budget.budget.name) {
           await budgetStore.getState().updateName(budget.budget.id, name);
-          toast("#budget-name-updated");
+          if (isMounted()) toast("#budget-name-updated");
         }
 
         // If amount changed, open an internal modal to ask for update type
         if (amountLimit !== budget.periods[budget.periods.length - 1].amountLimit) {
           // Keep pending amount in state and show the update-type modal
-          setPendingAmount(amountLimit);
-          setShowUpdateType(true);
+          if (isMounted()) {
+            setPendingAmount(amountLimit);
+            setShowUpdateType(true);
+          }
           // Don't close the main modal yet; the update-type modal will call updateAmount and then close everything.
           return;
         }
@@ -128,16 +135,19 @@ const BudgetForm = ({ modalId }: Props) => {
         };
 
         await budgetStore.getState().add(payload);
-        toast("#budget-created");
       }
 
-      e.target.reset();
+      if (!isMounted()) return;
+      if (!budget) toast("#budget-created");
+      form.reset();
 
       editState.clear();
       closeModal(`#${modalId}`);
     } catch (err) {
       logger.error(err);
-      setErrors(["Ocurrió un error al guardar el presupuesto"]);
+      if (isMounted()) setErrors(["Ocurrió un error al guardar el presupuesto"]);
+    } finally {
+      finish();
     }
   };
 
@@ -154,11 +164,13 @@ const BudgetForm = ({ modalId }: Props) => {
 
   const handleConfirmUpdateAmount = async () => {
     if (!budget || pendingAmount === undefined) return;
+    if (!begin()) return;
 
     try {
       await budgetStore
         .getState()
         .updateAmount(budget.budget.id, pendingAmount, selectedUpdateType);
+      if (!isMounted()) return;
       toast("#budget-amount-updated");
 
       // close update modal and the main modal
@@ -169,7 +181,9 @@ const BudgetForm = ({ modalId }: Props) => {
       editState.clear();
     } catch (err) {
       logger.error(err);
-      setErrors(["Ocurrió un error al actualizar el monto"]);
+      if (isMounted()) setErrors(["Ocurrió un error al actualizar el monto"]);
+    } finally {
+      finish();
     }
   };
 
@@ -180,8 +194,11 @@ const BudgetForm = ({ modalId }: Props) => {
         id="budget-form"
         onSubmit={onSubmit}
         onReset={() => {
-          setSelectedPeriodType(budget ? budget.budget.budgetPeriodTypeId : null);
+          setSelectedPeriodType(
+            budget ? budget.budget.budgetPeriodTypeId : (periodTypes[0]?.id ?? null),
+          );
           setCategoryId(budget?.budget.categoryId);
+          setErrors([]);
         }}
       >
         <fieldset className="space-y-4">
@@ -237,7 +254,7 @@ const BudgetForm = ({ modalId }: Props) => {
         )}
 
         <FormErrors errors={errors} />
-        <FormActions />
+        <FormActions disabled={submitting} />
       </form>
 
       {/* Update type modal (shown when amount changed in edit mode) */}
@@ -286,6 +303,7 @@ const BudgetForm = ({ modalId }: Props) => {
           <menu className="flex justify-end gap-4 mt-4">
             <button
               type="button"
+              disabled={submitting}
               onClick={() => {
                 updateModalInstance?.close();
                 setShowUpdateType(false);
@@ -297,6 +315,7 @@ const BudgetForm = ({ modalId }: Props) => {
             </button>
             <button
               type="button"
+              disabled={submitting}
               onClick={handleConfirmUpdateAmount}
               className="border-2 border-blue-600 text-blue-600 hover:text-white hover:bg-blue-600 py-2 px-4 rounded hover:cursor-pointer"
             >

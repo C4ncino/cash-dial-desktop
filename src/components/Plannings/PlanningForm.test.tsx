@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { closeModal, toast } from "webcoreui";
 import { useStore } from "zustand";
 
 import PlanningForm, {
@@ -12,7 +13,6 @@ import { editStore } from "@/stores/editStore";
 import { planningsStore } from "@/stores/planningsStore";
 import {
   ACCOUNT_TYPES,
-  EDIT_TYPES,
   MODAL_ID,
   MOVEMENT_TYPES,
   PLANNINGS_RECURRING_TYPES,
@@ -273,6 +273,38 @@ describe("PlanningForm Component", () => {
     expect(screen.getByText("Ingreso")).toBeInTheDocument();
   });
 
+  it("restores default checked selections on reset", async () => {
+    render(<PlanningForm modalId={MODAL_ID.PLANNING.CREATE} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Ingreso" }));
+    fireEvent.click(screen.getByRole("button", { name: "Diario" }));
+    fireEvent.click(screen.getByLabelText(/Definir fecha de finalizaci.n/i));
+
+    expect(screen.getByRole("button", { name: "Ingreso" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Diario" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByLabelText(/Definir fecha de finalizaci.n/i)).toBeChecked();
+
+    fireEvent.click(screen.getByRole("button", { name: "Restaurar" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Gasto" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByRole("button", { name: "Mensual" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByLabelText(/Definir fecha de finalizaci.n/i)).not.toBeChecked();
+    });
+  });
+
   it("submits create planning payload on valid form submission", async () => {
     const createSpy = vi
       .spyOn(planningsStore.getState(), "create")
@@ -302,5 +334,55 @@ describe("PlanningForm Component", () => {
     await waitFor(() => {
       expect(createSpy).toHaveBeenCalled();
     });
+  });
+
+  it("locks duplicate submissions, reports failure, and allows retry", async () => {
+    let rejectFirst: (reason: Error) => void = () => undefined;
+    const createSpy = vi
+      .spyOn(planningsStore.getState(), "create")
+      .mockReturnValueOnce(new Promise((_, reject) => (rejectFirst = reject)))
+      .mockResolvedValueOnce({} as Planning);
+    render(<PlanningForm modalId={MODAL_ID.PLANNING.CREATE} />);
+    fireEvent.change(screen.getByLabelText("Nombre de la planificación"), {
+      target: { value: "Gym" },
+    });
+    fireEvent.change(screen.getByLabelText("Monto Estimado"), { target: { value: "350" } });
+    fireEvent.change(screen.getByLabelText("Cuenta"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "5" } });
+    const form = document.getElementById(MODAL_ID.PLANNING.CREATE)!;
+
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(createSpy).toHaveBeenCalledTimes(1);
+    rejectFirst(new Error("temporary"));
+    expect(
+      await screen.findByText("Ocurrió un error al guardar la planificación"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Nombre de la planificación")).toHaveValue("Gym");
+
+    fireEvent.submit(form);
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(2));
+    expect(toast).toHaveBeenCalledTimes(1);
+    expect(closeModal).toHaveBeenCalledTimes(1);
+  });
+
+  it("suppresses completion UI after unmount", async () => {
+    let resolveCreate: (planning: Planning) => void = () => undefined;
+    vi.spyOn(planningsStore.getState(), "create").mockReturnValueOnce(
+      new Promise((resolve) => (resolveCreate = resolve)),
+    );
+    const { unmount } = render(<PlanningForm modalId={MODAL_ID.PLANNING.CREATE} />);
+    fireEvent.change(screen.getByLabelText("Nombre de la planificación"), {
+      target: { value: "Gym" },
+    });
+    fireEvent.change(screen.getByLabelText("Monto Estimado"), { target: { value: "350" } });
+    fireEvent.change(screen.getByLabelText("Cuenta"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "5" } });
+    fireEvent.submit(document.getElementById(MODAL_ID.PLANNING.CREATE)!);
+    unmount();
+    resolveCreate({} as Planning);
+    await Promise.resolve();
+    expect(toast).not.toHaveBeenCalled();
+    expect(closeModal).not.toHaveBeenCalled();
   });
 });

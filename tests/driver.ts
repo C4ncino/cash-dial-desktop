@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import os from "node:os";
@@ -8,102 +8,144 @@ import { Builder, By, Capabilities, until, type WebDriver } from "selenium-webdr
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// create the path to the expected application binary
+const workspaceRoot = path.resolve(__dirname, "..");
 const application = path.resolve(
-  __dirname,
-  "..",
+  workspaceRoot,
   "src-tauri",
   "target",
   "debug",
   process.platform === "win32" ? "cash-dial-desktop.exe" : "cash-dial-desktop",
 );
 
-// keep track of the webdriver instance we create
 export let driver: WebDriver;
+let tauriDriver: ChildProcess | undefined;
+let ownedTempDir: string | undefined;
 
 process.env.RUST_BACKTRACE = "1";
 
-// keep track of the tauri-driver process we start
-let tauriDriver: any;
+type DriverOptions = { freshDatabase?: boolean; seedOverlay?: string };
 
-export async function createDriver() {
+const getFreePort = () =>
+  new Promise<number>((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      server.close((error) => (error ? reject(error) : resolve(port)));
+    });
+  });
+
+const waitForPort = (port: number, processHandle: ChildProcess, timeoutMs = 15_000) =>
+  new Promise<void>((resolve, reject) => {
+    const startedAt = Date.now();
+    const tryConnect = () => {
+      if (processHandle.exitCode !== null) {
+        reject(new Error(`tauri-driver exited during startup with code ${processHandle.exitCode}`));
+        return;
+      }
+      const socket = net.createConnection({ host: "127.0.0.1", port });
+      socket.once("connect", () => {
+        socket.destroy();
+        resolve();
+      });
+      socket.once("error", () => {
+        socket.destroy();
+        if (Date.now() - startedAt >= timeoutMs) {
+          reject(new Error(`tauri-driver did not listen on port ${port} within ${timeoutMs}ms`));
+          return;
+        }
+        setTimeout(tryConnect, 50);
+      });
+    };
+    tryConnect();
+  });
+
+export async function createDriver(options: DriverOptions = {}) {
+  if (tauriDriver || driver) throw new Error("A test driver is already running");
   if (!fs.existsSync(application)) {
     throw new Error(`Application not found at ${application}. Did you run pnpm build:test?`);
   }
 
+  const port = await getFreePort();
+  const cargoHome = process.env.CARGO_HOME ?? path.join(os.homedir(), ".cargo");
+  const driverBinary = path.join(
+    cargoHome,
+    "bin",
+    process.platform === "win32" ? "tauri-driver.exe" : "tauri-driver",
+  );
+  const env: NodeJS.ProcessEnv = { ...process.env, APP_ENV: "test" };
+
+  if (options.freshDatabase) {
+    ownedTempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cash-dial-e2e-"));
+    env.DATABASE_URL = path.join(ownedTempDir, "scenario.sqlite");
+  }
+  if (options.seedOverlay) {
+    const overlay = path.resolve(options.seedOverlay);
+    if (!fs.existsSync(overlay)) throw new Error(`Seed overlay not found: ${overlay}`);
+    env.E2E_SEED_FILE = overlay;
+  }
+
   try {
-    tauriDriver = spawn(path.resolve(os.homedir(), ".cargo", "bin", "tauri-driver"), [], {
-      stdio: [null, process.stdout, process.stderr],
-      env: { ...process.env, APP_ENV: "test" },
+    tauriDriver = spawn(driverBinary, ["--port", String(port)], {
+      stdio: ["ignore", "inherit", "inherit"],
+      env,
+      windowsHide: true,
     });
+    await new Promise<void>((resolve, reject) => {
+      tauriDriver?.once("spawn", resolve);
+      tauriDriver?.once("error", reject);
+    });
+    await waitForPort(port, tauriDriver);
 
     const capabilities = new Capabilities();
     capabilities.set("tauri:options", { application });
     capabilities.setBrowserName("wry");
-
-    // start the webdriver client
     driver = await new Builder()
       .withCapabilities(capabilities)
-      .usingServer("http://localhost:4444/")
+      .usingServer(`http://127.0.0.1:${port}/`)
       .build();
   } catch (error) {
-    console.error(error);
+    await closeTauriDriver();
+    throw error;
   }
-
-  // start tauri-driver
 }
 
 export async function closeTauriDriver() {
-  // stop the webdriver session
-  await driver.quit();
+  const activeDriver = driver;
+  driver = undefined as unknown as WebDriver;
+  if (activeDriver) await activeDriver.quit().catch(() => undefined);
 
-  // kill the tauri-driver process
-  tauriDriver.kill();
-}
+  const activeProcess = tauriDriver;
+  tauriDriver = undefined;
+  if (activeProcess && activeProcess.exitCode === null) activeProcess.kill();
 
-/** Wait until the home page has finished mounting its interactive islands. */
-export async function waitForHomeReady() {
-  await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 15000);
-}
-
-function onShutdown(fn: any) {
-  const cleanup = () => {
-    try {
-      fn();
-    } finally {
-      process.exit();
+  if (ownedTempDir) {
+    const target = path.resolve(ownedTempDir);
+    const tempRoot = `${path.resolve(os.tmpdir())}${path.sep}`;
+    if (!target.startsWith(tempRoot) || !path.basename(target).startsWith("cash-dial-e2e-")) {
+      throw new Error(`Refusing to remove unowned test directory: ${target}`);
     }
-  };
-
-  process.on("exit", cleanup);
-  process.on("SIGINT", cleanup);
-  process.on("SIGTERM", cleanup);
-  process.on("SIGHUP", cleanup);
-  process.on("SIGBREAK", cleanup);
+    fs.rmSync(target, { recursive: true, force: true });
+    ownedTempDir = undefined;
+  }
 }
 
-onShutdown(() => {
-  closeTauriDriver();
-});
+export async function waitForHomeReady() {
+  await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 15_000);
+}
 
 export function deleteDatabase() {
-  const DB_FILE = String(process.env.DATABASE_URL);
-
-  const dbPath = path.resolve(__dirname, "..", DB_FILE);
-
-  if (fs.existsSync(dbPath)) {
-    const parsed = path.parse(dbPath);
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-
-    const backupPath = path.join(parsed.dir, `${parsed.name}-${timestamp}.backup${parsed.ext}`);
-
-    fs.copyFileSync(dbPath, backupPath);
-    console.info(`Test driver created database backup: ${backupPath}`);
-
-    fs.unlinkSync(dbPath);
-    console.info(`Test driver deleted database: ${dbPath}`);
-  }
+  const configured = process.env.DATABASE_URL;
+  if (!configured) return;
+  const dbPath = path.resolve(workspaceRoot, configured);
+  const relative = path.relative(workspaceRoot, dbPath);
+  const isOwnedWorkspaceDb =
+    !relative.startsWith("..") &&
+    ["e2e-test.sqlite", "integration-tests-front.sqlite"].includes(path.basename(dbPath));
+  if (!isOwnedWorkspaceDb) throw new Error(`Refusing to delete unowned database: ${dbPath}`);
+  if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
 }
 
 export async function invokeCommand<T>(
@@ -112,27 +154,20 @@ export async function invokeCommand<T>(
 ): Promise<T> {
   await driver.wait(
     async () => Boolean(await driver.executeScript("return Boolean(window.testApi?.invoke);")),
-    10000,
+    10_000,
   );
-
   const result = await driver.executeAsyncScript(
-    (cmd: any, commandArgs: any, done: any) => {
+    (cmd: string, commandArgs: Record<string, unknown>, done: (value: unknown) => void) => {
       (window as any).testApi
         .invoke(cmd, commandArgs)
         .then(done)
-        .catch((error: any) =>
-          done({
-            __error: String(error),
-          }),
-        );
+        .catch((error: unknown) => done({ __error: String(error) }));
     },
     command,
     args ?? {},
   );
-
   if (result && typeof result === "object" && "__error" in (result as Record<string, unknown>)) {
     throw new Error(String((result as Record<string, unknown>).__error));
   }
-
   return result as T;
 }

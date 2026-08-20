@@ -282,7 +282,7 @@ pub(crate) fn add_movement_internal(
                 row.id,
                 type_id,
                 account_id,
-                original_amount,
+                account_amount,
                 installments,
                 timestamp,
             )?;
@@ -473,7 +473,7 @@ fn update_movement_internal(
                 id,
                 type_id,
                 account_id,
-                original_amount,
+                account_amount,
                 installments,
                 timestamp,
             )?;
@@ -604,12 +604,12 @@ fn validate_movement(
         errors.push("La moneda seleccionada no existe".to_string());
     }
 
-    if original_amount <= 0.0 {
+    if !original_amount.is_finite() || original_amount <= 0.0 {
         errors.push("El monto debe ser mayor a 0".to_string());
     }
 
-    if installments.is_some_and(|value| value < 0) {
-        errors.push("Las mensualidades deben ser mayor o igual a 0".to_string());
+    if installments.is_some_and(|value| !(1..=48).contains(&value)) {
+        errors.push("Las mensualidades deben ser entre 1 y 48".to_string());
     }
 
     if errors.is_empty() {
@@ -701,7 +701,7 @@ fn create_installments_if_credit(
     movement_id: i32,
     type_id: i32,
     account_id: i32,
-    original_amount: f64,
+    account_amount: f64,
     installments: Option<i32>,
     timestamp: i64,
 ) -> QueryResult<()> {
@@ -717,13 +717,16 @@ fn create_installments_if_credit(
 
         if let Some(credit_info) = credit_info_row {
             let total_inst = installments.unwrap_or(1);
-            let inst_amount = original_amount / (total_inst as f64);
+            let total_cents = (account_amount * 100.0).round() as i64;
+            let base_cents = total_cents / i64::from(total_inst);
+            let final_cents = total_cents - base_cents * i64::from(total_inst - 1);
 
             use crate::models::movements::MovementInstallmentInsert;
             use crate::schema::movement_installments::dsl::movement_installments;
             use crate::utils::date::calculate_credit_payment_date_for_installment;
 
             for i in 1..=total_inst {
+                let installment_cents = if i == total_inst { final_cents } else { base_cents };
                 let due_timestamp = calculate_credit_payment_date_for_installment(
                     timestamp,
                     credit_info.cutoff_day as u32,
@@ -735,7 +738,7 @@ fn create_installments_if_credit(
                     movement_id,
                     installment_number: i,
                     total_installments: total_inst,
-                    amount: inst_amount,
+                    amount: installment_cents as f64 / 100.0,
                     due_timestamp,
                     paid: false,
                     paid_timestamp: None,

@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
+import { statisticsStore } from "@/stores/statisticsStore";
 import { ACCOUNT_FUNCTIONS, ACCOUNT_TYPES } from "@/types/enums";
 
 export const accountsStore = createStore<AccountsStore & Actions<Account>>((set, get) => ({
@@ -98,14 +99,20 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
       throw error;
     }
   },
-  payCreditCard: async (creditAccountId: number, payments: CreditCardPaymentRequest[]) => {
+  payCreditCard: async (
+    creditAccountId: number,
+    payments: CreditCardPaymentRequest[],
+    installmentIds: number[],
+  ) => {
     try {
-      const transferMovementIds = (await invoke(ACCOUNT_FUNCTIONS.payCreditCard, {
+      const result = (await invoke(ACCOUNT_FUNCTIONS.payCreditCard, {
         creditAccountId,
         payments,
-      })) as number[];
+        installmentIds,
+      })) as CreditCardPaymentResult;
       await get().populate();
-      return transferMovementIds;
+      statisticsStore.getState().invalidate();
+      return result;
     } catch (error) {
       logger.error("Failed to pay credit card", error);
       throw error;
@@ -127,7 +134,7 @@ export function validate(data: { [k: string]: FormDataEntryValue }): {
     errors.push("El nombre debe tener máximo 25 caracteres");
   }
 
-  if (typeof data.balance !== "string" || Number.isNaN(Number(data.balance))) {
+  if (typeof data.balance !== "string" || !Number.isFinite(Number(data.balance))) {
     errors.push("El saldo debe ser un número válido");
   }
 
@@ -136,7 +143,11 @@ export function validate(data: { [k: string]: FormDataEntryValue }): {
   }
 
   if (Number(data.type) === ACCOUNT_TYPES.CREDIT) {
-    if (typeof data.creditLimit !== "string" && Number.isNaN(Number(data.creditLimit))) {
+    if (
+      typeof data.creditLimit !== "string" ||
+      data.creditLimit.trim() === "" ||
+      !Number.isFinite(Number(data.creditLimit))
+    ) {
       errors.push("El límite de crédito es requerido");
     }
 
@@ -148,19 +159,27 @@ export function validate(data: { [k: string]: FormDataEntryValue }): {
       errors.push("El saldo usado debe ser mayor o igual a 0");
     }
 
-    if (typeof data.cutoffDay !== "string" && Number.isNaN(Number(data.cutoffDay))) {
+    if (
+      typeof data.cutoffDay !== "string" ||
+      data.cutoffDay.trim() === "" ||
+      !Number.isInteger(Number(data.cutoffDay))
+    ) {
       errors.push("El día de corte es requerido");
     }
 
-    if (typeof data.daysToPay !== "string" && Number.isNaN(Number(data.daysToPay))) {
+    if (
+      typeof data.daysToPay !== "string" ||
+      data.daysToPay.trim() === "" ||
+      !Number.isInteger(Number(data.daysToPay))
+    ) {
       errors.push("El día de pago es requerido");
     }
 
-    if (Number(data.cutoffDay) <= 0 && Number(data.cutoffDay) > 31) {
+    if (Number(data.cutoffDay) <= 0 || Number(data.cutoffDay) > 31) {
       errors.push("El día de corte debe ser un número entre 1 y 31");
     }
 
-    if (Number(data.daysToPay) <= 0 && Number(data.daysToPay) > 30) {
+    if (Number(data.daysToPay) <= 0 || Number(data.daysToPay) > 30) {
       errors.push("El día de pago debe ser un número entre 1 y 30");
     }
   }

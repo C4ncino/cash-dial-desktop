@@ -220,23 +220,74 @@ describe("AccountForm", () => {
     expect(screen.getByDisplayValue("100")).toBeInTheDocument();
   });
 
-  it("should render reset button", () => {
-    render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
+  it("should clear credit-only fields from the submitted payload when switching to cash", () => {
+    vi.mocked(validate).mockReturnValue({ valid: true, errors: [] });
+    vi.mocked(createAccountFromData).mockReturnValue({ name: "Cash" } as any);
 
-    expect(
-      screen.getByRole("button", {
-        name: "Restaurar",
-      }),
-    ).toBeInTheDocument();
+    render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
+    fireEvent.click(screen.getByLabelText(/Credit/i));
+    fireEvent.change(screen.getByLabelText(/L.*mite de Cr.*dito/i), {
+      target: { value: "2000" },
+    });
+    fireEvent.click(screen.getByLabelText(/Cash/i));
+    fireEvent.submit(document.getElementById("account-form")!);
+
+    const submittedData = vi.mocked(validate).mock.calls[0][0] as Record<string, FormDataEntryValue>;
+    expect(submittedData.creditLimit).toBeUndefined();
+    expect(submittedData.cutoffDay).toBeUndefined();
+    expect(submittedData.daysToPay).toBeUndefined();
   });
 
-  it("should render submit button", () => {
-    render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
+  it("locks duplicate submissions, preserves values on failure, and permits retry", async () => {
+    let rejectFirst: (reason: Error) => void = () => undefined;
+    mockAdd
+      .mockReturnValueOnce(new Promise((_, reject) => (rejectFirst = reject)))
+      .mockResolvedValueOnce(undefined);
+    vi.mocked(validate).mockReturnValue({ valid: true, errors: [] });
+    vi.mocked(createAccountFromData).mockReturnValue({ name: "Checking" } as Account);
 
-    expect(
-      screen.getByRole("button", {
-        name: "Guardar",
-      }),
-    ).toBeInTheDocument();
+    render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Checking" } });
+    fireEvent.click(screen.getByLabelText(/Cash/i));
+    const form = document.getElementById("account-form")!;
+
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(mockAdd).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Guardando…" })).toBeDisabled();
+
+    rejectFirst(new Error("temporary"));
+    expect(await screen.findByText("Ocurrió un error al guardar la cuenta")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Checking");
+    fireEvent.submit(form);
+
+    await waitFor(() => expect(mockAdd).toHaveBeenCalledTimes(2));
+    expect(toast).toHaveBeenCalledTimes(1);
+    expect(closeModal).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears validation errors on reset", () => {
+    vi.mocked(validate).mockReturnValue({ valid: false, errors: ["Invalid account"] });
+    render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
+    fireEvent.submit(document.getElementById("account-form")!);
+    expect(screen.getByText("Invalid account")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Restaurar" }));
+    expect(screen.queryByText("Invalid account")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Cash/i)).toBeChecked();
+  });
+
+  it("suppresses completion UI effects after unmount", async () => {
+    let resolveAdd: () => void = () => undefined;
+    mockAdd.mockReturnValueOnce(new Promise<void>((resolve) => (resolveAdd = resolve)));
+    vi.mocked(validate).mockReturnValue({ valid: true, errors: [] });
+    vi.mocked(createAccountFromData).mockReturnValue({ name: "Checking" } as Account);
+    const { unmount } = render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
+    fireEvent.click(screen.getByLabelText(/Cash/i));
+    fireEvent.submit(document.getElementById("account-form")!);
+    unmount();
+    resolveAdd();
+    await Promise.resolve();
+    expect(toast).not.toHaveBeenCalled();
+    expect(closeModal).not.toHaveBeenCalled();
   });
 });

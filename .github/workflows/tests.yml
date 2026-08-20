@@ -1,0 +1,101 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.1
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Linux native dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf webkit2gtk-driver xvfb
+
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --locked
+
+      - name: Install matching Edge WebDriver
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $edgePath = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
+          $edgeVersion = (Get-Item -LiteralPath $edgePath).VersionInfo.ProductVersion
+          $driverDirectory = Join-Path $env:RUNNER_TEMP "edge-driver"
+          $archive = Join-Path $env:RUNNER_TEMP "edge-driver.zip"
+          New-Item -ItemType Directory -Force -Path $driverDirectory | Out-Null
+          Invoke-WebRequest "https://msedgedriver.microsoft.com/$edgeVersion/edgedriver_win64.zip" -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $driverDirectory -Force
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value $driverDirectory
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Static analysis
+        run: pnpm check
+
+      - name: Frontend tests
+        run: pnpm test
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --locked -- --test-threads=1
+
+      - name: Production build
+        run: pnpm build
+
+      - name: Integration and E2E tests (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          pnpm test:integration
+          pnpm test:e2e:fast
+
+      - name: Integration and E2E tests (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          xvfb-run -a pnpm test:integration
+          xvfb-run -a pnpm test:e2e:fast
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ matrix.os }}
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            src-tauri/test-logs
+            integration-tests-front.sqlite
+            e2e-test.sqlite
+            ~/AppData/Roaming/**/logs
+            ~/.local/share/**/logs

@@ -1,16 +1,16 @@
 import { Icon } from "@iconify/react";
-import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "webcoreui/react";
 
 import FormErrors from "@/components/Forms/FormErrors";
 import SelectAccounts from "@/components/Forms/SelectAccounts";
 import AmountText from "@/components/General/AmountText";
+import { convertCurrencyAmount } from "@/lib/currencyConversion";
 import { formatAmount } from "@/lib/formatters";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
+import { currencyStore } from "@/stores/currencyStore";
 import { movementsStore } from "@/stores/movementsStore";
-import { MOVEMENT_FUNCTIONS } from "@/types/enums";
 
 interface PaymentSourceRow {
   key: number;
@@ -44,13 +44,20 @@ const CreditCardPaymentForm = ({
   const [rows, setRows] = useState<PaymentSourceRow[]>([createRow()]);
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    [],
+  );
 
   const amountCovered = rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
   const remaining = Math.max(0, totalAmount - amountCovered);
   const isExactlyCovered = Math.abs(totalAmount - amountCovered) < 0.005;
   const isOverfunded = amountCovered > totalAmount + 0.005;
-
-  const selectedAccountIds = rows.map((r) => r.accountId).filter((id): id is number => id !== null);
 
   const handleAccountChange = (key: number, accountId: number) => {
     setRows((prev) => prev.map((row) => (row.key === key ? { ...row, accountId } : row)));
@@ -113,8 +120,9 @@ const CreditCardPaymentForm = ({
     return errs;
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
 
     const validationErrors = validate();
     if (validationErrors.length > 0) {
@@ -123,38 +131,46 @@ const CreditCardPaymentForm = ({
     }
 
     setErrors([]);
+    submittingRef.current = true;
     setSubmitting(true);
 
-    const payments: CreditCardPaymentRequest[] = rows.map((row) => ({
-      fromAccountId: row.accountId as number,
-      amount: Number(row.amount),
-    }));
+    const payments: CreditCardPaymentRequest[] = rows.map((row) => {
+      const accountAmount = Number(row.amount);
+      const sourceAccount = accountsStore.getState().getById(row.accountId as number);
+      const sourceCurrency = sourceAccount
+        ? currencyStore.getState().getById(sourceAccount.currencyId)
+        : undefined;
+      const originalAmount =
+        Math.round(convertCurrencyAmount(accountAmount, currency, sourceCurrency) * 100) / 100;
 
-    console.log(payments);
-    console.log(installmentIds);
+      return {
+        fromAccountId: row.accountId as number,
+        originalAmount,
+        accountAmount,
+      };
+    });
 
     try {
-      const transferMovementIds = await accountsStore
+      const result = await accountsStore
         .getState()
-        .payCreditCard(creditAccountId, payments);
+        .payCreditCard(creditAccountId, payments, installmentIds);
 
-      const movementIds = (await invoke<number[]>(MOVEMENT_FUNCTIONS.markInstallmentsPaid, {
-        installmentIds,
-      })) as number[];
-
-      movementsStore.getState().refresh([...transferMovementIds, ...movementIds]);
+      movementsStore.getState().refresh([...result.transferMovementIds, ...result.paidMovementIds]);
 
       logger.info("Credit card payment completed", {
-        transferMovementIds,
+        transferMovementIds: result.transferMovementIds,
         installmentIds,
-        movementIds,
+        movementIds: result.paidMovementIds,
       });
 
       onSuccess();
     } catch (error) {
       logger.error("Payment failed", error);
-      setErrors([String(error)]);
-      setSubmitting(false);
+      submittingRef.current = false;
+      if (mountedRef.current) {
+        setErrors([String(error)]);
+        setSubmitting(false);
+      }
     }
   };
 

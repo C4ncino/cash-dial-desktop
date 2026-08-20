@@ -34,7 +34,7 @@ const links: Link[] = [
 <nav>
   <ul id="links" class="space-y-4">
     {
-      links.map((link, i) => (
+      links.map((link) => (
         <NavbarLink
           href={link.url}
           isSelected={Astro.url.pathname === link.url}

@@ -17,9 +17,9 @@ type CurrencyStore = {
 
 type Actions<T> = {
   populate: () => Promise<void>;
-  add: (data: T) => void;
-  update: (id: number, data: T) => void;
-  remove: (id: number) => void;
+  add: (data: T) => Promise<T | void>;
+  update: (id: number, data: T) => Promise<void>;
+  remove: (id: number) => Promise<void>;
   getById: (id: number) => T | undefined;
 };
 

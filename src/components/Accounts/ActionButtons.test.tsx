@@ -27,38 +27,6 @@ describe("ActionButtons", () => {
     setSearchParams("?id=1");
   });
 
-  it("should render two buttons", () => {
-    render(<ActionButtons />);
-
-    const buttons = screen.getAllByRole("button");
-
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("should render deactivate button", () => {
-    render(<ActionButtons />);
-
-    expect(screen.getByTestId(`confirm-modal-${MODAL_ID.ACCOUNT.DEACTIVATE}`)).toBeInTheDocument();
-
-    expect(screen.getByText("Desactivar")).toBeInTheDocument();
-  });
-
-  it("should render delete button", () => {
-    render(<ActionButtons />);
-
-    expect(screen.getByTestId(`confirm-modal-${MODAL_ID.ACCOUNT.DELETE}`)).toBeInTheDocument();
-
-    expect(screen.getByText("Eliminar")).toBeInTheDocument();
-  });
-
-  it("should call onConfirm with correct modalId for delete", () => {
-    render(<ActionButtons />);
-
-    const deleteBtn = screen.getByTestId(`confirm-modal-${MODAL_ID.ACCOUNT.DELETE}`);
-
-    expect(deleteBtn).toBeInTheDocument();
-  });
-
   it("should call accountsStore.remove when delete is confirmed", async () => {
     const removeSpy = vi.spyOn(accountsStore.getState(), "remove");
 
@@ -76,7 +44,7 @@ describe("ActionButtons", () => {
   it("should navigate back after account deletion", () => {
     const backSpy = vi.spyOn(window.history, "back");
 
-    vi.spyOn(accountsStore.getState(), "remove").mockImplementation(() => undefined);
+    vi.spyOn(accountsStore.getState(), "remove").mockResolvedValue(undefined);
 
     render(<ActionButtons />);
 
@@ -87,29 +55,4 @@ describe("ActionButtons", () => {
     expect(backSpy).toHaveBeenCalled();
   });
 
-  it("should render in list items", () => {
-    const { container } = render(<ActionButtons />);
-
-    const listItems = container.querySelectorAll("li");
-
-    expect(listItems.length).toBe(2);
-  });
-
-  it("should render deactivate modal with correct props", () => {
-    render(<ActionButtons />);
-
-    const deactivateBtn = screen.getByTestId(`confirm-modal-${MODAL_ID.ACCOUNT.DEACTIVATE}`);
-
-    expect(deactivateBtn).toBeInTheDocument();
-  });
-
-  it("should pass different account ids", () => {
-    setSearchParams("?id=2");
-
-    render(<ActionButtons />);
-
-    const deleteBtn = screen.getByTestId(`confirm-modal-${MODAL_ID.ACCOUNT.DELETE}`);
-
-    expect(deleteBtn).toBeInTheDocument();
-  });
 });

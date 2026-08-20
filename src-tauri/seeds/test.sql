@@ -4,7 +4,8 @@ VALUES
     (2, 1, 'Débito', 500.0),
     (3, 1, 'Crédito', 1000.0),
     (1, 1, 'Delete this', 1000.0),
-    (3, 1, 'Visa Gold', 1500.0);
+    (3, 1, 'Visa Gold', 1500.0),
+    (1, 2, 'USD Wallet', 100.0);
 
 INSERT OR IGNORE INTO accounts_credit_info (account_id, credit_limit, cutoff_day, days_to_pay)
 VALUES 

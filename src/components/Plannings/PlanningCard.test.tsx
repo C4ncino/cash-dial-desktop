@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
 import PlanningCard, {
-  formatOccurrenceDate,
   formatRecurrenceRuleSummary,
 } from "@/components/Plannings/PlanningCard";
 import { accountsStore } from "@/stores/accountsStore";

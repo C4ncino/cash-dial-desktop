@@ -3,6 +3,7 @@ import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
 import { planningsStore } from "@/stores/planningsStore";
+import { statisticsStore } from "@/stores/statisticsStore";
 import { MOVEMENT_FUNCTIONS, MOVEMENT_TYPES } from "@/types/enums";
 
 function buildByAccountIndex(movements: Movement[]): Record<number, number[]> {
@@ -139,8 +140,9 @@ export const movementsStore = createStore<
     if (planningId) {
       await planningsStore.getState().refresh(planningId);
     }
+    statisticsStore.getState().invalidate();
 
-    return set((state) => {
+    set((state) => {
       const byId = { ...state.byId, [newMovement.id]: newMovement };
       const allIds = [newMovement.id, ...state.allIds];
 
@@ -159,6 +161,8 @@ export const movementsStore = createStore<
         byAccount,
       };
     });
+
+    return newMovement;
   },
 
   remove: async (id: number) => {
@@ -168,6 +172,7 @@ export const movementsStore = createStore<
     if (removedMovement?.planningId) {
       await planningsStore.getState().refresh(removedMovement.planningId);
     }
+    statisticsStore.getState().invalidate();
 
     return set((state) => {
       const byId = { ...state.byId };
@@ -206,6 +211,7 @@ export const movementsStore = createStore<
         movementId: updatedMovement.id,
       })) as MovementInstallment[];
     }
+    statisticsStore.getState().invalidate();
 
     return set((state) => {
       const byId = { ...state.byId, [id]: updatedMovement };

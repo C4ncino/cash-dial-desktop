@@ -69,11 +69,11 @@ const MovementInfo = () => {
       />
 
       <Details
+        {...movement}
         categoryId={category.id}
         typeName={movementTypeObj?.name || ""}
         accountId={account.id}
         toAccountId={toAccount?.id}
-        {...movement}
       />
 
       {movementCurrency.id !== accountCurrency.id && (

@@ -34,7 +34,13 @@ type CreditCardNextPayment = {
 
 type CreditCardPaymentRequest = {
   fromAccountId: number;
-  amount: number;
+  originalAmount: number;
+  accountAmount: number;
+};
+
+type CreditCardPaymentResult = {
+  transferMovementIds: number[];
+  paidMovementIds: number[];
 };
 
 type AccountsStore = {
@@ -42,5 +48,9 @@ type AccountsStore = {
   types: AccountType[];
   updateBalance: (id1: number, id2?: number) => Promise<number | [number, number]>;
   getNextPayment: (accountId: number) => Promise<CreditCardNextPayment | null>;
-  payCreditCard: (creditAccountId: number, payments: CreditCardPaymentRequest[]) => Promise<number[]>;
+  payCreditCard: (
+    creditAccountId: number,
+    payments: CreditCardPaymentRequest[],
+    installmentIds: number[],
+  ) => Promise<CreditCardPaymentResult>;
 };

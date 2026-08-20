@@ -27,29 +27,15 @@ describe("ConfirmModal", () => {
     (modal as any).mockReturnValue(mockModalInstance);
   });
 
-  it("should render button with correct title", () => {
-    render(<ConfirmModal {...defaultProps} />);
-
-    const buttons = screen.getAllByRole("button", {
-      name: "Delete",
-    });
-
-    expect(buttons).toHaveLength(2);
-  });
-
-  it("should render modal with correct title", async () => {
+  it("should render the confirmation contract", async () => {
     render(<ConfirmModal {...defaultProps} />);
 
     await waitFor(() => {
+      expect(screen.getByTestId("open-modal-button")).toBeInTheDocument();
+      expect(screen.getByTestId("confirm-button")).toBeInTheDocument();
       expect(screen.getByTestId("modal")).toHaveAttribute("data-title", "Confirm Deletion");
-    });
-  });
-
-  it("should render description text", async () => {
-    render(<ConfirmModal {...defaultProps} />);
-
-    await waitFor(() => {
       expect(screen.getByText("Are you sure you want to delete this item?")).toBeInTheDocument();
+      expect(screen.getByText("Cancelar")).toBeInTheDocument();
     });
   });
 
@@ -65,35 +51,17 @@ describe("ConfirmModal", () => {
     });
   });
 
-  it("should call onConfirm when confirm button is clicked", async () => {
+  it("should confirm the action and close the modal", async () => {
     render(<ConfirmModal {...defaultProps} />);
 
     await waitFor(() => {
-      const confirmButton = screen.getByTestId("confirm-button");
-      if (confirmButton) {
-        fireEvent.click(confirmButton);
-      }
+      expect(screen.getByTestId("confirm-button")).toBeInTheDocument();
     });
-  });
 
-  it("should close modal after confirmation", async () => {
-    render(<ConfirmModal {...defaultProps} />);
+    fireEvent.click(screen.getByTestId("confirm-button"));
 
-    await waitFor(() => {
-      const confirmButtons = screen
-        .getAllByRole("button")
-        .filter((btn) => btn.textContent === "Delete");
-      if (confirmButtons.length > 1) {
-        fireEvent.click(confirmButtons[1]);
-      }
-    });
-  });
-
-  it("should render cancel button", async () => {
-    render(<ConfirmModal {...defaultProps} />);
-    await waitFor(() => {
-      expect(screen.getByText("Cancelar")).toBeInTheDocument();
-    });
+    expect(mockOnConfirm).toHaveBeenCalledTimes(1);
+    expect(mockModalInstance.close).toHaveBeenCalledTimes(1);
   });
 
   it("should close modal when cancel button is clicked", async () => {
@@ -123,16 +91,6 @@ describe("ConfirmModal", () => {
     expect(modal).toHaveBeenLastCalledWith("#new-modal");
   });
 
-  it("should apply correct button class for warning theme", async () => {
-    const warningProps = { ...defaultProps, theme: "warning" as const };
-    render(<ConfirmModal {...warningProps} />);
-
-    await waitFor(() => {
-      const modal = screen.getByTestId("modal");
-      expect(modal).toBeInTheDocument();
-    });
-  });
-
   it("should apply custom button class when provided", () => {
     const customProps = {
       ...defaultProps,
@@ -145,15 +103,4 @@ describe("ConfirmModal", () => {
     expect(button).toHaveClass("custom-class");
   });
 
-  it("should handle multiple theme types", async () => {
-    const themes = ["alert", "info", "success", "warning"] as const;
-
-    for (const theme of themes) {
-      const { unmount } = render(<ConfirmModal {...defaultProps} theme={theme} />);
-      await waitFor(() => {
-        expect(screen.getByTestId("modal")).toBeInTheDocument();
-      });
-      unmount();
-    }
-  });
 });

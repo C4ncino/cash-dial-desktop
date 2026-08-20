@@ -1,16 +1,15 @@
-import { closeTauriDriver, createDriver, deleteDatabase, driver, waitForHomeReady } from "@test/driver";
+import { closeTauriDriver, createDriver, driver, waitForHomeReady } from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("Planning to linked movement user flow", () => {
-  beforeAll(async () => {
-    await createDriver();
+  beforeEach(async () => {
+    await createDriver({ freshDatabase: true });
     await waitForHomeReady();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await closeTauriDriver();
-    deleteDatabase();
   });
 
   async function clearAndType(element: any, text: string) {
@@ -20,22 +19,29 @@ describe("Planning to linked movement user flow", () => {
   }
 
   async function selectPlanningCategory(formId: string) {
-    const categoryButton = await driver.findElement(By.css(`#${formId} fieldset.relative > button`));
+    const categoryButton = await driver.findElement(
+      By.css(`#${formId} fieldset.relative > button`),
+    );
     await categoryButton.click();
-    await driver.findElement(By.xpath(`//form[@id='${formId}']//button[contains(., 'Comida y Bebida')]`)).click();
-    await driver.findElement(By.xpath(`//form[@id='${formId}']//button[contains(., 'Supermercados')]`)).click();
+    await driver
+      .findElement(By.xpath(`//form[@id='${formId}']//button[contains(., 'Comida y Bebida')]`))
+      .click();
+    await driver
+      .findElement(By.xpath(`//form[@id='${formId}']//button[contains(., 'Supermercados')]`))
+      .click();
   }
 
   it("creates a planning, links a compatible movement, reloads, and cancels the next occurrence", async () => {
-    const planningLink = await driver.wait(until.elementLocated(By.css('a[href="/planning"]')), 15000);
+    const planningLink = await driver.wait(
+      until.elementLocated(By.css('a[href="/planning"]')),
+      15000,
+    );
     await planningLink.click();
     await driver.wait(until.elementLocated(By.id("create-planning-button")), 10000);
     await driver.findElement(By.id("create-planning-button")).click();
     const planningFormElement = By.css('form[id="create-planning-form"]');
     await driver.wait(until.elementLocated(planningFormElement), 5000);
     await driver.wait(until.elementIsVisible(driver.findElement(planningFormElement)), 5000);
-    await driver.sleep(500);
-
     const planningForm = "create-planning-form";
     const nameInput = await driver.findElement(By.css(`form#${planningForm} input[name="name"]`));
     await driver.executeScript(
@@ -45,17 +51,26 @@ describe("Planning to linked movement user flow", () => {
     await driver.wait(until.elementIsEnabled(nameInput), 5000);
     await nameInput.click();
     await nameInput.sendKeys("E2E Grocery Planning");
-    await clearAndType(await driver.findElement(By.css(`form#${planningForm} input[name="amount"]`)), "75");
+    await clearAndType(
+      await driver.findElement(By.css(`form#${planningForm} input[name="amount"]`)),
+      "75",
+    );
 
-    const accountSelect = await driver.findElement(By.css(`form#${planningForm} select[name="accountId"]`));
+    const accountSelect = await driver.findElement(
+      By.css(`form#${planningForm} select[name="accountId"]`),
+    );
     await accountSelect.findElement(By.css('option:not([value=""])')).click();
-    const currencySelect = await driver.findElement(By.css(`form#${planningForm} select[name="currency"]`));
+    const currencySelect = await driver.findElement(
+      By.css(`form#${planningForm} select[name="currency"]`),
+    );
     await currencySelect.findElement(By.css('option:not([value=""])')).click();
     await selectPlanningCategory(planningForm);
     await driver.findElement(By.css(`form#${planningForm} button[type="submit"]`)).click();
 
     const planningCard = await driver.wait(
-      until.elementLocated(By.xpath("//a[@data-testid='planning-card' and contains(., 'E2E Grocery Planning')]")),
+      until.elementLocated(
+        By.xpath("//a[@data-testid='planning-card' and contains(., 'E2E Grocery Planning')]"),
+      ),
       10000,
     );
     await driver.wait(until.elementTextContains(planningCard, "E2E Grocery Planning"), 5000);
@@ -69,8 +84,6 @@ describe("Planning to linked movement user flow", () => {
     expect(cardText).toMatch(/Efectivo|Updated Account/);
     const detailHref = await planningCard.getAttribute("href");
     await driver.executeScript("arguments[0].click();", planningCard);
-    await driver.sleep(1000);
-    console.log("detail url", await driver.getCurrentUrl());
     await driver.wait(until.elementLocated(By.xpath("//h3[contains(., 'Ocurrencias')]")), 10000);
     let bodyText = await driver.findElement(By.css("body")).getText();
     expect(bodyText).toContain("Ocurrencias");
@@ -84,17 +97,26 @@ describe("Planning to linked movement user flow", () => {
     await driver.findElement(By.id("create-expense-dialog-button")).click();
     await driver.wait(until.elementLocated(By.id("expense-form")), 5000);
 
-    const movementPlanningSelect = await driver.findElement(By.css('#expense-form select[name="planningId"]'));
+    const movementPlanningSelect = await driver.findElement(
+      By.css('#expense-form select[name="planningId"]'),
+    );
     await movementPlanningSelect
       .findElement(By.xpath('.//option[contains(., "E2E Grocery Planning")]'))
       .click();
     expect(await movementPlanningSelect.getAttribute("value")).not.toBe("");
-    expect(await driver.findElement(By.css('#expense-form input[name="amount"]')).getAttribute("value")).toBe("75");
-    const movementCategory = await driver.findElement(By.css('#expense-form input[name="categoryId"]'));
+    expect(
+      await driver.findElement(By.css('#expense-form input[name="amount"]')).getAttribute("value"),
+    ).toBe("75");
+    const movementCategory = await driver.findElement(
+      By.css('#expense-form input[name="categoryId"]'),
+    );
     expect(await movementCategory.getAttribute("value")).not.toBe("");
     await driver.findElement(By.css('#expense-form button[type="submit"]')).click();
 
-    await driver.executeScript("arguments[0].click();", await driver.findElement(By.css('a[href="/planning"]')));
+    await driver.executeScript(
+      "arguments[0].click();",
+      await driver.findElement(By.css('a[href="/planning"]')),
+    );
     await driver.wait(until.elementLocated(By.css('a[href^="/planning-detail?id="]')), 10000);
     const createdPlanning = await driver.findElement(
       By.xpath("//a[@data-testid='planning-card' and contains(., 'E2E Grocery Planning')]"),
@@ -110,12 +132,17 @@ describe("Planning to linked movement user flow", () => {
     bodyText = await driver.findElement(By.css("body")).getText();
     expect(bodyText).toContain("Historial");
 
-    const cancelButton = await driver.findElement(By.xpath("//button[contains(., 'Cancelar ocurrencia')]")).catch(() => null);
+    const cancelButton = await driver
+      .findElement(By.xpath("//button[contains(., 'Cancelar ocurrencia')]"))
+      .catch(() => null);
     if (cancelButton) {
       await cancelButton.click();
       const confirmButton = await driver.findElement(By.css('[data-testid="confirm-button"]'));
       await confirmButton.click();
-      await driver.sleep(300);
+      await driver.wait(async () => {
+        const text = await driver.findElement(By.css("body")).getText();
+        return text.includes("Cancelada");
+      }, 10000);
       bodyText = await driver.findElement(By.css("body")).getText();
       expect(bodyText).toContain("Cancelada");
     }

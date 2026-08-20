@@ -4,7 +4,6 @@ import { useStore } from "zustand";
 
 import PlanningCard from "@/components/Plannings/PlanningCard";
 import { planningsStore } from "@/stores/planningsStore";
-import { MODAL_ID } from "@/types/enums";
 
 type FilterStatus = "all" | "active" | "inactive" | "overdue";
 

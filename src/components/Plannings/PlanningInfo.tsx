@@ -32,7 +32,9 @@ const PlanningInfo = () => {
       : null;
 
   const planning = useStore(planningsStore, (s) => s?.plannings?.find((p) => p.id === id));
-  const category = useStore(categoryStore, (s) => (s?.getById && planning ? s.getById(planning.categoryId) : undefined));
+  const category = useStore(categoryStore, (s) =>
+    planning ? s.getById(planning.categoryId) : undefined,
+  );
   const currency = useStore(currencyStore, (s) => s?.currencies?.find((c) => c.id === planning?.currencyId));
 
   if (!planning) return null;
@@ -40,8 +42,6 @@ const PlanningInfo = () => {
   const rule = planning.recurringRule;
   const isExpense = planning.typeId === MOVEMENT_TYPES.EXPENSE;
   const recurrenceSummary = formatRecurrenceRuleSummary(rule);
-  const actionableOccurrence = planning.currentOccurrence;
-
   return (
     <section className="p-4 mb-4">
       {/* Header */}

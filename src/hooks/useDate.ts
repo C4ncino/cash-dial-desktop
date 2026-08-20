@@ -21,7 +21,7 @@ const useDate = (timestamp: number) => {
   const time = dateObject.toLocaleTimeString(lang, {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: !clockFormat12,
+    hour12: clockFormat12,
   });
 
   return {

@@ -9,6 +9,7 @@ import SelectAccounts from "@/components/Forms/SelectAccounts";
 import SelectCategories from "@/components/Forms/SelectCategories";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import PlanningRecurrenceForm from "@/components/Plannings/PlanningRecurrenceForm";
+import useSubmissionGuard from "@/hooks/useSubmissionGuard";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
@@ -99,6 +100,7 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
   const accounts = useStore(accountsStore, (s) => s?.accounts) ?? [];
 
   const [errors, setErrors] = useState<string[]>([]);
+  const { submitting, begin, finish, isMounted } = useSubmissionGuard();
   const [name, setName] = useState("");
   const [typeId, setTypeId] = useState<number>(MOVEMENT_TYPES.EXPENSE);
   const [selectedAccountId, setSelectedAccountId] = useState<number | undefined>();
@@ -154,8 +156,10 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
     ? accounts.find((a) => a.id === selectedAccountId)
     : undefined;
 
-  const isCreditAccount =
-    selectedAccount?.type.id === ACCOUNT_TYPES.CREDIT || selectedAccount?.creditInfo !== null;
+  const isCreditAccount = Boolean(
+    selectedAccount &&
+      (selectedAccount.type.id === ACCOUNT_TYPES.CREDIT || selectedAccount.creditInfo !== null),
+  );
 
   useEffect(() => {
     if (isCreditAccount && typeId === MOVEMENT_TYPES.INCOME) {
@@ -165,7 +169,8 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
 
   const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
     const formCurrencyId = Number(formData.get("currency")) || currencyId || 1;
 
     const numAmount = Number(amount);
@@ -190,6 +195,8 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
       return;
     }
 
+    if (!begin()) return;
+
     try {
       const payload: CreatePlanningRequest = {
         typeId,
@@ -209,20 +216,25 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
 
       if (isEditing && planning) {
         await planningsStore.getState().update(planning.id, payload);
-        toast("#planning-updated");
       } else {
         await planningsStore.getState().create(payload);
-        toast("#planning-created");
       }
 
-      (e.target as HTMLFormElement).reset();
+      if (!isMounted()) return;
+      toast(isEditing ? "#planning-updated" : "#planning-created");
+      form.reset();
       setErrors([]);
       editState.clear();
       closeModal(`#${modalId}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error("Planning form submission error:", err);
-      const errMsg = typeof err === "string" ? err : "Ocurrió un error al guardar la planificación";
-      setErrors([errMsg]);
+      if (isMounted()) {
+        const errMsg =
+          typeof err === "string" ? err : "Ocurrió un error al guardar la planificación";
+        setErrors([errMsg]);
+      }
+    } finally {
+      finish();
     }
   };
 
@@ -281,6 +293,7 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
         <div className="flex border border-zinc-800 rounded bg-zinc-950">
           <button
             type="button"
+            aria-pressed={typeId === MOVEMENT_TYPES.EXPENSE}
             onClick={() => setTypeId(MOVEMENT_TYPES.EXPENSE)}
             className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer rounded-l ${
               typeId === MOVEMENT_TYPES.EXPENSE
@@ -293,6 +306,7 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
           <button
             type="button"
             disabled={isCreditAccount}
+            aria-pressed={typeId === MOVEMENT_TYPES.INCOME}
             onClick={() => setTypeId(MOVEMENT_TYPES.INCOME)}
             className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer rounded-r border-l border-zinc-800 ${
               typeId === MOVEMENT_TYPES.INCOME
@@ -358,7 +372,7 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
       />
 
       <FormErrors errors={errors} />
-      <FormActions />
+      <FormActions disabled={submitting} />
     </form>
   );
 };

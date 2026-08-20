@@ -47,6 +47,24 @@ fn run_seed(conn: &mut diesel::SqliteConnection, environment: &Environment) -> R
     conn.batch_execute(&seed_sql)
         .map_err(|e| format!("Failed to execute seed file {seed_file}: {e}"))?;
 
+    if matches!(environment, Environment::Test) {
+        if let Ok(overlay_file) = std::env::var("E2E_SEED_FILE") {
+            let overlay_path = std::path::Path::new(&overlay_file)
+                .canonicalize()
+                .map_err(|e| format!("Cannot resolve E2E seed overlay {overlay_file}: {e}"))?;
+            if !overlay_path.is_file()
+                || overlay_path.extension().and_then(|value| value.to_str()) != Some("sql")
+            {
+                return Err("E2E seed overlay must be an existing .sql file".to_string());
+            }
+            let overlay_sql = std::fs::read_to_string(&overlay_path)
+                .map_err(|e| format!("Cannot read E2E seed overlay: {e}"))?;
+            conn.batch_execute(&overlay_sql)
+                .map_err(|e| format!("Failed to execute E2E seed overlay: {e}"))?;
+            tracing::info!("Applied test seed overlay {}", overlay_path.display());
+        }
+    }
+
     tracing::info!("Seeding completed");
     Ok(())
 }

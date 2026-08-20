@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react";
-import { useMemo, useState } from "react";
-import { Button, Input, Select } from "webcoreui/react";
+import { useEffect, useMemo, useState } from "react";
+import { Input } from "webcoreui/react";
 import { useStore } from "zustand";
 
 import { planningsStore } from "@/stores/planningsStore";
@@ -87,6 +87,10 @@ const PlanningRecurrenceForm = ({
   const [newYearMonth, setNewYearMonth] = useState<number>(1);
   const [newYearDay, setNewYearDay] = useState<number>(1);
 
+  useEffect(() => {
+    setHasEndDate(endDate != null);
+  }, [endDate]);
+
   const currentType = useMemo(() => {
     return (
       (storeRecurringTypes || []).find((t) => t.id === recurringTypeId) || {
@@ -167,6 +171,7 @@ const PlanningRecurrenceForm = ({
           <button
             type="button"
             key={t.id}
+            aria-pressed={recurringTypeId === t.id}
             onClick={() => handleTypeSelect(t.id)}
             className={`flex-1 py-2 text-sm text-center font-medium transition-colors cursor-pointer first:rounded-l last:rounded-r border-r last:border-0 border-zinc-800 ${
               recurringTypeId === t.id

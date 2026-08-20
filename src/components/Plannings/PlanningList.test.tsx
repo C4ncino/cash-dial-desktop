@@ -100,6 +100,9 @@ describe("PlanningList Component", () => {
 
     expect(screen.getByText("Renta de Departamento")).toBeInTheDocument();
     expect(screen.queryByText("Sueldo Quincenal")).not.toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: "" } });
+    expect(screen.getByText("Sueldo Quincenal")).toBeInTheDocument();
   });
 
   it("filters plannings by active and inactive status tabs", () => {

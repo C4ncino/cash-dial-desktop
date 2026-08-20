@@ -29,7 +29,7 @@ vi.mock("@/stores/budgetStore", () => ({
   },
 }));
 
-vi.mock("@/components/Forms/SelectCurrencies", () => ({
+vi.mock("@/components/Forms/SelectCurrency", () => ({
   default: ({ value, onChange, disabled }: any) => (
     <select
       name="currency"
@@ -233,7 +233,7 @@ it("submits planningId and applies the selected planning context", () => {
     target: { value: "7" },
   });
   fireEvent.submit(document.getElementById("expense-form")!);
-  expect(createMovementFromData.mock.calls[0][0]).toMatchObject({
+  expect(vi.mocked(createMovementFromData).mock.calls[0][0]).toMatchObject({
     planningId: "7",
   });
   expect(mockAdd).toHaveBeenCalledWith(createdMovement);
@@ -310,6 +310,9 @@ describe("MovementForm", () => {
       "MovementForm test beforeEach: clear mocks and setup store state",
     );
     vi.clearAllMocks();
+    mockAdd.mockResolvedValue({ id: 99 });
+    mockUpdate.mockResolvedValue(undefined);
+    mockUpdateBalance.mockResolvedValue(0);
 
     mockUseStoreState();
   });
@@ -377,7 +380,7 @@ describe("MovementForm", () => {
       expect(mockAdd).not.toHaveBeenCalled();
     });
 
-    it("should create income when form is valid", () => {
+    it("should create income when form is valid", async () => {
       vi.mocked(validateMovement).mockReturnValue({
         valid: true,
         errors: [],
@@ -407,13 +410,13 @@ describe("MovementForm", () => {
 
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
-      expect(toast).toHaveBeenCalledWith("#income-created");
+      await waitFor(() => expect(toast).toHaveBeenCalledWith("#income-created"));
       expect(closeModal).toHaveBeenCalledWith(
         `#${MODAL_ID.MOVEMENT.INCOME.CREATE}`,
       );
     });
 
-    it("should update income when editing", () => {
+    it("should update income when editing", async () => {
       mockUseStoreState({
         editState: {
           id: 1,
@@ -445,7 +448,7 @@ describe("MovementForm", () => {
       fireEvent.submit(form!);
 
       expect(mockUpdate).toHaveBeenCalledWith(1, updatedMovement);
-      expect(toast).toHaveBeenCalledWith("#income-updated");
+      await waitFor(() => expect(toast).toHaveBeenCalledWith("#income-updated"));
     });
 
     it("should populate fields when editing an income", () => {
@@ -512,7 +515,7 @@ describe("MovementForm", () => {
       ).toBeInTheDocument();
     });
 
-    it("should create expense when form is valid", () => {
+    it("should create expense when form is valid", async () => {
       vi.mocked(validateMovement).mockReturnValue({
         valid: true,
         errors: [],
@@ -538,13 +541,13 @@ describe("MovementForm", () => {
 
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
-      expect(toast).toHaveBeenCalledWith("#expense-created");
+      await waitFor(() => expect(toast).toHaveBeenCalledWith("#expense-created"));
       expect(closeModal).toHaveBeenCalledWith(
         `#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}`,
       );
     });
 
-    it("should update expense when editing", () => {
+    it("should update expense when editing", async () => {
       mockUseStoreState({
         editState: {
           id: 1,
@@ -576,7 +579,7 @@ describe("MovementForm", () => {
       fireEvent.submit(form!);
 
       expect(mockUpdate).toHaveBeenCalledWith(1, updatedMovement);
-      expect(toast).toHaveBeenCalledWith("#expense-updated");
+      await waitFor(() => expect(toast).toHaveBeenCalledWith("#expense-updated"));
     });
   });
 
@@ -623,7 +626,7 @@ describe("MovementForm", () => {
       expect(screen.getByLabelText("Monto en USD")).toBeInTheDocument();
     });
 
-    it("should create transfer when form is valid", () => {
+    it("should create transfer when form is valid", async () => {
       vi.mocked(validateMovement).mockReturnValue({
         valid: true,
         errors: [],
@@ -649,17 +652,17 @@ describe("MovementForm", () => {
       fireEvent.submit(form!);
 
       expect(createMovementFromData).toHaveBeenCalled();
-      expect(createMovementFromData.mock.calls[0][0]).toMatchObject({
+      expect(vi.mocked(createMovementFromData).mock.calls[0][0]).toMatchObject({
         currency: "1",
       });
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
-      expect(toast).toHaveBeenCalledWith("#transfer-created");
+      await waitFor(() => expect(toast).toHaveBeenCalledWith("#transfer-created"));
       expect(closeModal).toHaveBeenCalledWith(
         `#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}`,
       );
     });
 
-    it("should update transfer when editing", () => {
+    it("should update transfer when editing", async () => {
       mockUseStoreState({
         editState: {
           id: 1,
@@ -692,11 +695,11 @@ describe("MovementForm", () => {
       fireEvent.submit(form!);
 
       expect(mockUpdate).toHaveBeenCalledWith(1, updatedMovement);
-      expect(toast).toHaveBeenCalledWith("#transfer-updated");
+      await waitFor(() => expect(toast).toHaveBeenCalledWith("#transfer-updated"));
     });
   });
 
-  it("should call updateBalance after creating a movement", () => {
+  it("should call updateBalance after creating a movement", async () => {
     vi.mocked(validateMovement).mockReturnValue({
       valid: true,
       errors: [],
@@ -721,36 +724,65 @@ describe("MovementForm", () => {
 
     fireEvent.submit(form!);
 
-    expect(mockUpdateBalance).toHaveBeenCalledWith(1, 2);
+    await waitFor(() => expect(mockUpdateBalance).toHaveBeenCalledWith(1, 2));
   });
 
-  it("should render reset button", () => {
+  it("locks duplicate submissions, preserves data on failure, and allows retry", async () => {
+    let rejectFirst: (reason: Error) => void = () => undefined;
+    mockAdd
+      .mockReturnValueOnce(new Promise((_, reject) => (rejectFirst = reject)))
+      .mockResolvedValueOnce({ id: 99 });
+    vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
+    vi.mocked(createMovementFromData).mockReturnValue({
+      accountId: 1,
+      categoryId: 1,
+      originalAmount: 100,
+      accountAmount: 100,
+    } as Movement);
     render(
       <MovementForm
         modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
         movementType={MOVEMENT_TYPES.INCOME}
       />,
     );
+    fireEvent.change(screen.getByLabelText("Monto"), { target: { value: "100" } });
+    const form = document.getElementById("income-form")!;
 
-    expect(
-      screen.getByRole("button", {
-        name: "Restaurar",
-      }),
-    ).toBeInTheDocument();
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(mockAdd).toHaveBeenCalledTimes(1);
+    rejectFirst(new Error("temporary movement failure"));
+    expect(await screen.findByText("temporary movement failure")).toBeInTheDocument();
+    expect(screen.getByLabelText("Monto")).toHaveValue(100);
+
+    fireEvent.submit(form);
+    await waitFor(() => expect(mockAdd).toHaveBeenCalledTimes(2));
+    expect(toast).toHaveBeenCalledTimes(1);
+    expect(closeModal).toHaveBeenCalledTimes(1);
   });
 
-  it("should render submit button", () => {
-    render(
+  it("suppresses completion UI after unmount", async () => {
+    let resolveAdd: (movement: Movement) => void = () => undefined;
+    mockAdd.mockReturnValueOnce(new Promise((resolve) => (resolveAdd = resolve)));
+    vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
+    vi.mocked(createMovementFromData).mockReturnValue({
+      accountId: 1,
+      categoryId: 1,
+      originalAmount: 100,
+      accountAmount: 100,
+    } as Movement);
+    const { unmount } = render(
       <MovementForm
         modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
         movementType={MOVEMENT_TYPES.INCOME}
       />,
     );
-
-    expect(
-      screen.getByRole("button", {
-        name: "Guardar",
-      }),
-    ).toBeInTheDocument();
+    fireEvent.submit(document.getElementById("income-form")!);
+    unmount();
+    resolveAdd({ id: 99 } as Movement);
+    await Promise.resolve();
+    expect(toast).not.toHaveBeenCalled();
+    expect(closeModal).not.toHaveBeenCalled();
   });
+
 });

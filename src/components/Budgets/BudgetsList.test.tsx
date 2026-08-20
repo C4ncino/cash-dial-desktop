@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
-import BudgetCard from "@/components/Budgets/BudgetCard";
 import BudgetsList from "@/components/Budgets/BudgetsList";
 import { budgetStore } from "@/stores/budgetStore";
 

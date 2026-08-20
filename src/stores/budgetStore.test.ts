@@ -76,4 +76,27 @@ describe("budgetStore", () => {
 
     expect(budgetStore.getState().getById(1)?.periods[0].amountLimit).toBe(300);
   });
+
+  it("keeps budget state unchanged when mutations fail", async () => {
+    budgetStore.setState({ budgets: [sampleBudget], periodTypes: [samplePeriodType] });
+    const before = budgetStore.getState().budgets;
+    const request = {
+      budgetPeriodTypeId: 1,
+      categoryId: 1,
+      currencyId: 1,
+      name: "B2",
+      amountLimit: 10,
+      startDate: 0,
+    };
+    for (const mutation of [
+      () => budgetStore.getState().add(request),
+      () => budgetStore.getState().updateName(1, "Changed"),
+      () => budgetStore.getState().updateAmount(1, 10, BUDGET_UPDATE_TYPES.CORRECT),
+      () => budgetStore.getState().remove(1),
+    ]) {
+      mockInvoke.mockRejectedValueOnce(new Error("mutation failed"));
+      await expect(mutation()).rejects.toThrow("mutation failed");
+      expect(budgetStore.getState().budgets).toEqual(before);
+    }
+  });
 });

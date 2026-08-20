@@ -14,8 +14,6 @@ interface Props {
 }
 
 const SegmentedControl = ({ items, value, modalId, onChange }: Props) => {
-  console.log(items);
-
   return (
     <fieldset
       className="flex border border-gray-webui rounded"

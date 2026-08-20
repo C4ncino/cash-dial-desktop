@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 
 import CreditCardPaymentForm from "@/components/Accounts/CreditCardPaymentForm";
@@ -19,18 +19,22 @@ const AccountNextPayment = ({ accountId }: Props) => {
   const [nextPayment, setNextPayment] = useState<CreditCardNextPayment | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const latestRequestId = useRef(0);
 
   const fetchNextPayment = useCallback(async () => {
+    const requestId = ++latestRequestId.current;
     setLoading(true);
     setError(false);
     accountsStore
       .getState()
       .getNextPayment(accountId)
       .then((data) => {
+        if (requestId !== latestRequestId.current) return;
         setNextPayment(data);
         setLoading(false);
       })
       .catch(() => {
+        if (requestId !== latestRequestId.current) return;
         setError(true);
         setLoading(false);
       });
@@ -38,6 +42,9 @@ const AccountNextPayment = ({ accountId }: Props) => {
 
   useEffect(() => {
     fetchNextPayment();
+    return () => {
+      latestRequestId.current += 1;
+    };
   }, [fetchNextPayment]);
 
   const { dateShort } = useDate(nextPayment?.paymentDate || 0);

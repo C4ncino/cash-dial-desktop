@@ -7,10 +7,10 @@ const stores = vi.hoisted(() => ({
   },
   statisticsState: {
     selectedCurrencyId: 1,
-    period: "month" as const,
+    period: "month" as "week" | "month" | "year",
     periodStartMs: new Date(2026, 7, 1).getTime(),
     periodEndMs: new Date(2026, 8, 1).getTime(),
-    granularity: "day" as const,
+    granularity: "day" as "day" | "month",
     response: null,
     loading: false,
     error: null as string | null,

@@ -20,7 +20,7 @@ import MovementToasts from "@/components/Movements/Toasts.astro";
 <MovementToasts />
 
 <script>
-    import { EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
+    import { EDIT_TYPES, MOVEMENT_TYPES } from "@/types/enums";
     import { editStore } from "@/stores/editStore";
     import { movementsStore } from "@/stores/movementsStore";
 
@@ -43,17 +43,13 @@ import MovementToasts from "@/components/Movements/Toasts.astro";
             }
 
             let editType: EDIT_TYPES;
-            let modalId: string;
 
             if (movement.typeId === MOVEMENT_TYPES.INCOME) {
                 editType = EDIT_TYPES.INCOME;
-                modalId = MODAL_ID.MOVEMENT.INCOME.EDIT;
             } else if (movement.typeId === MOVEMENT_TYPES.EXPENSE) {
                 editType = EDIT_TYPES.EXPENSE;
-                modalId = MODAL_ID.MOVEMENT.EXPENSE.EDIT;
             } else if (movement.typeId === MOVEMENT_TYPES.TRANSFER) {
                 editType = EDIT_TYPES.TRANSFER;
-                modalId = MODAL_ID.MOVEMENT.TRANSFER.EDIT;
             } else {
                 return;
             }

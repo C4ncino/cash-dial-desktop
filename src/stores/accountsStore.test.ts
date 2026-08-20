@@ -149,18 +149,20 @@ describe("accountsStore", () => {
   });
 
   it("payCreditCard invokes Tauri command and populates store", async () => {
-    const payments = [{ fromAccountId: 2, amount: 50.0 }];
+    const payments = [{ fromAccountId: 2, originalAmount: 45, accountAmount: 50 }];
+    const paymentResult = { transferMovementIds: [42], paidMovementIds: [7] };
     mockInvoke
-      .mockResolvedValueOnce([42])
+      .mockResolvedValueOnce(paymentResult)
       .mockResolvedValueOnce([accountType])
       .mockResolvedValueOnce([account]);
 
-    const transferMovementIds = await accountsStore.getState().payCreditCard(1, payments);
+    const result = await accountsStore.getState().payCreditCard(1, payments, [101]);
 
-    expect(transferMovementIds).toEqual([42]);
+    expect(result).toEqual(paymentResult);
     expect(mockInvoke).toHaveBeenNthCalledWith(1, "pay_credit_card", {
       creditAccountId: 1,
       payments,
+      installmentIds: [101],
     });
     expect(mockInvoke).toHaveBeenNthCalledWith(2, "get_account_types");
     expect(mockInvoke).toHaveBeenNthCalledWith(3, "get_accounts");
@@ -170,8 +172,24 @@ describe("accountsStore", () => {
     mockInvoke.mockRejectedValueOnce(new Error("Payment Failed"));
 
     await expect(
-      accountsStore.getState().payCreditCard(1, [{ fromAccountId: 2, amount: 50 }])
+      accountsStore
+        .getState()
+        .payCreditCard(1, [{ fromAccountId: 2, originalAmount: 45, accountAmount: 50 }], [101]),
     ).rejects.toThrow("Payment Failed");
+  });
+
+  it("keeps account state unchanged when add, update, or remove fails", async () => {
+    accountsStore.setState({ accounts: [account], types: [accountType] });
+    const before = accountsStore.getState().accounts;
+    for (const mutation of [
+      () => accountsStore.getState().add(account),
+      () => accountsStore.getState().update(account.id, account),
+      () => accountsStore.getState().remove(account.id),
+    ]) {
+      mockInvoke.mockRejectedValueOnce(new Error("mutation failed"));
+      await expect(mutation()).rejects.toThrow("mutation failed");
+      expect(accountsStore.getState().accounts).toEqual(before);
+    }
   });
 });
 
@@ -218,6 +236,38 @@ describe("validate", () => {
     });
 
     expect(result.valid).toBe(false);
+  });
+
+  const validCreditAccount = {
+    name: "Visa",
+    balance: "0",
+    type: "3",
+    creditLimit: "1000",
+    cutoffDay: "15",
+    daysToPay: "20",
+  };
+
+  it("accepts valid credit-account boundary values", () => {
+    expect(validate({ ...validCreditAccount, cutoffDay: "1", daysToPay: "1" }).valid).toBe(true);
+    expect(validate({ ...validCreditAccount, cutoffDay: "31", daysToPay: "30" }).valid).toBe(true);
+  });
+
+  it.each([
+    ["creditLimit", "", "El límite de crédito es requerido"],
+    ["creditLimit", "Infinity", "El límite de crédito es requerido"],
+    ["creditLimit", "0", "El límite de crédito debe ser mayor a 0"],
+    ["cutoffDay", "0", "El día de corte debe ser un número entre 1 y 31"],
+    ["cutoffDay", "32", "El día de corte debe ser un número entre 1 y 31"],
+    ["cutoffDay", "1.5", "El día de corte es requerido"],
+    ["daysToPay", "0", "El día de pago debe ser un número entre 1 y 30"],
+    ["daysToPay", "31", "El día de pago debe ser un número entre 1 y 30"],
+    ["daysToPay", "1.5", "El día de pago es requerido"],
+    ["balance", "-1", "El saldo usado debe ser mayor o igual a 0"],
+  ])("rejects invalid credit field %s=%s", (field, value, message) => {
+    const result = validate({ ...validCreditAccount, [field]: value });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain(message);
   });
 });
 

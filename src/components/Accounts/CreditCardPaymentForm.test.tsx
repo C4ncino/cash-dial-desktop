@@ -4,10 +4,12 @@ import { useStore } from "zustand";
 
 import CreditCardPaymentForm from "@/components/Accounts/CreditCardPaymentForm";
 import { accountsStore } from "@/stores/accountsStore";
+import { currencyStore } from "@/stores/currencyStore";
 import { movementsStore } from "@/stores/movementsStore";
 
 vi.mock("zustand");
 vi.mock("@/stores/accountsStore");
+vi.mock("@/stores/currencyStore");
 vi.mock("@/stores/movementsStore");
 vi.mock("@/components/Forms/SelectAccounts", () => ({
   default: ({ name, onChange }: { name: string; onChange?: (id: number) => void }) => (
@@ -22,22 +24,16 @@ vi.mock("@/components/Forms/SelectAccounts", () => ({
     </select>
   ),
 }));
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
-}));
 vi.mock("@iconify/react", () => ({
   Icon: ({ icon }: { icon: string }) => <span data-testid="icon" data-icon={icon} />,
 }));
-
-import { invoke } from "@tauri-apps/api/core";
-
-const mockInvoke = vi.mocked(invoke);
 
 const mockCurrency: Currency = {
   id: 1,
   code: "USD",
   name: "US Dollar",
   symbol: "$",
+  conversionRate: 1,
 };
 
 const mockAccounts = [
@@ -78,7 +74,6 @@ describe("CreditCardPaymentForm", () => {
     payCreditCardMock = vi.fn();
     onSuccessMock = vi.fn();
     onCancelMock = vi.fn();
-    mockInvoke.mockResolvedValue(undefined);
 
     vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
       if (store === accountsStore) {
@@ -91,6 +86,10 @@ describe("CreditCardPaymentForm", () => {
 
     (accountsStore.getState as any).mockReturnValue({
       payCreditCard: payCreditCardMock,
+      getById: (id: number) => mockAccounts.find((account) => account.id === id),
+    });
+    (currencyStore.getState as any).mockReturnValue({
+      getById: () => mockCurrency,
     });
     (movementsStore.getState as any).mockReturnValue({
       refresh: vi.fn(),
@@ -181,6 +180,37 @@ describe("CreditCardPaymentForm", () => {
     expect(payButton).toBeDisabled();
   });
 
+  it("recalculates the remaining amount and duplicate validation after editing payment rows", async () => {
+    render(
+      <CreditCardPaymentForm
+        creditAccountId={12}
+        totalAmount={150}
+        currency={mockCurrency}
+        onSuccess={onSuccessMock}
+        onCancel={onCancelMock}
+        installmentIds={[]}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Agregar cuenta"));
+    const accounts = screen.getAllByLabelText("Cuenta origen");
+    const amounts = screen.getAllByLabelText("Monto");
+    fireEvent.change(accounts[0], { target: { value: "10" } });
+    fireEvent.change(amounts[0], { target: { value: "100" } });
+    fireEvent.change(accounts[1], { target: { value: "11" } });
+    fireEvent.change(amounts[1], { target: { value: "50" } });
+    expect(screen.getByRole("button", { name: "Pagar" })).toBeEnabled();
+
+    fireEvent.change(amounts[1], { target: { value: "25" } });
+    expect(screen.getByRole("button", { name: "Pagar" })).toBeDisabled();
+
+    fireEvent.change(accounts[1], { target: { value: "10" } });
+    fireEvent.submit(screen.getByText("Pagar tarjeta").closest("form")!);
+    expect(
+      await screen.findByText("No puedes seleccionar la misma cuenta dos veces"),
+    ).toBeInTheDocument();
+  });
+
   it("displays validation error if account is not selected on submit", async () => {
     render(
       <CreditCardPaymentForm
@@ -241,8 +271,10 @@ describe("CreditCardPaymentForm", () => {
   });
 
   it("calls payCreditCard and onSuccess on valid submission", async () => {
-    payCreditCardMock.mockResolvedValue([123]);
-    mockInvoke.mockResolvedValueOnce([201, 202]);
+    payCreditCardMock.mockResolvedValue({
+      transferMovementIds: [123],
+      paidMovementIds: [201, 202],
+    });
 
     render(
       <CreditCardPaymentForm
@@ -271,15 +303,53 @@ describe("CreditCardPaymentForm", () => {
     fireEvent.submit(form!);
 
     await waitFor(() => {
-      expect(payCreditCardMock).toHaveBeenCalledWith(12, [
-        { fromAccountId: 10, amount: 100 },
-        { fromAccountId: 11, amount: 50 },
-      ]);
-      expect(mockInvoke).toHaveBeenCalledWith("mark_installments_as_paid", {
-        installmentIds: [101, 102],
-      });
+      expect(payCreditCardMock).toHaveBeenCalledWith(
+        12,
+        [
+          { fromAccountId: 10, originalAmount: 100, accountAmount: 100 },
+          { fromAccountId: 11, originalAmount: 50, accountAmount: 50 },
+        ],
+        [101, 102],
+      );
       expect(onSuccessMock).toHaveBeenCalled();
     });
+  });
+
+  it("derives the source debit from the card-currency account amount", async () => {
+    const mxnCurrency = { ...mockCurrency, id: 2, code: "MXN", conversionRate: 18 };
+    (currencyStore.getState as any).mockReturnValue({
+      getById: (id: number) => (id === 1 ? mockCurrency : mxnCurrency),
+    });
+    const convertedAccounts = mockAccounts.map((account) =>
+      account.id === 10 ? { ...account, currencyId: 2 } : account,
+    );
+    (accountsStore.getState as any).mockReturnValue({
+      payCreditCard: payCreditCardMock,
+      getById: (id: number) => convertedAccounts.find((account) => account.id === id),
+    });
+    payCreditCardMock.mockResolvedValue({ transferMovementIds: [123], paidMovementIds: [201] });
+
+    render(
+      <CreditCardPaymentForm
+        creditAccountId={12}
+        totalAmount={10}
+        currency={mockCurrency}
+        onSuccess={onSuccessMock}
+        onCancel={onCancelMock}
+        installmentIds={[101]}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Cuenta origen"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Monto"), { target: { value: "10" } });
+    fireEvent.submit(screen.getByText("Pagar tarjeta").closest("form")!);
+
+    await waitFor(() =>
+      expect(payCreditCardMock).toHaveBeenCalledWith(
+        12,
+        [{ fromAccountId: 10, originalAmount: 180, accountAmount: 10 }],
+        [101],
+      ),
+    );
   });
 
   it("displays submission error when payCreditCard fails", async () => {
@@ -307,6 +377,36 @@ describe("CreditCardPaymentForm", () => {
 
     expect(await screen.findByText("Error: Database error")).toBeInTheDocument();
     expect(onSuccessMock).not.toHaveBeenCalled();
+  });
+
+  it("locks rapid duplicate submissions and permits retry after rejection", async () => {
+    let rejectFirst: (reason: Error) => void = () => undefined;
+    payCreditCardMock
+      .mockReturnValueOnce(new Promise((_, reject) => (rejectFirst = reject)))
+      .mockResolvedValueOnce({ transferMovementIds: [123], paidMovementIds: [201] });
+    render(
+      <CreditCardPaymentForm
+        creditAccountId={12}
+        totalAmount={150}
+        currency={mockCurrency}
+        onSuccess={onSuccessMock}
+        onCancel={onCancelMock}
+        installmentIds={[101]}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Cuenta origen"), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText("Monto"), { target: { value: "150" } });
+    const form = screen.getByText("Pagar tarjeta").closest("form")!;
+
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(payCreditCardMock).toHaveBeenCalledTimes(1);
+    rejectFirst(new Error("temporary failure"));
+    expect(await screen.findByText("Error: temporary failure")).toBeInTheDocument();
+
+    fireEvent.submit(form);
+    await waitFor(() => expect(payCreditCardMock).toHaveBeenCalledTimes(2));
+    expect(onSuccessMock).toHaveBeenCalledTimes(1);
   });
 
   it("calls onCancel when Cancelar button is clicked", () => {

@@ -7,6 +7,7 @@ import FormActions from "@/components/Forms/FormActions";
 import FormErrors from "@/components/Forms/FormErrors";
 import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
+import useSubmissionGuard from "@/hooks/useSubmissionGuard";
 import { logger } from "@/lib/logger";
 import { accountsStore, createAccountFromData, validate } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
@@ -20,8 +21,9 @@ const AccountForm = ({ modalId }: Props) => {
   const types = useStore(accountsStore, (state) => state.types);
   const editState = useStore(editStore, (state) => state);
 
-  const [typeId, setTypeId] = useState<number | null>(null);
+  const [typeId, setTypeId] = useState<number | null>(types[0]?.id ?? null);
   const [errors, setErrors] = useState<string[]>([]);
+  const { submitting, begin, finish, isMounted } = useSubmissionGuard();
 
   const account = useMemo(() => {
     const account =
@@ -31,14 +33,15 @@ const AccountForm = ({ modalId }: Props) => {
         ? accountsStore.getState().getById(editState.id)
         : null;
 
-    setTypeId(account ? account.type.id : null);
+    setTypeId(account ? account.type.id : (types[0]?.id ?? null));
 
     return account;
-  }, [editState.id, editState.type, modalId]);
+  }, [editState.id, editState.type, modalId, types]);
 
   const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
     const { valid, errors } = validate(data);
@@ -64,18 +67,25 @@ const AccountForm = ({ modalId }: Props) => {
 
     console.debug("Is Editing mode:", editState.type === EDIT_TYPES.ACCOUNT);
 
-    if (editState.id && editState.type === EDIT_TYPES.ACCOUNT) {
-      await accountsStore.getState().update(editState.id, account);
-      toast("#account-updated");
-    } else {
-      await accountsStore.getState().add(account);
-      toast("#account-created");
+    if (!begin()) return;
+
+    try {
+      const isEditing = Boolean(editState.id && editState.type === EDIT_TYPES.ACCOUNT);
+      if (isEditing) await accountsStore.getState().update(editState.id as number, account);
+      else await accountsStore.getState().add(account);
+
+      if (!isMounted()) return;
+      toast(isEditing ? "#account-updated" : "#account-created");
+      form.reset();
+      setErrors([]);
+      editState.clear();
+      closeModal(`#${modalId}`);
+    } catch (error) {
+      logger.error("Account form submission error:", error);
+      if (isMounted()) setErrors(["Ocurrió un error al guardar la cuenta"]);
+    } finally {
+      finish();
     }
-
-    e.target.reset();
-
-    editState.clear();
-    closeModal(`#${modalId}`);
   };
 
   return (
@@ -83,7 +93,10 @@ const AccountForm = ({ modalId }: Props) => {
       className="w-5/6 h-full m-auto space-y-4"
       id="account-form"
       onSubmit={onSubmit}
-      onReset={() => setTypeId(account ? account.type.id : null)}
+      onReset={() => {
+        setTypeId(account ? account.type.id : (types[0]?.id ?? null));
+        setErrors([]);
+      }}
     >
       <fieldset className="space-y-4">
         <Input
@@ -151,7 +164,7 @@ const AccountForm = ({ modalId }: Props) => {
       )}
 
       <FormErrors errors={errors} />
-      <FormActions />
+      <FormActions disabled={submitting} />
     </form>
   );
 };

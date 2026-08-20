@@ -11,7 +11,7 @@ const currency = { id: 1, name: "Peso", code: "MXN", symbol: "$" } as Currency;
 
 describe("AmountText", () => {
   it("uses neutral defaults without an icon", () => {
-    const { container } = render(<AmountText amount={1250} />);
+    render(<AmountText amount={1250} />);
     expect(screen.getByText("1,250")).toBeInTheDocument();
     expect(screen.queryByTestId("icon")).not.toBeInTheDocument();
   });

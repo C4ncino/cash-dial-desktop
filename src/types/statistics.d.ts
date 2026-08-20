@@ -103,5 +103,6 @@ type StatisticsActions = {
   nextPeriod: () => void;
   setGranularity: (granularity: StatisticsGranularity) => void;
   fetchStatistics: () => Promise<StatisticsResponse | null>;
+  invalidate: () => void;
   clearError: () => void;
 };

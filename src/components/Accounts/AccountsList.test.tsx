@@ -82,18 +82,6 @@ describe("AccountsList", () => {
     expect(screen.getByText("Credit Card Account")).toBeInTheDocument();
   });
 
-  it("should pass correct props to AccountCard", () => {
-    (useStore as any).mockImplementation((_store: any, selector: any) =>
-      selector({
-        accounts: mockAccounts,
-      }),
-    );
-
-    render(<AccountsList />);
-    const firstCard = screen.getByTestId("account-card-1");
-    expect(firstCard).toHaveTextContent("Checking Account");
-  });
-
   it("should render single account", () => {
     const singleAccount = [mockAccounts[0]];
 
@@ -108,24 +96,12 @@ describe("AccountsList", () => {
     expect(screen.queryByTestId("account-card-2")).not.toBeInTheDocument();
   });
 
-  it("should use account id as key prop", () => {
-    (useStore as any).mockImplementation((_store: any, selector: any) =>
-      selector({
-        accounts: mockAccounts,
-      }),
-    );
-
-    const { rerender } = render(<AccountsList />);
-    expect(screen.getByTestId("account-card-1")).toBeInTheDocument();
-    expect(screen.getByTestId("account-card-2")).toBeInTheDocument();
-    expect(screen.getByTestId("account-card-3")).toBeInTheDocument();
-    rerender(<AccountsList />);
-    expect(screen.getByTestId("account-card-1")).toBeInTheDocument();
-  });
-
-  it("should handle account updates", () => {
+  it("should reflect account updates without losing other accounts", () => {
     const initialAccounts = [mockAccounts[0]];
-    const updatedAccounts = mockAccounts;
+    const updatedAccounts = [
+      { ...mockAccounts[0], name: "Updated Checking" },
+      mockAccounts[2],
+    ];
 
     (useStore as any).mockImplementation((_store: any, selector: any) =>
       selector({
@@ -144,7 +120,8 @@ describe("AccountsList", () => {
     );
 
     rerender(<AccountsList />);
-    expect(screen.getByTestId("account-card-2")).toBeInTheDocument();
+    expect(screen.getByText("Updated Checking")).toBeInTheDocument();
+    expect(screen.queryByTestId("account-card-2")).not.toBeInTheDocument();
     expect(screen.getByTestId("account-card-3")).toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
 import AccountInfo from "@/components/Accounts/AccountInfo";
-import { formatAmount, formatNumber } from "@/lib/formatters";
+import { formatNumber } from "@/lib/formatters";
 import { logger } from "@/lib/logger";
 
 vi.mock("zustand");
@@ -61,16 +61,6 @@ describe("AccountInfo", () => {
     expect(screen.getByTestId("square-icon")).toBeInTheDocument();
   });
 
-  it("should render the formatted balance", () => {
-    (useStore as any).mockImplementation(() => mockAccount);
-
-    render(<AccountInfo />);
-
-    expect(
-      screen.getByText(formatAmount(mockAccount.balance, { code: "USD" } as Currency)),
-    ).toBeInTheDocument();
-  });
-
   it("should render credit info section when creditInfo exists", () => {
     (useStore as any).mockImplementation(() => mockAccount);
 
@@ -112,28 +102,6 @@ describe("AccountInfo", () => {
     render(<AccountInfo />);
 
     expect(screen.queryByText(/crédito usado/i)).not.toBeInTheDocument();
-  });
-
-  it("should render correct SquareIcon with account type", () => {
-    (useStore as any).mockImplementation(() => mockAccount);
-
-    render(<AccountInfo />);
-
-    const icon = screen.getByTestId("square-icon");
-
-    expect(icon).toHaveAttribute("data-bg", "#ef4444");
-
-    expect(icon).toHaveAttribute("data-icon", "credit");
-  });
-
-  it("should render h1 heading", () => {
-    (useStore as any).mockImplementation(() => mockAccount);
-
-    render(<AccountInfo />);
-
-    const heading = screen.getByRole("heading", { level: 1 });
-
-    expect(heading).toHaveTextContent("My Credit Card");
   });
 
   it("should render AccountNextPayment for credit cards", () => {

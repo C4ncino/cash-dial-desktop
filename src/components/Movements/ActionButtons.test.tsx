@@ -5,7 +5,6 @@ import { useStore } from "zustand";
 
 import ActionButtons from "@/components/Movements/ActionButtons";
 import { accountsStore } from "@/stores/accountsStore";
-import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";
 import { movementsStore } from "@/stores/movementsStore";
 import { EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
@@ -54,7 +53,7 @@ describe("Movement ActionButtons", () => {
   });
 
   const setupStoresMock = (movement: Movement | undefined) => {
-    (useStore as any).mockImplementation((store, selector) => {
+    vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
       if (store === movementsStore) {
         return selector({
           byId: movement ? { [movement.id]: movement } : {},

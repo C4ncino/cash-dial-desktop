@@ -31,6 +31,25 @@ pub mod unit {
     }
 
     #[test]
+    fn validate_budget_rejects_non_finite_amounts() {
+        let state = mock_state();
+
+        for amount in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert!(validate_budget(&state, "Food Budget", amount, 2, 1, 1).is_err());
+        }
+    }
+
+    #[test]
+    fn validate_budget_covers_zero_name_and_reference_boundaries() {
+        let state = mock_state();
+        assert!(validate_budget(&state, &"a".repeat(50), 0.0, 2, 1, 1).is_ok());
+        assert!(validate_budget(&state, &"a".repeat(51), 0.0, 2, 1, 1).is_err());
+        assert!(validate_budget(&state, "Budget", 0.0, 999, 1, 1).is_err());
+        assert!(validate_budget(&state, "Budget", 0.0, 2, 999, 1).is_err());
+        assert!(validate_budget(&state, "Budget", 0.0, 2, 1, 999).is_err());
+    }
+
+    #[test]
     fn test_unit_exact_category_match_and_ancestors() {
         let categories = vec![
             (1, None),    // Food (Root)
@@ -419,6 +438,29 @@ pub mod integration {
             .get_result::<MovementRow>(connection)
             .unwrap();
 
+        // Movement E: movement currency differs from the account/budget currency.
+        // The budget must use account_amount, which is the amount actually charged
+        // to the account after the user confirms or edits the conversion.
+        let mov_e = diesel::insert_into(crate::schema::movements::table)
+            .values(&MovementInsert {
+                type_id: 2,
+                account_id,
+                to_account_id: None,
+                category_id: 13,
+                currency_id: 2,
+                original_amount: 10.0,
+                account_amount: 200.0,
+                installments: None,
+                timestamp: Local
+                    .with_ymd_and_hms(2026, 7, 20, 12, 0, 0)
+                    .unwrap()
+                    .timestamp_millis(),
+                description: Some("Converted expense"),
+            })
+            .returning(MovementRow::as_returning())
+            .get_result::<MovementRow>(connection)
+            .unwrap();
+
         // 4. Query budget details
         let today_val = Local.with_ymd_and_hms(2026, 7, 14, 0, 0, 0).unwrap().timestamp_millis();
         let details = get_budget_internal(connection, budget.id, today_val).unwrap();
@@ -441,10 +483,111 @@ pub mod integration {
         // Period 2: 2026-07-04 to 2026-08-03
         let p2 = &details.periods[1];
         assert_eq!(p2.amount_limit, 500.0);
-        // Spend should include Movement D (150.0)
-        assert_eq!(p2.amount_spend, 150.0);
-        assert_eq!(p2.movement_ids.len(), 1);
+        // Spend should include Movement D (150.0) plus Movement E's
+        // account_amount (200.0), not its original_amount (10.0).
+        assert_eq!(p2.amount_spend, 350.0);
+        assert_eq!(p2.movement_ids.len(), 2);
         assert!(p2.movement_ids.contains(&mov_d.id));
+        assert!(p2.movement_ids.contains(&mov_e.id));
+    }
+
+    #[test]
+    fn budget_converts_movement_currency_into_budget_currency() {
+        use crate::models::accounts::{AccountInsert, AccountRow};
+        use crate::models::movements::{MovementInsert, MovementRow};
+
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let account_id = diesel::insert_into(crate::schema::accounts::table)
+            .values(&AccountInsert {
+                type_id: 1,
+                currency_id: 1,
+                name: "MXN account for USD budget",
+                balance: 10000.0,
+            })
+            .returning(AccountRow::as_returning())
+            .get_result::<AccountRow>(connection)
+            .unwrap()
+            .id;
+
+        let start_date = Local.with_ymd_and_hms(2026, 6, 4, 0, 0, 0).unwrap().timestamp_millis();
+        let budget = create_budget_internal(
+            connection, 2, 1, 2, "USD Food", 100.0, start_date,
+        )
+        .unwrap();
+
+        diesel::insert_into(crate::schema::movements::table)
+            .values(&MovementInsert {
+                type_id: 2,
+                account_id,
+                to_account_id: None,
+                category_id: 1,
+                currency_id: 1,
+                original_amount: 100.0,
+                account_amount: 100.0,
+                installments: None,
+                timestamp: Local.with_ymd_and_hms(2026, 6, 10, 12, 0, 0).unwrap().timestamp_millis(),
+                description: Some("MXN expense in USD budget"),
+            })
+            .returning(MovementRow::as_returning())
+            .get_result::<MovementRow>(connection)
+            .unwrap();
+
+        let details = get_budget_internal(
+            connection,
+            budget.id,
+            Local.with_ymd_and_hms(2026, 6, 14, 0, 0, 0).unwrap().timestamp_millis(),
+        )
+        .unwrap();
+
+        let expected = 100.0 * 1.1576 / 19.7411;
+        assert!((details.periods[0].amount_spend - expected).abs() < 0.000001);
+    }
+
+    #[test]
+    fn budget_rejects_invalid_conversion_rates_instead_of_returning_misleading_totals() {
+        use crate::models::accounts::{AccountInsert, AccountRow};
+        use crate::models::movements::MovementInsert;
+        use crate::schema::currencies::dsl::{conversion_rate, currencies};
+
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let account_id = diesel::insert_into(crate::schema::accounts::table)
+            .values(&AccountInsert {
+                type_id: 1,
+                currency_id: 1,
+                name: "Invalid rate source",
+                balance: 100.0,
+            })
+            .returning(AccountRow::as_returning())
+            .get_result::<AccountRow>(connection)
+            .unwrap()
+            .id;
+        let start = Local.with_ymd_and_hms(2026, 6, 1, 0, 0, 0).unwrap().timestamp_millis();
+        let budget = create_budget_internal(connection, 2, 1, 2, "USD budget", 50.0, start)
+            .unwrap();
+        diesel::insert_into(crate::schema::movements::table)
+            .values(&MovementInsert {
+                type_id: 2,
+                account_id,
+                to_account_id: None,
+                category_id: 1,
+                currency_id: 1,
+                original_amount: 10.0,
+                account_amount: 10.0,
+                installments: None,
+                timestamp: start + 1,
+                description: None,
+            })
+            .execute(connection)
+            .unwrap();
+        diesel::update(currencies.find(2))
+            .set(conversion_rate.eq(0.0))
+            .execute(connection)
+            .unwrap();
+
+        let error = get_budget_internal(connection, budget.id, start + 2).unwrap_err();
+        assert!(error.contains("Invalid currency conversion rate"));
     }
 
     fn setup_test_categories_and_budgets(connection: &mut SqliteConnection) -> QueryResult<()> {
@@ -611,7 +754,7 @@ pub mod integration {
         // 3. Category with no parent / Root category
         // Food (100) -> Root.
         // Affected budget should be Budget 1
-        let mut res = get_affected_budget_ids_internal(connection, 100, None, &hierarchy).unwrap();
+        let res = get_affected_budget_ids_internal(connection, 100, None, &hierarchy).unwrap();
         assert_eq!(res, vec![1]);
 
         // 4. Update without category change

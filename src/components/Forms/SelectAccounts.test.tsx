@@ -99,4 +99,23 @@ describe("SelectAccounts", () => {
 
     expect(mockOnChange).toHaveBeenCalledWith(3);
   });
+
+  it("should expose the selected account value and update it through user selection", () => {
+    const mockOnChange = vi.fn();
+    render(
+      <SelectAccounts
+        name="source"
+        label="Cuenta Origen"
+        accountId={1}
+        onChange={mockOnChange}
+      />,
+    );
+
+    const select = screen.getByLabelText("Cuenta Origen") as HTMLSelectElement;
+    expect(select.value).toBe("1");
+
+    fireEvent.change(select, { target: { value: "3" } });
+    expect(select.value).toBe("3");
+    expect(mockOnChange).toHaveBeenCalledWith(3);
+  });
 });

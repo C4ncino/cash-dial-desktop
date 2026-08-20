@@ -246,10 +246,7 @@ pub fn create_planning_internal(
 
     connection
         .transaction::<Planning, diesel::result::Error, _>(|connection| {
-            use crate::schema::{
-                planning_recurring_month_days, planning_recurring_rules,
-                planning_recurring_week_days, planning_recurring_year_days, plannings,
-            };
+            use crate::schema::{planning_recurring_rules, plannings};
 
             let rule_insert = PlanningRecurringRuleInsert {
                 recurring_type_id: request.recurring_type_id,
@@ -1080,7 +1077,7 @@ fn validate_planning_request(
         errors.push("El nombre de la planificación es requerido".to_string());
     }
 
-    if req.amount < 0.0 {
+    if !req.amount.is_finite() || req.amount < 0.0 {
         errors.push("El monto debe ser mayor o igual a cero".to_string());
     }
 

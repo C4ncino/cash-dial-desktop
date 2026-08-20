@@ -24,7 +24,7 @@ vi.mock("@/stores/budgetStore", () => ({
   budgetStore: {
     getState: () => ({
       periodTypes: [{ id: 1, name: "Monthly", key: "monthly" }],
-      getById: (id: number) => undefined,
+      getById: (_id: number) => undefined,
     }),
   },
 }));

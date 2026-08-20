@@ -71,4 +71,81 @@ describe("statisticsStore", () => {
     await request;
     expect(statisticsStore.getState().loading).toBe(false);
   });
+
+  it("does not reuse a cached response for a different currency", async () => {
+    statisticsStore.setState({ selectedCurrencyId: 1 });
+    mockInvoke.mockResolvedValue(response);
+    await statisticsStore.getState().fetchStatistics();
+
+    statisticsStore.setState({ selectedCurrencyId: 2, response: null });
+    await statisticsStore.getState().fetchStatistics();
+
+    expect(mockInvoke).toHaveBeenCalledTimes(2);
+    expect(mockInvoke).toHaveBeenLastCalledWith(
+      "get_statistics",
+      expect.objectContaining({ currencyId: 2 }),
+    );
+  });
+
+  it("does not let an older request replace the latest selection", async () => {
+    let resolveFirst: (value: StatisticsResponse) => void = () => undefined;
+    let resolveSecond: (value: StatisticsResponse) => void = () => undefined;
+    mockInvoke
+      .mockReturnValueOnce(new Promise((resolve) => (resolveFirst = resolve)))
+      .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
+
+    statisticsStore.setState({ selectedCurrencyId: 1 });
+    const first = statisticsStore.getState().fetchStatistics();
+    statisticsStore.setState({ selectedCurrencyId: 2 });
+    const second = statisticsStore.getState().fetchStatistics();
+    const latest = { ...response, currencyId: 2 } as StatisticsResponse;
+
+    resolveSecond(latest);
+    await second;
+    resolveFirst(response);
+    await first;
+
+    expect(statisticsStore.getState().selectedCurrencyId).toBe(2);
+    expect(statisticsStore.getState().response).toEqual(latest);
+    expect(statisticsStore.getState().loading).toBe(false);
+  });
+
+  it("keeps the newest request loading when an older request fails", async () => {
+    let rejectFirst: (reason: Error) => void = () => undefined;
+    let resolveSecond: (value: StatisticsResponse) => void = () => undefined;
+    mockInvoke
+      .mockReturnValueOnce(new Promise((_, reject) => (rejectFirst = reject)))
+      .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
+
+    statisticsStore.setState({ selectedCurrencyId: 1 });
+    const first = statisticsStore.getState().fetchStatistics();
+    statisticsStore.setState({ selectedCurrencyId: 2 });
+    const second = statisticsStore.getState().fetchStatistics();
+    rejectFirst(new Error("stale failure"));
+    await first;
+    expect(statisticsStore.getState().loading).toBe(true);
+    expect(statisticsStore.getState().error).toBeNull();
+
+    resolveSecond({ ...response, currencyId: 2 } as StatisticsResponse);
+    await second;
+    expect(statisticsStore.getState().loading).toBe(false);
+  });
+
+  it("invalidates cached financial data and any in-flight response", async () => {
+    let resolveRequest: (value: StatisticsResponse) => void = () => undefined;
+    statisticsStore.setState({
+      selectedCurrencyId: 1,
+      response,
+      cache: { stale: response },
+    });
+    mockInvoke.mockReturnValueOnce(new Promise((resolve) => (resolveRequest = resolve)));
+    const request = statisticsStore.getState().fetchStatistics();
+
+    statisticsStore.getState().invalidate();
+    expect(statisticsStore.getState().cache).toEqual({});
+    expect(statisticsStore.getState().response).toBeNull();
+    resolveRequest(response);
+    await request;
+    expect(statisticsStore.getState().response).toBeNull();
+  });
 });

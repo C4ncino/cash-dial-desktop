@@ -1,5 +1,6 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { closeModal, toast } from "webcoreui";
 import { useStore } from "zustand";
 
 import BudgetForm from "@/components/Budgets/Form";
@@ -21,7 +22,7 @@ vi.mock("@/components/Forms/SelectCategories", () => ({
   ),
 }));
 
-vi.mock("@/components/Forms/SelectCurrencies", () => ({
+vi.mock("@/components/Forms/SelectCurrency", () => ({
   default: () => (
     <select name="currency" data-testid="currency-select">
       <option value="1">USD</option>
@@ -57,6 +58,9 @@ vi.mock("@/stores/budgetStore", () => ({
 const mockUseStoreState = ({
   periodTypes = [{ id: 1, name: "Monthly" }],
   edit = { id: null, type: null, clear: vi.fn() },
+}: {
+  periodTypes?: Array<{ id: number; name: string }>;
+  edit?: Pick<EditStore, "id" | "type" | "clear">;
 } = {}) => {
   vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
     if (store === budgetStore) {
@@ -82,6 +86,9 @@ const mockUseStoreState = ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAdd.mockResolvedValue(undefined);
+  mockUpdateName.mockResolvedValue(undefined);
+  mockUpdateAmount.mockResolvedValue(undefined);
   mockUseStoreState();
 });
 describe("BudgetForm", () => {
@@ -94,7 +101,7 @@ describe("BudgetForm", () => {
     expect(screen.getByLabelText("Límite")).toBeInTheDocument();
   });
 
-  it("should create budget when form submitted", () => {
+  it("should create budget when form submitted", async () => {
     render(<BudgetForm modalId={MODAL_ID.BUDGET.CREATE} />);
 
     fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "New Budget" } });
@@ -109,7 +116,21 @@ describe("BudgetForm", () => {
 
     fireEvent.submit(form);
 
-    expect(mockAdd).toHaveBeenCalled();
+    await waitFor(() => expect(mockAdd).toHaveBeenCalled());
+  });
+
+  it("resets create-mode values before submission", () => {
+    render(<BudgetForm modalId={MODAL_ID.BUDGET.CREATE} />);
+
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Temporary" } });
+    fireEvent.change(screen.getByTestId("category-select"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText(/L.*mite/i), { target: { value: "250" } });
+    fireEvent.click(screen.getByRole("button", { name: "Restaurar" }));
+
+    expect(screen.getByLabelText("Nombre")).toHaveValue("");
+    expect(screen.getByTestId("category-select")).toHaveValue("");
+    expect(screen.getByLabelText(/L.*mite/i)).toHaveValue(0);
+    expect(screen.getByLabelText(/Monthly/i)).toBeChecked();
   });
 
   it("should render edit fields and open update type modal when amount changed", () => {
@@ -147,5 +168,48 @@ describe("BudgetForm", () => {
     });
 
     expect(screen.getByText("El nombre es requerido")).toBeInTheDocument();
+  });
+
+  it("locks duplicate submissions and allows retry without losing input", async () => {
+    let rejectFirst: (reason: Error) => void = () => undefined;
+    mockAdd
+      .mockReturnValueOnce(new Promise((_, reject) => (rejectFirst = reject)))
+      .mockResolvedValueOnce(undefined);
+    render(<BudgetForm modalId={MODAL_ID.BUDGET.CREATE} />);
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Food" } });
+    fireEvent.change(screen.getByTestId("category-select"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText(/L.*mite/i), { target: { value: "200" } });
+    fireEvent.click(screen.getByLabelText(/Monthly/i));
+    const form = document.getElementById("budget-form")!;
+
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(mockAdd).toHaveBeenCalledTimes(1);
+    rejectFirst(new Error("temporary"));
+    expect(
+      await screen.findByText("Ocurrió un error al guardar el presupuesto"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Food");
+
+    fireEvent.submit(form);
+    await waitFor(() => expect(mockAdd).toHaveBeenCalledTimes(2));
+    expect(toast).toHaveBeenCalledTimes(1);
+    expect(closeModal).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not close or toast when a submission resolves after unmount", async () => {
+    let resolveAdd: () => void = () => undefined;
+    mockAdd.mockReturnValueOnce(new Promise<void>((resolve) => (resolveAdd = resolve)));
+    const { unmount } = render(<BudgetForm modalId={MODAL_ID.BUDGET.CREATE} />);
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Food" } });
+    fireEvent.change(screen.getByTestId("category-select"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText(/L.*mite/i), { target: { value: "200" } });
+    fireEvent.click(screen.getByLabelText(/Monthly/i));
+    fireEvent.submit(document.getElementById("budget-form")!);
+    unmount();
+    resolveAdd();
+    await Promise.resolve();
+    expect(toast).not.toHaveBeenCalled();
+    expect(closeModal).not.toHaveBeenCalled();
   });
 });

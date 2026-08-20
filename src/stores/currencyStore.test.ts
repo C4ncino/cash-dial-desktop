@@ -18,6 +18,13 @@ const currency = {
   name: "Peso",
   symbol: "$",
   code: "MXN",
+  conversionRate: 1,
+};
+
+const refreshedCurrency = {
+  ...currency,
+  conversionRate: 19.8,
+  conversionRateDate: "2026-08-19",
 };
 
 describe("currencyStore", () => {
@@ -48,5 +55,24 @@ describe("currencyStore", () => {
 
   it("returns undefined for missing currency", () => {
     expect(currencyStore.getState().getById(999)).toBeUndefined();
+  });
+
+  it("replaces currencies with the rates returned by a refresh", async () => {
+    currencyStore.setState({ currencies: [currency] });
+    mockInvoke.mockResolvedValue([refreshedCurrency]);
+
+    await currencyStore.getState().refreshRates();
+
+    expect(mockInvoke).toHaveBeenCalledWith("refresh_currency_rates");
+    expect(currencyStore.getState().currencies).toEqual([refreshedCurrency]);
+  });
+
+  it("preserves cached rates when a refresh fails", async () => {
+    currencyStore.setState({ currencies: [currency] });
+    mockInvoke.mockRejectedValue(new Error("ECB unavailable"));
+
+    await expect(currencyStore.getState().refreshRates()).rejects.toThrow("ECB unavailable");
+
+    expect(currencyStore.getState().currencies).toEqual([currency]);
   });
 });

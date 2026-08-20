@@ -191,15 +191,28 @@ describe("Tauri - Account creation", () => {
     const initialMovements = await invokeCommand<any[]>(MOVEMENT_FUNCTIONS.get);
 
     // 2. Perform payment
-    const paymentAmount = 50;
+    const nextPayment = await invokeCommand<CreditCardNextPayment>(
+      ACCOUNT_FUNCTIONS.getNextPayment,
+      { accountId: 3 },
+    );
+    const paymentAmount = nextPayment.totalAmount;
+    const installmentIds = nextPayment.movements.flatMap((movement) => movement.installmentIds);
     const payments: CreditCardPaymentRequest[] = [
-      { fromAccountId: 2, amount: paymentAmount },
+      {
+        fromAccountId: 2,
+        originalAmount: paymentAmount,
+        accountAmount: paymentAmount,
+      },
     ];
 
-    const transferMovementIds = await invokeCommand<number[]>(ACCOUNT_FUNCTIONS.payCreditCard, {
-      creditAccountId: 3,
-      payments,
-    });
+    const result = await invokeCommand<CreditCardPaymentResult>(
+      ACCOUNT_FUNCTIONS.payCreditCard,
+      {
+        creditAccountId: 3,
+        payments,
+        installmentIds,
+      },
+    );
 
     // 3. Verify updated balances
     const newDebitBalance = await invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, { id: 2 });
@@ -207,9 +220,12 @@ describe("Tauri - Account creation", () => {
 
     expect(newDebitBalance).toBe(initialDebitBalance - paymentAmount);
     expect(newCreditBalance).toBe(initialCreditBalance + paymentAmount);
-    expect(transferMovementIds).toHaveLength(1);
-    expect(transferMovementIds[0]).toEqual(expect.any(Number));
-    expect(transferMovementIds[0]).toBeGreaterThan(0);
+    expect(result.transferMovementIds).toHaveLength(1);
+    expect(result.transferMovementIds[0]).toEqual(expect.any(Number));
+    expect(result.transferMovementIds[0]).toBeGreaterThan(0);
+    expect(result.paidMovementIds).toEqual(
+      expect.arrayContaining(nextPayment.movements.map((movement) => movement.movementId)),
+    );
 
     // 4. Verify a transfer movement was created
     const newMovements = await invokeCommand<any[]>(MOVEMENT_FUNCTIONS.get);
@@ -224,15 +240,33 @@ describe("Tauri - Account creation", () => {
     );
     expect(createdMovement).toBeDefined();
     expect(createdMovement.description).toContain("Pago de tarjeta");
-    expect(createdMovement.id).toBe(transferMovementIds[0]);
+    expect(createdMovement.id).toBe(result.transferMovementIds[0]);
+
+    const refreshedPayment = await invokeCommand<CreditCardNextPayment>(
+      ACCOUNT_FUNCTIONS.getNextPayment,
+      { accountId: 3 },
+    );
+    expect(refreshedPayment.paymentDate).not.toBe(nextPayment.paymentDate);
   });
 
   it("pay_credit_card throws error on invalid parameters", async () => {
+    const nextPayment = await invokeCommand<CreditCardNextPayment>(
+      ACCOUNT_FUNCTIONS.getNextPayment,
+      { accountId: 3 },
+    );
+    const installmentIds = nextPayment.movements.flatMap((movement) => movement.installmentIds);
+    const validPayment = {
+      fromAccountId: 2,
+      originalAmount: nextPayment.totalAmount,
+      accountAmount: nextPayment.totalAmount,
+    };
+
     // Case A: Nonexistent credit card account
     await expect(
       invokeCommand(ACCOUNT_FUNCTIONS.payCreditCard, {
         creditAccountId: 9999,
-        payments: [{ fromAccountId: 2, amount: 50.0 }],
+        payments: [validPayment],
+        installmentIds,
       }),
     ).rejects.toThrow();
 
@@ -240,7 +274,8 @@ describe("Tauri - Account creation", () => {
     await expect(
       invokeCommand(ACCOUNT_FUNCTIONS.payCreditCard, {
         creditAccountId: 2, // debit account
-        payments: [{ fromAccountId: 1, amount: 50.0 }],
+        payments: [{ ...validPayment, fromAccountId: 1 }],
+        installmentIds,
       }),
     ).rejects.toThrow();
 
@@ -248,14 +283,16 @@ describe("Tauri - Account creation", () => {
     await expect(
       invokeCommand(ACCOUNT_FUNCTIONS.payCreditCard, {
         creditAccountId: 3,
-        payments: [{ fromAccountId: 2, amount: 0.0 }],
+        payments: [{ fromAccountId: 2, originalAmount: 0, accountAmount: 0 }],
+        installmentIds,
       }),
     ).rejects.toThrow();
 
     await expect(
       invokeCommand(ACCOUNT_FUNCTIONS.payCreditCard, {
         creditAccountId: 3,
-        payments: [{ fromAccountId: 2, amount: -10.0 }],
+        payments: [{ fromAccountId: 2, originalAmount: -10, accountAmount: -10 }],
+        installmentIds,
       }),
     ).rejects.toThrow();
 
@@ -263,7 +300,8 @@ describe("Tauri - Account creation", () => {
     await expect(
       invokeCommand(ACCOUNT_FUNCTIONS.payCreditCard, {
         creditAccountId: 3,
-        payments: [{ fromAccountId: 9999, amount: 50.0 }],
+        payments: [{ ...validPayment, fromAccountId: 9999 }],
+        installmentIds,
       }),
     ).rejects.toThrow();
   });

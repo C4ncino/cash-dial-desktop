@@ -27,6 +27,30 @@ pub mod unit {
     }
 
     #[test]
+    fn validate_account_rejects_non_finite_financial_values() {
+        let state = mock_state();
+
+        for balance in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert!(validate_account(&state, "Wallet", balance, 1, 1, &None).is_err());
+        }
+
+        let credit_info = Some(AccountCreditInfo {
+            credit_limit: f64::NAN,
+            cutoff_day: 15,
+            days_to_pay: 20,
+        });
+        assert!(validate_account(
+            &state,
+            "Visa",
+            0.0,
+            AccountTypeEnum::CreditCard as i32,
+            1,
+            &credit_info,
+        )
+        .is_err());
+    }
+
+    #[test]
     fn validate_account_requires_name() {
         let state = mock_state();
 
@@ -210,6 +234,36 @@ pub mod integration {
 
     use crate::models::accounts::CreditCardPaymentRequest;
     use crate::tests::setup;
+
+    fn create_pending_installments(
+        connection: &mut SqliteConnection,
+        credit_account_id: i32,
+        original_amount: f64,
+        account_amount: f64,
+    ) -> Vec<i32> {
+        crate::functions::movements::add_movement_internal(
+            connection,
+            2,
+            credit_account_id,
+            None,
+            3,
+            1,
+            original_amount,
+            account_amount,
+            Some(1),
+            chrono::Local::now().timestamp_millis(),
+            Some("Purchase pending payment"),
+            None,
+        )
+        .unwrap();
+
+        get_credit_card_next_payment_internal(connection, credit_account_id)
+            .unwrap()
+            .movements
+            .into_iter()
+            .flat_map(|movement| movement.installment_ids)
+            .collect()
+    }
 
     #[test]
     fn returns_cash_account() {
@@ -533,17 +587,26 @@ pub mod integration {
         )
         .unwrap();
 
-        let reqs =
-            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 200.0 }];
-        let transfer_ids = pay_credit_card_internal(connection, cc.id, reqs).unwrap();
-        assert_eq!(transfer_ids.len(), 1);
-        assert!(transfer_ids[0] > 0);
+        let installment_ids = create_pending_installments(connection, cc.id, 100.0, 200.0);
+        let reqs = vec![CreditCardPaymentRequest {
+            from_account_id: debit_account.id,
+            original_amount: 100.0,
+            account_amount: 200.0,
+        }];
+        let result =
+            pay_credit_card_internal(connection, cc.id, reqs, installment_ids.clone()).unwrap();
+        assert_eq!(result.transfer_movement_ids.len(), 1);
+        assert!(result.transfer_movement_ids[0] > 0);
+        assert_eq!(result.paid_movement_ids.len(), 1);
 
         let debit_bal = get_account_balance_internal(connection, debit_account.id).unwrap();
         let cc_bal = get_account_balance_internal(connection, cc.id).unwrap();
 
-        assert_eq!(debit_bal, 300.0);
-        assert_eq!(cc_bal, 1200.0);
+        assert_eq!(debit_bal, 400.0);
+        assert_eq!(cc_bal, 1000.0);
+
+        let next_payment = get_credit_card_next_payment_internal(connection, cc.id).unwrap();
+        assert!(next_payment.movements.is_empty());
 
         // Verify that the transfer movement was created in the database
         use crate::models::movements::MovementRow;
@@ -557,8 +620,9 @@ pub mod integration {
             .unwrap();
 
         assert_eq!(payment_movements.len(), 1);
-        assert_eq!(payment_movements[0].id, transfer_ids[0]);
-        assert_eq!(payment_movements[0].original_amount, 200.0);
+        assert_eq!(payment_movements[0].id, result.transfer_movement_ids[0]);
+        assert_eq!(payment_movements[0].original_amount, 100.0);
+        assert_eq!(payment_movements[0].account_amount, 200.0);
         assert_eq!(payment_movements[0].type_id, 3); // TRANSFER
         assert_eq!(
             payment_movements[0].description,
@@ -586,12 +650,18 @@ pub mod integration {
             Some(credit_info),
         )
         .unwrap();
+        let installment_ids = create_pending_installments(connection, cc.id, 100.0, 100.0);
 
         // 1. Invalid credit card account
         let res1 = pay_credit_card_internal(
             connection,
             9999,
-            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 100.0 }],
+            vec![CreditCardPaymentRequest {
+                from_account_id: debit_account.id,
+                original_amount: 100.0,
+                account_amount: 100.0,
+            }],
+            installment_ids.clone(),
         );
         assert!(res1.is_err());
         assert!(res1.unwrap_err().contains("no existe"));
@@ -600,7 +670,12 @@ pub mod integration {
         let res2 = pay_credit_card_internal(
             connection,
             debit_account.id,
-            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 100.0 }],
+            vec![CreditCardPaymentRequest {
+                from_account_id: debit_account.id,
+                original_amount: 100.0,
+                account_amount: 100.0,
+            }],
+            installment_ids.clone(),
         );
         assert!(res2.is_err());
         assert!(res2.unwrap_err().contains("no es una tarjeta de crédito"));
@@ -609,7 +684,12 @@ pub mod integration {
         let res3 = pay_credit_card_internal(
             connection,
             cc.id,
-            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 0.0 }],
+            vec![CreditCardPaymentRequest {
+                from_account_id: debit_account.id,
+                original_amount: 0.0,
+                account_amount: 0.0,
+            }],
+            installment_ids.clone(),
         );
         assert!(res3.is_err());
         assert!(res3.unwrap_err().contains("mayor a 0"));
@@ -617,7 +697,12 @@ pub mod integration {
         let res4 = pay_credit_card_internal(
             connection,
             cc.id,
-            vec![CreditCardPaymentRequest { from_account_id: debit_account.id, amount: -50.0 }],
+            vec![CreditCardPaymentRequest {
+                from_account_id: debit_account.id,
+                original_amount: -50.0,
+                account_amount: -50.0,
+            }],
+            installment_ids.clone(),
         );
         assert!(res4.is_err());
         assert!(res4.unwrap_err().contains("mayor a 0"));
@@ -626,7 +711,12 @@ pub mod integration {
         let res5 = pay_credit_card_internal(
             connection,
             cc.id,
-            vec![CreditCardPaymentRequest { from_account_id: 9999, amount: 100.0 }],
+            vec![CreditCardPaymentRequest {
+                from_account_id: 9999,
+                original_amount: 100.0,
+                account_amount: 100.0,
+            }],
+            installment_ids,
         );
         assert!(res5.is_err());
         assert!(res5.unwrap_err().contains("cuenta de origen con ID 9999 no existe"));
@@ -652,19 +742,143 @@ pub mod integration {
             Some(credit_info),
         )
         .unwrap();
+        let installment_ids = create_pending_installments(connection, cc.id, 300.0, 300.0);
 
         let reqs = vec![
-            CreditCardPaymentRequest { from_account_id: debit_account.id, amount: 200.0 },
-            CreditCardPaymentRequest { from_account_id: 9999, amount: 100.0 },
+            CreditCardPaymentRequest {
+                from_account_id: debit_account.id,
+                original_amount: 200.0,
+                account_amount: 200.0,
+            },
+            CreditCardPaymentRequest {
+                from_account_id: 9999,
+                original_amount: 100.0,
+                account_amount: 100.0,
+            },
         ];
 
-        let res = pay_credit_card_internal(connection, cc.id, reqs);
+        let res = pay_credit_card_internal(connection, cc.id, reqs, installment_ids.clone());
         assert!(res.is_err());
 
         let debit_bal = get_account_balance_internal(connection, debit_account.id).unwrap();
         let cc_bal = get_account_balance_internal(connection, cc.id).unwrap();
 
         assert_eq!(debit_bal, 500.0);
-        assert_eq!(cc_bal, 1000.0);
+        assert_eq!(cc_bal, 700.0);
+
+        let next_payment = get_credit_card_next_payment_internal(connection, cc.id).unwrap();
+        assert_eq!(next_payment.total_amount, 300.0);
+        assert_eq!(
+            next_payment.movements[0].installment_ids,
+            installment_ids
+        );
+    }
+
+    #[test]
+    fn test_pay_credit_card_split_duplicate_and_retry_contract() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+
+        let first_source =
+            add_account_internal(connection, &state.account_types, "First", 500.0, 2, 1, None)
+                .unwrap();
+        let second_source =
+            add_account_internal(connection, &state.account_types, "Second", 500.0, 2, 1, None)
+                .unwrap();
+        let credit_info =
+            AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 };
+        let card = add_account_internal(
+            connection,
+            &state.account_types,
+            "Card",
+            1000.0,
+            3,
+            1,
+            Some(credit_info),
+        )
+        .unwrap();
+        let installment_ids = create_pending_installments(connection, card.id, 300.0, 300.0);
+
+        let duplicate_source = pay_credit_card_internal(
+            connection,
+            card.id,
+            vec![
+                CreditCardPaymentRequest {
+                    from_account_id: first_source.id,
+                    original_amount: 100.0,
+                    account_amount: 100.0,
+                },
+                CreditCardPaymentRequest {
+                    from_account_id: first_source.id,
+                    original_amount: 200.0,
+                    account_amount: 200.0,
+                },
+            ],
+            installment_ids.clone(),
+        );
+        assert!(duplicate_source.unwrap_err().contains("misma cuenta de origen"));
+
+        let duplicate_installment = pay_credit_card_internal(
+            connection,
+            card.id,
+            vec![CreditCardPaymentRequest {
+                from_account_id: first_source.id,
+                original_amount: 300.0,
+                account_amount: 300.0,
+            }],
+            vec![installment_ids[0], installment_ids[0]],
+        );
+        assert!(duplicate_installment.unwrap_err().contains("misma mensualidad"));
+
+        let underpayment = pay_credit_card_internal(
+            connection,
+            card.id,
+            vec![CreditCardPaymentRequest {
+                from_account_id: first_source.id,
+                original_amount: 299.99,
+                account_amount: 299.99,
+            }],
+            installment_ids.clone(),
+        );
+        assert!(underpayment.unwrap_err().contains("exactamente"));
+        assert_eq!(get_account_balance_internal(connection, first_source.id).unwrap(), 500.0);
+        assert_eq!(get_account_balance_internal(connection, card.id).unwrap(), 700.0);
+
+        let result = pay_credit_card_internal(
+            connection,
+            card.id,
+            vec![
+                CreditCardPaymentRequest {
+                    from_account_id: first_source.id,
+                    original_amount: 125.0,
+                    account_amount: 125.0,
+                },
+                CreditCardPaymentRequest {
+                    from_account_id: second_source.id,
+                    original_amount: 175.0,
+                    account_amount: 175.0,
+                },
+            ],
+            installment_ids.clone(),
+        )
+        .unwrap();
+        assert_eq!(result.transfer_movement_ids.len(), 2);
+        assert_eq!(get_account_balance_internal(connection, first_source.id).unwrap(), 375.0);
+        assert_eq!(get_account_balance_internal(connection, second_source.id).unwrap(), 325.0);
+        assert_eq!(get_account_balance_internal(connection, card.id).unwrap(), 1000.0);
+
+        let retry = pay_credit_card_internal(
+            connection,
+            card.id,
+            vec![CreditCardPaymentRequest {
+                from_account_id: first_source.id,
+                original_amount: 300.0,
+                account_amount: 300.0,
+            }],
+            installment_ids,
+        );
+        assert!(retry.unwrap_err().contains("ya fueron pagadas"));
+        assert_eq!(get_account_balance_internal(connection, first_source.id).unwrap(), 375.0);
+        assert_eq!(get_account_balance_internal(connection, card.id).unwrap(), 1000.0);
     }
 }

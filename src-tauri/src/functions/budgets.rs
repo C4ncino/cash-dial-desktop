@@ -124,7 +124,7 @@ pub fn update_budget_amount(
 
     let state = state.lock().unwrap();
 
-    if amount_limit < 0.0 {
+    if !amount_limit.is_finite() || amount_limit < 0.0 {
         return Err("El límite de presupuesto debe ser mayor o igual a 0".to_string());
     }
 
@@ -830,7 +830,7 @@ fn validate_budget(
         errors.push("El nombre debe tener máximo 50 caracteres".to_string());
     }
 
-    if amount_limit < 0.0 {
+    if !amount_limit.is_finite() || amount_limit < 0.0 {
         errors.push("El límite de presupuesto debe ser mayor o igual a 0".to_string());
     }
 

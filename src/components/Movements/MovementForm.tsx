@@ -10,6 +10,7 @@ import SelectCategories from "@/components/Forms/SelectCategories";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import SelectPlanning from "@/components/Movements/SelectPlanning";
 import useMovementCurrencyConversion from "@/hooks/useMovementCurrencyConversion";
+import useSubmissionGuard from "@/hooks/useSubmissionGuard";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { budgetStore } from "@/stores/budgetStore";
@@ -75,6 +76,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
   const currencies = useStore(currencyStore, (state) => state.currencies) ?? [];
 
   const [errors, setErrors] = useState<string[]>([]);
+  const { submitting, begin, finish, isMounted } = useSubmissionGuard();
   const [selectedAccountId, setSelectedAccountId] = useState<number | undefined>();
   const [selectedToAccountId, setSelectedToAccountId] = useState<number | undefined>();
   const [categoryId, setCategoryId] = useState<number | undefined>();
@@ -170,7 +172,8 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
   const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
     if (isTransfer) data.categoryId = "0";
@@ -193,26 +196,15 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       account?.type.id === ACCOUNT_TYPES.CREDIT,
     );
 
+    if (!begin()) return;
+
     try {
+      const isEditing = Boolean(editState.id && editState.type === config.editType);
       if (editState.id && editState.type === config.editType) {
-        const updateResult = movementsStore
-          .getState()
-          .update(editState.id, movementData) as unknown as Promise<void> | undefined;
-        if (updateResult && typeof (updateResult as Promise<void>).then === "function") {
-          await updateResult;
-        }
-
-        budgetStore.getState().refreshAffected(movementData.categoryId);
-
-        toast(config.toastUpdated);
+        await movementsStore.getState().update(editState.id, movementData);
+        await budgetStore.getState().refreshAffected(movementData.categoryId);
       } else {
-        const addResult = movementsStore.getState().add(movementData) as unknown as
-          | Promise<Movement>
-          | undefined;
-        let createdMovement: Movement | undefined;
-        if (addResult && typeof (addResult as Promise<Movement>).then === "function") {
-          createdMovement = await addResult;
-        }
+        const createdMovement = await movementsStore.getState().add(movementData);
 
         if (movementData.planningId && selectedPlanningOccurrenceId) {
           window.dispatchEvent(
@@ -226,14 +218,17 @@ const MovementForm = ({ modalId, movementType }: Props) => {
           );
         }
 
-        budgetStore.getState().refreshAffected(movementData.categoryId, movement?.categoryId);
-
-        toast(config.toastCreated);
+        await budgetStore.getState().refreshAffected(
+          movementData.categoryId,
+          movement?.categoryId,
+        );
       }
 
-      accountsStore.getState().updateBalance(movementData.accountId, movementData.toAccountId);
+      await accountsStore.getState().updateBalance(movementData.accountId, movementData.toAccountId);
 
-      (e.target as HTMLFormElement).reset();
+      if (!isMounted()) return;
+      toast(isEditing ? config.toastUpdated : config.toastCreated);
+      form.reset();
       setErrors([]);
       setSelectedAccountId(undefined);
       setSelectedToAccountId(undefined);
@@ -244,7 +239,9 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       closeModal(`#${modalId}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      setErrors([message]);
+      if (isMounted()) setErrors([message]);
+    } finally {
+      finish();
     }
   };
 
@@ -394,7 +391,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       />
 
       <FormErrors errors={errors} />
-      <FormActions />
+      <FormActions disabled={submitting} />
     </form>
   );
 };

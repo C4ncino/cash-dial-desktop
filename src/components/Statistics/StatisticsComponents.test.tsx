@@ -15,15 +15,16 @@ vi.mock("zustand", () => ({
   useStore: (store: unknown, selector?: (state: unknown) => unknown) => {
     if (!selector) return undefined;
     if (store === categoryStore) {
+      const categories = [
+        { id: 1, name: "Food", icon: "food", color: "#ff0000" },
+        { id: 2, name: "Transport", icon: "car", color: "#00ff00" },
+        { id: 3, name: "Taxi", icon: "car", color: "#0000ff" },
+        { id: 4, name: "Restaurants", icon: "restaurant", color: "#ffffff" },
+      ];
       return selector({
-        categories: [
-          { id: 1, name: "Food", icon: "food", color: "#ff0000" },
-          { id: 2, name: "Transport", icon: "car", color: "#00ff00" },
-          { id: 3, name: "Taxi", icon: "car", color: "#0000ff" },
-          { id: 4, name: "Restaurants", icon: "restaurant", color: "#ffffff" },
-        ],
+        categories,
         getById(id: number) {
-          return this.categories.find((category) => category.id === id);
+          return categories.find((category) => category.id === id);
         },
       });
     }

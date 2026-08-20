@@ -306,4 +306,25 @@ describe("planningsStore", () => {
     expect(isOccurrenceOverdue(futureOcc, today)).toBe(false);
     expect(isOccurrenceOverdue(completedPastOcc, today)).toBe(false);
   });
+
+  it("keeps planning lists and occurrence caches unchanged when mutations fail", async () => {
+    planningsStore.setState({
+      plannings: [samplePlanning],
+      recurringTypes: [sampleRecurringType],
+      statuses: [sampleStatus],
+      occurrencesByPlanning: { 1: [sampleOccurrence] },
+    });
+    const before = JSON.stringify(planningsStore.getState());
+    for (const mutation of [
+      () => planningsStore.getState().create({} as CreatePlanningRequest),
+      () => planningsStore.getState().update(1, {} as UpdatePlanningRequest),
+      () => planningsStore.getState().activate(1),
+      () => planningsStore.getState().deactivate(1),
+      () => planningsStore.getState().remove(1),
+    ]) {
+      mockInvoke.mockRejectedValueOnce(new Error("mutation failed"));
+      await expect(mutation()).rejects.toThrow("mutation failed");
+      expect(JSON.stringify(planningsStore.getState())).toBe(before);
+    }
+  });
 });

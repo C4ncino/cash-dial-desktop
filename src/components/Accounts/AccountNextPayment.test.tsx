@@ -18,7 +18,9 @@ vi.mock("@/hooks/useDate", () => ({
 vi.mock("@/components/Accounts/CreditCardPaymentForm", () => ({
   default: ({ creditAccountId, totalAmount, onSuccess, onCancel }: any) => (
     <div data-testid="mock-payment-form">
-      <span>Pagar tarjeta - {creditAccountId} - {totalAmount}</span>
+      <span>
+        Pagar tarjeta - {creditAccountId} - {totalAmount}
+      </span>
       <button onClick={onSuccess}>Simulate Success</button>
       <button onClick={onCancel}>Simulate Cancel</button>
     </div>
@@ -31,6 +33,7 @@ describe("AccountNextPayment", () => {
     code: "USD",
     name: "US Dollar",
     symbol: "$",
+    conversionRate: 1,
   };
 
   const mockAccount = {
@@ -105,7 +108,9 @@ describe("AccountNextPayment", () => {
   it("renders empty state if no payments", async () => {
     getNextPaymentMock.mockResolvedValue({ ...mockNextPayment, movements: [] });
     render(<AccountNextPayment accountId={1} />);
-    expect(await screen.findByText("No hay pagos pendientes para este periodo.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No hay pagos pendientes para este periodo."),
+    ).toBeInTheDocument();
   });
 
   it("renders next payment total and date", async () => {
@@ -113,23 +118,25 @@ describe("AccountNextPayment", () => {
     render(<AccountNextPayment accountId={1} />);
     expect(await screen.findByText("Próximo pago")).toBeInTheDocument();
     expect(screen.getByText("Fecha límite: 15/08/2026")).toBeInTheDocument();
-    expect(screen.getByText(formatAmount(mockNextPayment.totalAmount, mockCurrency))).toBeInTheDocument();
+    expect(
+      screen.getByText(formatAmount(mockNextPayment.totalAmount, mockCurrency)),
+    ).toBeInTheDocument();
   });
 
   it("expands to show movements and installments", async () => {
     getNextPaymentMock.mockResolvedValue(mockNextPayment);
     render(<AccountNextPayment accountId={1} />);
-    
+
     // Wait for load
     await screen.findByText("Próximo pago");
-    
+
     // Not expanded
     expect(screen.queryByText("Netflix")).not.toBeInTheDocument();
-    
+
     // Expand
     const button = screen.getByRole("button");
     fireEvent.click(button);
-    
+
     // Expanded
     expect(screen.getByText("Netflix")).toBeInTheDocument();
     expect(screen.getByText("Cuota 1 de 12, Cuota 2 de 12")).toBeInTheDocument();
@@ -190,5 +197,30 @@ describe("AccountNextPayment", () => {
 
     // Next payment should be refetched (fetchNextPayment is called on mount and on success)
     expect(getNextPaymentMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignores a stale response after the account changes", async () => {
+    let resolveFirst: (value: CreditCardNextPayment) => void = () => undefined;
+    let resolveSecond: (value: CreditCardNextPayment) => void = () => undefined;
+    getNextPaymentMock
+      .mockReturnValueOnce(new Promise((resolve) => (resolveFirst = resolve)))
+      .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
+    const { rerender } = render(<AccountNextPayment accountId={1} />);
+    rerender(<AccountNextPayment accountId={2} />);
+
+    resolveSecond({ ...mockNextPayment, accountId: 2, totalAmount: 222 });
+    expect(await screen.findByText(formatAmount(222, mockCurrency))).toBeInTheDocument();
+    resolveFirst({ ...mockNextPayment, totalAmount: 111 });
+
+    expect(screen.queryByText(formatAmount(111, mockCurrency))).not.toBeInTheDocument();
+  });
+
+  it("does not update state after unmount", async () => {
+    let resolveRequest: (value: CreditCardNextPayment) => void = () => undefined;
+    getNextPaymentMock.mockReturnValueOnce(new Promise((resolve) => (resolveRequest = resolve)));
+    const { unmount } = render(<AccountNextPayment accountId={1} />);
+    unmount();
+    resolveRequest(mockNextPayment);
+    await Promise.resolve();
   });
 });

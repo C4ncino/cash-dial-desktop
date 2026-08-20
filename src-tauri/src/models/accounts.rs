@@ -107,5 +107,13 @@ pub struct CreditCardNextPayment {
 #[serde(rename_all = "camelCase")]
 pub struct CreditCardPaymentRequest {
     pub from_account_id: i32,
-    pub amount: f64,
+    pub original_amount: f64,
+    pub account_amount: f64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CreditCardPaymentResult {
+    pub transfer_movement_ids: Vec<i32>,
+    pub paid_movement_ids: Vec<i32>,
 }

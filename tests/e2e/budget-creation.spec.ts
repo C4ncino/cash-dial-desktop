@@ -1,16 +1,15 @@
-import { closeTauriDriver, createDriver, deleteDatabase, driver, waitForHomeReady } from "@test/driver";
+import { closeTauriDriver, createDriver, driver, waitForHomeReady } from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("Tauri - Budget creation", () => {
-  beforeAll(async () => {
-    await createDriver();
+  beforeEach(async () => {
+    await createDriver({ freshDatabase: true });
     await waitForHomeReady();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await closeTauriDriver();
-    deleteDatabase();
   });
 
   async function clearAndType(element: any, text: string) {
@@ -69,9 +68,6 @@ describe("Tauri - Budget creation", () => {
     // Submit form
     const submitBtn = await driver.findElement(By.css('#budget-form button[type="submit"]'));
     await submitBtn.click();
-
-    // Wait for modal to close and card to render
-    await driver.sleep(500);
 
     // Verify it renders on the page
     const budgetCard = await driver.wait(

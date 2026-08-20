@@ -105,4 +105,42 @@ mod tests {
         let pay_date_3 = Local.timestamp_millis_opt(pay_time_3).unwrap().date_naive();
         assert_eq!(pay_date_3, NaiveDate::from_ymd_opt(2026, 10, 10).unwrap()); // September has 30 days, September 20 + 20 days is October 10.
     }
+
+    #[test]
+    fn test_cutoff_clamps_for_leap_and_non_leap_february() {
+        assert_eq!(
+            last_day_of_month_or_clamp(2028, 2, 31),
+            NaiveDate::from_ymd_opt(2028, 2, 29).unwrap()
+        );
+        assert_eq!(
+            last_day_of_month_or_clamp(2027, 2, 31),
+            NaiveDate::from_ymd_opt(2027, 2, 28).unwrap()
+        );
+        assert_eq!(
+            last_day_of_month_or_clamp(2026, 4, 31),
+            NaiveDate::from_ymd_opt(2026, 4, 30).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_installment_dates_cross_december_into_next_year() {
+        let tx_time = Local.with_ymd_and_hms(2026, 12, 31, 23, 59, 0).unwrap().timestamp_millis();
+        let payment = calculate_credit_payment_date_for_installment(tx_time, 31, 1, 2);
+        assert_eq!(
+            Local.timestamp_millis_opt(payment).unwrap().date_naive(),
+            NaiveDate::from_ymd_opt(2027, 2, 1).unwrap()
+        );
+    }
+
+    #[test]
+    fn local_midnight_round_trip_is_stable_for_calendar_dates() {
+        for date in [
+            NaiveDate::from_ymd_opt(1969, 12, 31).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 2, 29).unwrap(),
+            NaiveDate::from_ymd_opt(2026, 12, 31).unwrap(),
+        ] {
+            let timestamp = crate::utils::recurrence::local_naive_date_to_start_of_day_ms(date);
+            assert_eq!(crate::utils::recurrence::timestamp_to_local_naive_date(timestamp), date);
+        }
+    }
 }

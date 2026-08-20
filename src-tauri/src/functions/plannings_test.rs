@@ -8,6 +8,34 @@ use crate::utils::recurrence::local_naive_date_to_start_of_day_ms;
 use chrono::NaiveDate;
 
 #[test]
+fn test_validation_rejects_non_finite_amounts() {
+    let state = setup();
+    let mut conn = establish_connection(&state.config.database_url);
+    let start_date =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 10).unwrap());
+
+    for amount in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let req = CreatePlanningRequest {
+            type_id: MOVEMENT_EXPENSE_ID,
+            account_id: 1,
+            category_id: 1,
+            currency_id: 1,
+            name: "Invalid amount".to_string(),
+            amount,
+            recurring_type_id: RECURRING_TYPE_DAILY,
+            interval_step: 1,
+            start_date,
+            end_date: None,
+            week_days: None,
+            month_days: None,
+            year_days: None,
+        };
+
+        assert!(validate_planning_request(&state, &mut conn, &req).is_err());
+    }
+}
+
+#[test]
 fn test_create_daily_planning_generates_initial_occurrence() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);
@@ -276,10 +304,24 @@ fn test_complete_occurrence_directly_and_advances() {
     assert_eq!(completed.status_id, PLANNING_STATUS_COMPLETED);
     assert_eq!(completed.movement_id, Some(movement.id));
 
+    assert!(complete_planning_occurrence_internal(
+        &mut conn,
+        &state,
+        initial_occ.id,
+        movement.id,
+    )
+    .is_err());
+    assert!(cancel_planning_occurrence_internal(&mut conn, initial_occ.id).is_err());
+    assert!(cancel_planning_occurrence_internal(&mut conn, 999_999).is_err());
+
     // Next actionable occurrence should now be August 28
     let updated_planning = get_planning_internal(&mut conn, planning.id).unwrap();
     let next_occ = updated_planning.current_occurrence.unwrap();
     assert_eq!(next_occ.expected_date, expected_28th_ms);
+    assert!(complete_planning_occurrence_internal(&mut conn, &state, next_occ.id, 999_999)
+        .is_err());
+    let after_failure = get_planning_internal(&mut conn, planning.id).unwrap();
+    assert_eq!(after_failure.current_occurrence.unwrap().id, next_occ.id);
 }
 
 #[test]

@@ -1,16 +1,15 @@
-import { closeTauriDriver, createDriver, deleteDatabase, driver, waitForHomeReady } from "@test/driver";
+import { closeTauriDriver, createDriver, driver, waitForHomeReady } from "@test/driver";
 import { By, until } from "selenium-webdriver";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("Tauri - Account creation", () => {
-  beforeAll(async () => {
-    await createDriver();
+  beforeEach(async () => {
+    await createDriver({ freshDatabase: true });
     await waitForHomeReady();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await closeTauriDriver();
-    deleteDatabase();
   });
 
   it("creates a cash account", async () => {
@@ -35,10 +34,13 @@ describe("Tauri - Account creation", () => {
 
     await submit.click();
 
-    await driver.sleep(200);
-
-    const accountLink = await driver.findElement(By.css('a[href="/account?id=6"]'));
-    await accountLink.click();
+    const accountName = await driver.wait(
+      until.elementLocated(
+        By.xpath('//a[starts-with(@href, "/account?id=")]//h2[contains(., "Checking")]'),
+      ),
+      10000,
+    );
+    await accountName.click();
 
     await driver.wait(until.elementLocated(By.css("body")), 10000);
 
