@@ -64,7 +64,7 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
   return (
     <section className="space-y-4">
       {/* Search and Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-zinc-950/60 p-3 rounded-xl border border-zinc-800">
+      <div className="glass-surface flex flex-col items-stretch justify-between gap-3 rounded-xl p-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Icon
             icon="iconoir:search"
@@ -75,7 +75,7 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
             placeholder="Buscar planificación..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-700"
+            className="glass-control w-full rounded-lg py-1.5 pr-3 pl-9 text-sm text-zinc-950 placeholder-zinc-500 focus:border-zinc-400 focus:outline-none dark:text-zinc-100 dark:placeholder-zinc-400 dark:focus:border-zinc-600"
           />
         </div>
 
@@ -86,8 +86,8 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
             onClick={() => setStatusFilter("all")}
             className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition-colors ${
               statusFilter === "all"
-                ? "bg-zinc-200 text-black font-semibold"
-                : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
+                ? "bg-zinc-800 text-zinc-100 font-semibold dark:bg-zinc-200 dark:text-zinc-950"
+                : "glass-control text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
           >
             Todas ({plannings.length})
@@ -97,8 +97,8 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
             onClick={() => setStatusFilter("active")}
             className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition-colors ${
               statusFilter === "active"
-                ? "bg-zinc-200 text-black font-semibold"
-                : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
+                ? "bg-zinc-800 text-zinc-100 font-semibold dark:bg-zinc-200 dark:text-zinc-950"
+                : "glass-control text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
           >
             Activas
@@ -108,8 +108,8 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
             onClick={() => setStatusFilter("inactive")}
             className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition-colors ${
               statusFilter === "inactive"
-                ? "bg-zinc-200 text-black font-semibold"
-                : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
+                ? "bg-zinc-800 text-zinc-100 font-semibold dark:bg-zinc-200 dark:text-zinc-950"
+                : "glass-control text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
           >
             Inactivas
@@ -121,12 +121,12 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
               onClick={() => setStatusFilter("overdue")}
               className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition-colors flex items-center gap-1.5 ${
                 statusFilter === "overdue"
-                  ? "bg-red-600 text-white font-semibold"
-                  : "bg-red-950/60 text-red-300 border border-red-900/60 hover:bg-red-900/40"
+                  ? "bg-red-600 text-zinc-50 font-semibold dark:bg-red-400 dark:text-zinc-950"
+                  : "border border-red-200 bg-red-50/60 text-red-600 hover:bg-red-100/60 dark:border-red-800 dark:bg-red-950/60 dark:text-red-400 dark:hover:bg-red-900/60"
               }`}
             >
-              <span>Vencidas</span>
-              <span className="bg-red-800/80 px-1.5 py-0.2 rounded-full text-[10px]">
+              Vencidas
+              <span className="rounded-full bg-red-200/80 px-1.5 py-0.2 text-[10px] dark:bg-red-800/80">
                 {overdueCount}
               </span>
             </button>
@@ -136,11 +136,11 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
 
       {/* List / Empty State */}
       {filteredPlannings.length === 0 ? (
-        <div className="text-center py-12 px-4 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 space-y-3">
-          <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center mx-auto text-zinc-500">
+        <div className="glass-surface space-y-3 rounded-xl border-dashed px-4 py-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200/60 text-zinc-500 dark:bg-zinc-800/60 dark:text-zinc-400">
             <Icon icon="iconoir:calendar-xmark" className="w-6 h-6" />
           </div>
-          <h4 className="text-zinc-300 font-medium">No se encontraron planificaciones</h4>
+          <h4 className="font-medium text-zinc-700 dark:text-zinc-300">No se encontraron planificaciones</h4>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
             {plannings.length === 0
               ? "No tienes ninguna planificación configurada. Crea una para prever tus ingresos y gastos periódicos."
@@ -151,10 +151,10 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
             <button
               type="button"
               id="create-planning-button"
-              className="mt-2 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+              className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-zinc-50 transition-colors hover:bg-blue-500 dark:bg-blue-400 dark:text-zinc-950 dark:hover:bg-blue-500"
             >
               <Icon icon="iconoir:plus" className="w-4 h-4" />
-              <span>Crear primera planificación</span>
+              Crear primera planificación
             </button>
           )}
         </div>

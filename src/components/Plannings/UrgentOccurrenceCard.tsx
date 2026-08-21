@@ -27,32 +27,28 @@ const UrgentOccurrenceCard = ({ planning, occurrence }: Props) => {
     <a
       href={`/planning-detail?id=${planning.id}`}
       data-testid="urgent-occurrence-card"
-      className="block rounded-xl border border-zinc-800 bg-zinc-950/80 p-4 transition-colors hover:border-zinc-600 hover:bg-zinc-900/70"
+      className="glass-surface block rounded-xl p-4 transition-colors hover:border-zinc-400 hover:bg-zinc-200/60 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="mt-1 font-semibold text-white">{planning.name}</h3>
+        <h3 className="mt-1 font-semibold text-zinc-950 dark:text-zinc-100">{planning.name}</h3>
         <PlanningStatusBadge occurrence={occurrence} />
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <dd>
-            <AmountText
-              amount={planning.amount}
-              tone={isExpense || planning.amount < 0 ? "expense" : "income"}
-              icon={isExpense || planning.amount < 0 ? "minus" : "plus"}
-              format="number"
-              className="text-lg"
-              amountClassName="font-semibold"
-            />
-          </dd>
-        </div>
-        <div>
-          <dd className="text-lg font-semibold text-zinc-200">
-            <time dateTime={new Date(occurrence.expectedDate).toISOString()}>
-              {formatOccurrenceDueDifference(occurrence.expectedDate)}
-            </time>
-          </dd>
-        </div>
+        <dd>
+          <AmountText
+            amount={planning.amount}
+            tone={isExpense || planning.amount < 0 ? "expense" : "income"}
+            icon={isExpense || planning.amount < 0 ? "minus" : "plus"}
+            format="number"
+            className="text-lg"
+            amountClassName="font-semibold"
+          />
+        </dd>
+        <dd className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">
+          <time dateTime={new Date(occurrence.expectedDate).toISOString()}>
+            {formatOccurrenceDueDifference(occurrence.expectedDate)}
+          </time>
+        </dd>
       </dl>
     </a>
   );

@@ -1,6 +1,7 @@
 import colors from "tailwindcss/colors";
 import { Progress } from "webcoreui/react";
 
+import useTheme from "@/hooks/useTheme";
 import { formatNumber } from "@/lib/formatters";
 
 interface Props {
@@ -22,13 +23,18 @@ const BudgetMeter = ({ spent, limit, currencyCode }: Props) => {
   const percentage = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
   const remaining = limit - spent;
   const isOverBudget = spent >= limit;
+
+  const { isDark } = useTheme();
+
   return (
     <>
       <div className="flex justify-between items-baseline mb-1">
-        <p className={`text-lg font-semibold ${isOverBudget ? "text-red-500" : "dark:text-white"}`}>
+        <p
+          className={`text-lg font-semibold ${isOverBudget ? "text-red-600 dark:text-red-400" : "text-zinc-950 dark:text-zinc-100"}`}
+        >
           {formatNumber(spent, 999_999)}
         </p>
-        <p className="text-sm text-zinc-400 text-right">
+        <p className="text-right text-sm text-zinc-500 dark:text-zinc-400">
           / {formatNumber(limit, 999_999)} {currencyCode}
         </p>
       </div>
@@ -36,12 +42,12 @@ const BudgetMeter = ({ spent, limit, currencyCode }: Props) => {
       <Progress
         value={percentage}
         color={getColor(percentage)}
-        background={colors.zinc[700]}
+        background={isDark ? colors.zinc[700] : colors.zinc[200]}
         className="mb-2"
       />
 
       <p
-        className={`text-xs text-right ${isOverBudget ? "text-red-400" : "text-zinc-500 dark:text-zinc-400"}`}
+        className={`text-right text-xs ${isOverBudget ? "text-red-600 dark:text-red-400" : "text-zinc-500 dark:text-zinc-400"}`}
       >
         {isOverBudget
           ? `Excedido por ${formatNumber(Math.abs(remaining), 999_999)}`

@@ -24,7 +24,7 @@ const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, disa
 
   return (
     <fieldset className="space-y-1">
-      <label htmlFor={name} className="text-gray-webui-text">
+      <label htmlFor={name} className="text-zinc-700 dark:text-zinc-300">
         {label}
       </label>
       <select
@@ -33,15 +33,15 @@ const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, disa
         id={name}
         required
         disabled={disabled}
-        className="w-full border border-[#252525] bg-transparent rounded px-3 py-2"
+        className="glass-control w-full rounded px-3 py-2 text-zinc-950 dark:text-zinc-100"
         defaultValue={accountId}
         onChange={(e) => onChange?.(Number(e.target.value))}
       >
-        <option value="" className="bg-black">
+        <option value="" className="bg-zinc-100 dark:bg-zinc-800">
           Seleccionar cuenta
         </option>
         {activeAccounts.map((account) => (
-          <option key={account.id} value={account.id} className="bg-black">
+          <option key={account.id} value={account.id} className="bg-zinc-100 dark:bg-zinc-800">
             {account.name}
           </option>
         ))}

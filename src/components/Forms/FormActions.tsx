@@ -15,7 +15,7 @@ const FormActions = ({
         <button
           type="reset"
           disabled={disabled}
-          className="border-2 border-zinc-200 text-zinc-200 hover:text-black py-2 px-4 rounded hover:bg-zinc-200 hover:cursor-pointer"
+          className="rounded border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
         >
           {resetLabel}
         </button>
@@ -24,7 +24,7 @@ const FormActions = ({
         <button
           type="submit"
           disabled={disabled}
-          className="border-2 border-green-600 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 hover:border-green-700 hover:cursor-pointer"
+          className="rounded border-2 border-green-600 bg-green-600 px-4 py-2 text-zinc-50 hover:cursor-pointer hover:border-green-500 hover:bg-green-500 dark:border-green-400 dark:bg-green-400 dark:text-zinc-950 dark:hover:border-green-500 dark:hover:bg-green-500"
         >
           {disabled ? "Guardando…" : submitLabel}
         </button>

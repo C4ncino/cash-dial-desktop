@@ -175,8 +175,8 @@ const CreditCardPaymentForm = ({
   };
 
   return (
-    <form className="bg-zinc-900 border-t border-zinc-700 p-4 space-y-4" onSubmit={onSubmit}>
-      <h3 className="text-base font-semibold text-zinc-100">Pagar tarjeta</h3>
+    <form className="space-y-4 border-t border-zinc-200 bg-zinc-100/60 p-4 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/60" onSubmit={onSubmit}>
+      <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-100">Pagar tarjeta</h3>
 
       {rows.map((row) => (
         <div key={row.key} className="flex items-end gap-2">
@@ -192,7 +192,7 @@ const CreditCardPaymentForm = ({
           </div>
           <div className="flex-1">
             <fieldset className="space-y-1">
-              <label htmlFor={`amount-${row.key}`} className="text-gray-webui-text">
+              <label htmlFor={`amount-${row.key}`} className="text-zinc-700 dark:text-zinc-300">
                 Monto
               </label>
               <Input
@@ -213,7 +213,7 @@ const CreditCardPaymentForm = ({
             <button
               type="button"
               onClick={() => removeRow(row.key)}
-              className="mb-1 p-2 text-red-400 hover:text-red-300"
+              className="mb-1 p-2 text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-500"
               aria-label="Eliminar cuenta de origen"
             >
               <Icon icon="iconoir:trash" className="text-xl" />
@@ -225,32 +225,32 @@ const CreditCardPaymentForm = ({
       <button
         type="button"
         onClick={addRow}
-        className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300"
+        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-500"
       >
         <Icon icon="iconoir:plus" />
         Agregar cuenta
       </button>
 
-      <div className="border-t border-zinc-700 pt-3 space-y-1 text-sm">
+      <div className="space-y-1 border-t border-zinc-200 pt-3 text-sm dark:border-zinc-800">
         <div className="flex justify-between">
-          <span className="text-zinc-400">Próximo pago:</span>
+          <span className="text-zinc-500 dark:text-zinc-400">Próximo pago:</span>
           <AmountText
             amount={totalAmount}
             currency={currency}
             format="currency"
             inline
-            className="text-zinc-200"
+            className="text-zinc-700 dark:text-zinc-300"
           />
         </div>
         <div className="flex justify-between">
-          <span className="text-zinc-400">Monto cubierto:</span>
-          <span className={`font-medium ${isExactlyCovered ? "text-green-400" : "text-zinc-200"}`}>
+          <span className="text-zinc-500 dark:text-zinc-400">Monto cubierto:</span>
+          <span className={`font-medium ${isExactlyCovered ? "text-green-600 dark:text-green-400" : "text-zinc-700 dark:text-zinc-300"}`}>
             {formatAmount(amountCovered, currency)}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-zinc-400">Restante:</span>
-          <span className={`font-medium ${remaining === 0 ? "text-green-400" : "text-yellow-400"}`}>
+          <span className="text-zinc-500 dark:text-zinc-400">Restante:</span>
+          <span className={`font-medium ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-yellow-600 dark:text-yellow-400"}`}>
             {formatAmount(remaining, currency)}
           </span>
         </div>
@@ -264,7 +264,7 @@ const CreditCardPaymentForm = ({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="border-2 border-zinc-200 text-zinc-200 hover:text-black py-2 px-4 rounded hover:bg-zinc-200 hover:cursor-pointer disabled:opacity-50"
+            className="rounded border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -273,7 +273,7 @@ const CreditCardPaymentForm = ({
           <button
             type="submit"
             disabled={submitting || !isExactlyCovered}
-            className="border-2 border-green-600 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 hover:border-green-700 hover:cursor-pointer disabled:opacity-50"
+            className="rounded border-2 border-green-600 bg-green-600 px-4 py-2 text-zinc-50 hover:cursor-pointer hover:border-green-500 hover:bg-green-500 dark:border-green-400 dark:bg-green-400 dark:text-zinc-950 dark:hover:border-green-500 dark:hover:bg-green-500 disabled:opacity-50"
           >
             {submitting ? "Pagando..." : "Pagar"}
           </button>

@@ -1,10 +1,12 @@
 ---
 import Navbar from "@/components/Header/Navbar.astro";
+import ThemeToggle from "@/components/Header/ThemeToggle.astro";
 ---
 
 <header>
-  <hgroup class="pb-4">
-    <h2 class="italic font-serif">CashDial</h2>
+  <hgroup class="flex items-center justify-between gap-3 pb-4">
+    <h2 class="font-serif italic text-zinc-950 dark:text-zinc-100">CashDial</h2>
+    <ThemeToggle />
   </hgroup>
 
   <Navbar />

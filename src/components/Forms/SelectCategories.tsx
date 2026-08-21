@@ -115,23 +115,20 @@ const SelectCategories = ({ categoryId, rootCategoryId, onChange }: Props) => {
   };
 
   return (
-    <fieldset className="relative w-full text-white font-sans" ref={dropdownRef}>
-      <label htmlFor="categoryId" className="text-gray-webui-text">
+    <fieldset
+      className="relative w-full font-sans text-zinc-950 dark:text-zinc-100"
+      ref={dropdownRef}
+    >
+      <label htmlFor="categoryId" className="text-zinc-700 dark:text-zinc-300">
         Categoría
       </label>
 
-      <input
-        hidden
-        readOnly
-        id="categoryId"
-        name="categoryId"
-        value={selectedId ?? ""}
-      />
+      <input hidden readOnly id="categoryId" name="categoryId" value={selectedId ?? ""} />
 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-left hover:bg-zinc-900 cursor-pointer transition-colors duration-200"
+        className="glass-control flex w-full cursor-pointer items-center justify-between rounded px-3 py-2 text-left transition-colors duration-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
       >
         {selectedCategory ? (
           <span className="flex items-center gap-2 flex-no-wrap overflow-hidden">
@@ -147,18 +144,18 @@ const SelectCategories = ({ categoryId, rootCategoryId, onChange }: Props) => {
             />
           </span>
         ) : (
-          <p className="text-zinc-500">Seleccionar Categoría</p>
+          <p className="text-zinc-500 dark:text-zinc-400">Seleccionar Categoría</p>
         )}
         <Icon
           icon="iconoir:nav-arrow-down"
-          className={`w-5 h-5 text-zinc-500 transition-transform duration-200 ${
+          className={`h-5 w-5 text-zinc-500 transition-transform duration-200 dark:text-zinc-400 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {isOpen && (
-        <ul className="absolute z-50 w-full max-h-72 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded shadow-xl scrollbar-thin scrollbar-thumb-zinc-800">
+        <ul className="absolute z-50 max-h-72 w-full overflow-y-auto rounded shadow-xl bg-zinc-100 dark:bg-zinc-800">
           {categoryTree.map((node) => (
             <CategoryItem
               key={node.id}

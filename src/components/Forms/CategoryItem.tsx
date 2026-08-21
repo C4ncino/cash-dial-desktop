@@ -17,7 +17,7 @@ const CategoryItem = ({ node, expandedParents, selectedId, onToggle, onSelect }:
 
   return (
     <li
-      className={`px-3 py-4 ${!hasChildren && "hover:bg-zinc-900"} ${isSelected && "bg-zinc-900"} rounded-md`}
+      className={`rounded-md px-3 py-4 ${!hasChildren && "hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"} ${isSelected && "bg-zinc-200/60 dark:bg-zinc-800/60"}`}
     >
       <button
         type="button"
@@ -27,21 +27,19 @@ const CategoryItem = ({ node, expandedParents, selectedId, onToggle, onSelect }:
         }}
         className="flex w-full items-center justify-between"
       >
-        <span className="flex items-center gap-2.5">
-          <CategoryName id={node.id} customName={node.name} color={node.color} />
-        </span>
+        <CategoryName id={node.id} customName={node.name} color={node.color} />
 
         {hasChildren && (
           <Icon icon="iconoir:nav-arrow-right" className={isExpanded ? "rotate-90" : ""} />
         )}
 
         {!hasChildren && isSelected && (
-          <Icon icon="iconoir:check" className="ml-auto w-4 h-4 text-blue-400" />
+          <Icon icon="iconoir:check" className="ml-auto h-4 w-4 text-blue-600 dark:text-blue-400" />
         )}
       </button>
 
       {hasChildren && isExpanded && (
-        <ul className="mt-3 pl-2 border-l-2 border-zinc-800/80 rounded-r-md">
+        <ul className="mt-3 rounded-r-md border-l-2 border-zinc-200/80 pl-2 dark:border-zinc-800/80">
           {node.children.map((child) => (
             <CategoryItem
               key={child.id}

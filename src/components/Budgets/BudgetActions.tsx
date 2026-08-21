@@ -29,7 +29,7 @@ const BudgetActions = () => {
         modalTitle="Confirmar eliminación de presupuesto"
         description="¿Estás seguro de que deseas eliminar este presupuesto? Esta acción no se puede deshacer."
         theme="alert"
-        buttonClassName="text-red-500 font-medium"
+        buttonClassName="font-medium text-red-600 dark:text-red-400"
       />
     </li>
   );

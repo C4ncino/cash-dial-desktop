@@ -54,10 +54,8 @@ const PlanningInfo = () => {
           />
         )}
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold text-white">{planning.name}</h2>
-          </div>
-          <p className="text-sm text-zinc-400 mt-0.5">
+          <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-100">{planning.name}</h2>
+          <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
             {isExpense ? "Gasto" : "Ingreso"} planificado
           </p>
         </div>
@@ -71,7 +69,7 @@ const PlanningInfo = () => {
             className="text-3xl justify-end"
             amountClassName="font-bold"
           />
-          <p className="text-xs text-zinc-400">{currency?.code ?? ""}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">{currency?.code ?? ""}</p>
         </div>
       </div>
 
@@ -79,46 +77,46 @@ const PlanningInfo = () => {
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="space-y-1">
           <p className="text-zinc-500 text-xs uppercase tracking-wider">Cuenta</p>
-          <p className="text-zinc-200 flex items-center gap-1.5">
+          <p className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
             <AccountName id={planning.accountId} />
           </p>
         </div>
         <div className="space-y-1">
           <p className="text-zinc-500 text-xs uppercase tracking-wider">Categoría</p>
-          <p className="text-zinc-200 flex items-center gap-1.5">
+          <p className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
             <CategoryName id={planning.categoryId} />
           </p>
         </div>
         <div className="space-y-1">
           <p className="text-zinc-500 text-xs uppercase tracking-wider">Estado</p>
-          <p className={`font-medium ${rule.isActive ? "text-emerald-400" : "text-zinc-500"}`}>
+          <p className={`font-medium ${rule.isActive ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400"}`}>
             {rule.isActive ? "Activa" : "Inactiva"}
           </p>
         </div>
         <div className="space-y-1">
           <p className="text-zinc-500 text-xs uppercase tracking-wider">Tipo de Movimiento</p>
-          <p className={`font-medium ${isExpense ? "text-red-400" : "text-emerald-400"}`}>
+          <p className={`font-medium ${isExpense ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
             {isExpense ? "Gasto" : "Ingreso"}
           </p>
         </div>
       </div>
 
       {/* Recurrence Rule Summary */}
-      <div className="mt-6 p-3 rounded-lg bg-zinc-900/80 border border-zinc-800">
+      <div className="glass-surface mt-6 rounded-lg p-3">
         <p className="text-zinc-500 text-xs uppercase tracking-wider mb-2">Regla de Recurrencia</p>
-        <p className="text-zinc-200 flex items-center gap-2">
+        <p className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
           <Icon icon="iconoir:repeat" className="w-4 h-4 text-zinc-400" />
-          <span>{recurrenceSummary}</span>
+          {recurrenceSummary}
         </p>
 
         <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
           <div>
             <p className="text-zinc-500 text-xs">Fecha de inicio</p>
-            <p className="text-zinc-300">{formatDateLong(rule.startDate)}</p>
+            <p className="text-zinc-700 dark:text-zinc-300">{formatDateLong(rule.startDate)}</p>
           </div>
           <div>
             <p className="text-zinc-500 text-xs">Fecha límite</p>
-            <p className="text-zinc-300">
+            <p className="text-zinc-700 dark:text-zinc-300">
               {rule.endDate ? formatDateLong(rule.endDate) : "Sin fecha límite"}
             </p>
           </div>
@@ -130,7 +128,7 @@ const PlanningInfo = () => {
             <p className="text-zinc-500 text-xs mb-1">Días de la semana</p>
             <div className="flex gap-1.5 flex-wrap">
               {rule.weekDays.map((d) => (
-                <span key={d} className="text-xs bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded">
+                <span key={d} className="rounded bg-zinc-200/60 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
                   {WEEKDAY_NAMES_FULL[d]}
                 </span>
               ))}
@@ -144,7 +142,7 @@ const PlanningInfo = () => {
             <p className="text-zinc-500 text-xs mb-1">Días del mes</p>
             <div className="flex gap-1.5 flex-wrap">
               {rule.monthDays.map((d) => (
-                <span key={d} className="text-xs bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded">
+                <span key={d} className="rounded bg-zinc-200/60 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
                   Día {d}
                 </span>
               ))}
@@ -160,7 +158,7 @@ const PlanningInfo = () => {
               {rule.yearDays.map((yd) => (
                 <span
                   key={`${yd.month}-${yd.dayOfMonth}`}
-                  className="text-xs bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded"
+                  className="rounded bg-zinc-200/60 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300"
                 >
                   {yd.dayOfMonth} de {MONTH_NAMES_FULL[yd.month - 1]}
                 </span>

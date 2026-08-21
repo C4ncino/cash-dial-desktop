@@ -42,9 +42,9 @@ const BudgetPeriods = () => {
   return (
     <section className="space-y-2">
       <header className="space-y-4">
-        <menu className="flex justify-between text-white">
+        <menu className="flex justify-between text-zinc-950 dark:text-zinc-100">
           <button
-            className="flex items-center italic transition-all duration-200 hover:text-zinc-300 hover:opacity-90 disabled:text-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center italic transition-all duration-200 hover:text-zinc-700 hover:opacity-90 disabled:cursor-not-allowed disabled:text-zinc-500 disabled:opacity-50 dark:hover:text-zinc-300 dark:disabled:text-zinc-400"
             type="button"
             onClick={prev}
             disabled={isFirst}
@@ -64,7 +64,7 @@ const BudgetPeriods = () => {
           </h2>
 
           <button
-            className="flex items-center italic transition-all duration-200 hover:text-zinc-300 hover:opacity-90 disabled:text-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center italic transition-all duration-200 hover:text-zinc-700 hover:opacity-90 disabled:cursor-not-allowed disabled:text-zinc-500 disabled:opacity-50 dark:hover:text-zinc-300 dark:disabled:text-zinc-400"
             type="button"
             onClick={next}
             disabled={isLast}

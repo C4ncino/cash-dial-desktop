@@ -95,15 +95,15 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
 
   return (
     <section className="p-4 mb-4" data-testid="planning-occurrences">
-      <h3 className="text-lg font-semibold text-white mb-4">Ocurrencias</h3>
+      <h3 className="mb-4 text-lg font-semibold text-zinc-950 dark:text-zinc-100">Ocurrencias</h3>
 
       {currentOccurrence ? (
-        <article className="rounded-lg border border-zinc-800 bg-zinc-950/70 p-4 mb-5">
+        <article className="glass-surface mb-5 rounded-lg p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-wider text-zinc-500">Ocurrencia actual</p>
-              <p className="text-zinc-200 mt-1">{formatOccurrenceDate(currentOccurrence.expectedDate)}</p>
-              <p className="text-sm text-zinc-400 mt-1">
+              <p className="mt-1 text-zinc-700 dark:text-zinc-300">{formatOccurrenceDate(currentOccurrence.expectedDate)}</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                 {planning.typeId === MOVEMENT_TYPES.EXPENSE ? "Gasto" : "Ingreso"} de {formatNumber(planning.amount, 999_999)}
               </p>
             </div>
@@ -115,7 +115,7 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
                 type="button"
                 data-testid="complete-occurrence-button"
                 onClick={handleComplete}
-                className="rounded border border-emerald-600 px-3 py-2 text-sm text-emerald-300 hover:bg-emerald-950/50"
+                className="rounded border border-emerald-600 px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50/60 dark:border-emerald-400 dark:text-emerald-400 dark:hover:bg-emerald-950/60"
               >
                 Completar con movimiento
               </button>
@@ -126,7 +126,7 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
                 modalTitle="Confirmar cancelación de ocurrencia"
                 description="¿Estás seguro de que deseas cancelar esta ocurrencia?"
                 theme="alert"
-                buttonClassName="rounded border border-red-600 px-3 py-2 text-sm text-red-300 hover:bg-red-950/50"
+                buttonClassName="rounded border border-red-600 px-3 py-2 text-sm text-red-600 hover:bg-red-50/60 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-950/60"
               />
             </div>
           )}
@@ -135,29 +135,27 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
         <p className="text-sm text-zinc-500 mb-5">No hay una ocurrencia pendiente.</p>
       )}
 
-      <div>
-        <h4 className="text-sm font-medium text-zinc-300 mb-3">Historial</h4>
-        {occurrences.length === 0 ? (
-          <p className="text-sm text-zinc-500">Aún no hay historial de ocurrencias.</p>
-        ) : (
-          <ol className="space-y-3 border-l border-zinc-800 pl-4">
-            {occurrences.map((occurrence) => (
-              <li key={occurrence.id} className="relative rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className={`flex items-center gap-2 text-sm font-medium ${occurrence.statusId === PLANNING_STATUS.COMPLETED ? "text-emerald-400" : occurrence.statusId === PLANNING_STATUS.CANCELED ? "text-red-400" : "text-amber-300"}`}>
-                  <Icon icon={occurrence.statusId === PLANNING_STATUS.COMPLETED ? "iconoir:check-circle" : occurrence.statusId === PLANNING_STATUS.CANCELED ? "iconoir:cancel" : "iconoir:clock"} className="h-4 w-4" />
-                  {occurrenceLabel(occurrence)}
-                </p>
-                <p className="mt-1 text-sm text-zinc-300">{formatOccurrenceDate(occurrence.expectedDate)}</p>
-                {occurrence.statusId === PLANNING_STATUS.COMPLETED && occurrence.movementId && (
-                  <a className="text-xs text-blue-400 hover:underline" href={`/movement?id=${occurrence.movementId}`}>
-                    Ver movimiento
-                  </a>
-                )}
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+      <h4 className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">Historial</h4>
+      {occurrences.length === 0 ? (
+        <p className="text-sm text-zinc-500">Aún no hay historial de ocurrencias.</p>
+      ) : (
+        <ol className="space-y-3 border-l border-zinc-200 pl-4 dark:border-zinc-800">
+          {occurrences.map((occurrence) => (
+            <li key={occurrence.id} className="glass-surface relative rounded-lg p-3">
+              <p className={`flex items-center gap-2 text-sm font-medium ${occurrence.statusId === PLANNING_STATUS.COMPLETED ? "text-emerald-600 dark:text-emerald-400" : occurrence.statusId === PLANNING_STATUS.CANCELED ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
+                <Icon icon={occurrence.statusId === PLANNING_STATUS.COMPLETED ? "iconoir:check-circle" : occurrence.statusId === PLANNING_STATUS.CANCELED ? "iconoir:cancel" : "iconoir:clock"} className="h-4 w-4" />
+                {occurrenceLabel(occurrence)}
+              </p>
+              <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{formatOccurrenceDate(occurrence.expectedDate)}</p>
+              {occurrence.statusId === PLANNING_STATUS.COMPLETED && occurrence.movementId && (
+                <a className="text-xs text-blue-600 hover:underline dark:text-blue-400" href={`/movement?id=${occurrence.movementId}`}>
+                  Ver movimiento
+                </a>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 };

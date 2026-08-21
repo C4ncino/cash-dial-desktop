@@ -10,7 +10,7 @@ interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
 const SelectCurrency = ({ currencyId, ...selectProps }: Props) => {
   const currencies = useStore(currencyStore, (state) => state?.currencies) ?? [];
 
-  const defaultClassName = "border border-[#252525] border-l-0 w-24 px-2";
+  const defaultClassName = "glass-control w-24 border-l-0 px-2 text-zinc-950 dark:text-zinc-100";
 
   return (
     <select
@@ -22,7 +22,7 @@ const SelectCurrency = ({ currencyId, ...selectProps }: Props) => {
       {...selectProps}
     >
       {currencies.map((currency) => (
-        <option key={currency.id} value={currency.id} className="bg-black">
+        <option key={currency.id} value={currency.id} className="bg-zinc-100 dark:bg-zinc-800">
           {currency.symbol} {currency.code}
         </option>
       ))}

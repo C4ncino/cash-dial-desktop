@@ -44,7 +44,7 @@ describe("AccountCard", () => {
 
     const balanceElement = container.querySelector("strong");
 
-    expect(balanceElement).toHaveClass("text-red-500");
+    expect(balanceElement).toHaveClass("text-red-600", "dark:text-red-400");
   });
 
   it("should render zero balance without applying expense styling", () => {

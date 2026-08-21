@@ -17,33 +17,33 @@ const CurrencyConversion = ({
 
   return (
     <section className="space-y-3 mt-3">
-      <h2 className="text-lg font-semibold text-zinc-300">Información de divisa</h2>
+      <h2 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">Información de divisa</h2>
 
-      <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800">
+      <dl className="glass-surface grid grid-cols-1 gap-4 rounded-lg p-4 md:grid-cols-2">
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Monto original</dt>
-          <dd className="text-base text-zinc-200 mt-0.5">
+          <dd className="mt-0.5 text-base text-zinc-700 dark:text-zinc-300">
             <AmountText amount={originalAmount} currency={movementCurrency} format="currency" inline />
           </dd>
         </div>
 
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Divisa</dt>
-          <dd className="text-base text-zinc-200 mt-0.5">
+          <dd className="mt-0.5 text-base text-zinc-700 dark:text-zinc-300">
             {movementCurrency.name} ({movementCurrency.code})
           </dd>
         </div>
 
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Tipo de cambio</dt>
-          <dd className="text-base text-zinc-200 mt-0.5">
+          <dd className="mt-0.5 text-base text-zinc-700 dark:text-zinc-300">
             1 {movementCurrency.code} = {exchangeRate.toFixed(4)} {accountCurrency?.code}
           </dd>
         </div>
 
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Monto convertido</dt>
-          <dd className="text-base text-zinc-200 mt-0.5">
+          <dd className="mt-0.5 text-base text-zinc-700 dark:text-zinc-300">
             <AmountText amount={accountAmount} currency={accountCurrency} format="currency" inline />
           </dd>
         </div>

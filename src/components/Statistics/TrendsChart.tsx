@@ -8,10 +8,12 @@ import {
 } from "chart.js";
 import { useMemo } from "react";
 import { Bar } from "react-chartjs-2";
+import colors from "tailwindcss/colors";
 import { useStore } from "zustand";
 
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
+import useTheme from "@/hooks/useTheme";
 import { PERIOD_GRANULARITIES, type StatisticsPeriod } from "@/lib/statisticsQuery";
 import { statisticsStore } from "@/stores/statisticsStore";
 
@@ -37,6 +39,7 @@ const granularityLabels: Record<StatisticsGranularity, string> = {
 
 const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProps = {}) => {
   const { response, loading, symbol: storeSymbol } = useStatisticsSection();
+  const { isDark } = useTheme();
   const period = useStore(statisticsStore, (state) => state.period ?? "month") as StatisticsPeriod;
   const granularity = useStore(statisticsStore, (state) => state.granularity ?? "day");
   const points = pointsProp ?? response?.timeseries ?? [];
@@ -48,16 +51,16 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
         {
           label: "Ingresos",
           data: points.map((point) => point.income),
-          backgroundColor: "#10b981",
+          backgroundColor: isDark ? colors.green[400] : colors.green[600],
         },
         {
           label: "Gastos",
           data: points.map((point) => point.expense),
-          backgroundColor: "#ef4444",
+          backgroundColor: isDark ? colors.red[400] : colors.red[600],
         },
       ],
     }),
-    [points],
+    [points, isDark],
   );
 
   if (loading) {
@@ -68,7 +71,7 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
   return (
     <section
       aria-label="Tendencias"
-      className="rounded-md border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      className="glass-surface rounded-md p-4"
     >
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Tendencias</h2>
@@ -82,7 +85,7 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
             }
           >
             {PERIOD_GRANULARITIES[period].map((option) => (
-              <option className="dark:bg-zinc-950" key={option} value={option}>
+              <option className="bg-zinc-100 dark:bg-zinc-800" key={option} value={option}>
                 {granularityLabels[option]}
               </option>
             ))}
@@ -98,13 +101,21 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
               y: {
                 grid: {
                   color: (context) =>
-                    context.tick.value === 0 ? "#71717a" : "rgba(113, 113, 122, 0.2)",
+                    context.tick.value === 0
+                      ? isDark ? colors.zinc[400] : colors.zinc[600]
+                      : `${isDark ? colors.zinc[400] : colors.zinc[600]}33`,
                   lineWidth: (context) => (context.tick.value === 0 ? 3 : 2),
                 },
-                ticks: { callback: (value) => `${symbol}${Number(value).toFixed(2)}` },
+                ticks: {
+                  color: isDark ? colors.zinc[400] : colors.zinc[500],
+                  callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
+                },
               },
             },
             plugins: {
+              legend: {
+                labels: { color: isDark ? colors.zinc[300] : colors.zinc[700] },
+              },
               tooltip: {
                 callbacks: {
                   label: (item) => `${symbol}${Number(item.raw).toFixed(2)}`,

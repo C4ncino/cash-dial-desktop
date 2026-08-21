@@ -59,7 +59,7 @@ const AccountNextPayment = ({ accountId }: Props) => {
   if (loading) {
     return (
       <section className="mt-4">
-        <p className="text-zinc-400">Cargando próximo pago...</p>
+        <p className="text-zinc-500 dark:text-zinc-400">Cargando próximo pago...</p>
       </section>
     );
   }
@@ -67,7 +67,7 @@ const AccountNextPayment = ({ accountId }: Props) => {
   if (error) {
     return (
       <section className="mt-4">
-        <p className="text-red-400">Error al cargar el próximo pago.</p>
+        <p className="text-red-600 dark:text-red-400">Error al cargar el próximo pago.</p>
       </section>
     );
   }
@@ -75,7 +75,7 @@ const AccountNextPayment = ({ accountId }: Props) => {
   if (!nextPayment || nextPayment.movements.length === 0) {
     return (
       <section className="mt-4">
-        <p className="text-green-400">No hay pagos pendientes para este periodo.</p>
+        <p className="text-green-600 dark:text-green-400">No hay pagos pendientes para este periodo.</p>
       </section>
     );
   }
@@ -87,15 +87,15 @@ const AccountNextPayment = ({ accountId }: Props) => {
   };
 
   return (
-    <section className="mt-6 border border-zinc-700 rounded-md overflow-hidden">
+    <section className="glass-surface mt-6 overflow-hidden rounded-md">
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}
-        className="w-full flex items-center justify-between p-4 bg-zinc-800 hover:bg-zinc-750 transition-colors"
+        className="w-full bg-zinc-100/60 p-4 transition-colors hover:bg-zinc-200/60 dark:bg-zinc-900/60 dark:hover:bg-zinc-800/60"
       >
         <div className="flex flex-col items-start text-left">
-          <h2 className="text-lg font-semibold text-zinc-100">Próximo pago</h2>
-          <p className="text-sm text-zinc-400">Fecha límite: {dateShort}</p>
+          <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-100">Próximo pago</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Fecha límite: {dateShort}</p>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -115,7 +115,7 @@ const AccountNextPayment = ({ accountId }: Props) => {
 
       {expanded && !showPaymentForm && (
         <>
-          <ul className="bg-zinc-900 border-t border-zinc-700 divide-y divide-zinc-800">
+          <ul className="divide-y divide-zinc-200 border-t border-zinc-200 bg-zinc-100/60 backdrop-blur-md dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/60">
             {nextPayment.movements.map((movementInfo) => {
               const movement = movementsStore.getState().byId[movementInfo.movementId];
               const description = movement?.description || "Movimiento";
@@ -136,25 +136,25 @@ const AccountNextPayment = ({ accountId }: Props) => {
               return (
                 <li key={movementInfo.movementId} className="p-3 flex justify-between items-center">
                   <div className="flex flex-col">
-                    <span className="text-zinc-200">{description}</span>
-                    <span className="text-xs text-zinc-500">{installmentText}</span>
+                    <span className="text-zinc-700 dark:text-zinc-300">{description}</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">{installmentText}</span>
                   </div>
                   <AmountText
                     amount={movementInfo.amount}
                     currency={currency}
                     format="currency"
                     inline
-                    className="text-zinc-300"
+                    className="text-zinc-700 dark:text-zinc-300"
                   />
                 </li>
               );
             })}
           </ul>
-          <menu className="bg-zinc-900 border-t border-zinc-700 p-3 flex justify-end">
+          <menu className="flex justify-end border-t border-zinc-200 bg-zinc-100/60 p-3 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/60">
             <button
               type="button"
               onClick={() => setShowPaymentForm(true)}
-              className="flex items-center gap-2 border-2 border-green-600 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 hover:border-green-700 hover:cursor-pointer text-sm"
+              className="flex items-center gap-2 rounded border-2 border-green-600 bg-green-600 px-4 py-2 text-sm text-zinc-50 hover:cursor-pointer hover:border-green-500 hover:bg-green-500 dark:border-green-400 dark:bg-green-400 dark:text-zinc-950 dark:hover:border-green-500 dark:hover:bg-green-500"
             >
               <Icon icon="iconoir:mastercard-card" className="text-lg" />
               Pagar Tarjeta

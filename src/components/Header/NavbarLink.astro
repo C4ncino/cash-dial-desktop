@@ -6,14 +6,14 @@ export interface Props {
 
 const { href, isSelected } = Astro.props;
 
-const selected = isSelected ? "text-blue-500 border-blue-500" : "";
+const selected = isSelected ? "text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400" : "";
 ---
 
 <li>
   <a
     tabindex="1"
     class={`font-semibold flex items-center gap-1 w-40
-    hover:text-red-500 focus:text-red-500 ${selected}`}
+    text-zinc-700 dark:text-zinc-300 hover:text-red-600 focus:text-red-600 dark:hover:text-red-400 dark:focus:text-red-400 ${selected}`}
     href={href}
   >
     <slot />

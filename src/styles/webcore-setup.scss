@@ -5,3 +5,67 @@
     includeUtilities: false,
     includeResets: false,
 ));
+
+:root {
+    --w-color-scheme: light;
+    --w-color-primary: var(--color-zinc-950);
+    --w-color-primary-10: var(--color-zinc-900);
+    --w-color-primary-20: var(--color-zinc-700);
+    --w-color-primary-30: var(--color-zinc-500);
+    --w-color-primary-40: var(--color-zinc-400);
+    --w-color-primary-50: var(--color-zinc-300);
+    --w-color-primary-60: color-mix(in oklab, var(--color-zinc-100) 60%, transparent);
+    --w-color-primary-70: color-mix(in oklab, var(--color-zinc-100) 60%, transparent);
+    --w-color-info: var(--color-blue-600);
+    --w-color-info-accent: var(--color-blue-500);
+    --w-color-info-fg: var(--color-zinc-50);
+    --w-color-success: var(--color-green-600);
+    --w-color-success-accent: var(--color-green-500);
+    --w-color-success-fg: var(--color-zinc-50);
+    --w-color-warning: var(--color-amber-600);
+    --w-color-warning-accent: var(--color-amber-500);
+    --w-color-warning-fg: var(--color-zinc-50);
+    --w-color-alert: var(--color-red-600);
+    --w-color-alert-accent: var(--color-red-500);
+    --w-color-alert-fg: var(--color-zinc-50);
+    --w-color-overlay: color-mix(in oklab, var(--color-zinc-950) 60%, transparent);
+    --w-tooltip-background: color-mix(in oklab, var(--color-zinc-100) 85%, transparent);
+    --w-tooltip-color: var(--color-zinc-950);
+}
+
+:root.dark {
+    --w-color-scheme: dark;
+    --w-color-primary: var(--color-zinc-100);
+    --w-color-primary-10: var(--color-zinc-200);
+    --w-color-primary-20: var(--color-zinc-300);
+    --w-color-primary-30: var(--color-zinc-400);
+    --w-color-primary-40: var(--color-zinc-600);
+    --w-color-primary-50: var(--color-zinc-700);
+    --w-color-primary-60: color-mix(in oklab, var(--color-zinc-900) 60%, transparent);
+    --w-color-primary-70: color-mix(in oklab, var(--color-zinc-900) 60%, transparent);
+    --w-color-info: var(--color-blue-400);
+    --w-color-info-accent: var(--color-blue-500);
+    --w-color-info-fg: var(--color-zinc-950);
+    --w-color-success: var(--color-green-400);
+    --w-color-success-accent: var(--color-green-500);
+    --w-color-success-fg: var(--color-zinc-950);
+    --w-color-warning: var(--color-amber-400);
+    --w-color-warning-accent: var(--color-amber-500);
+    --w-color-warning-fg: var(--color-zinc-950);
+    --w-color-alert: var(--color-red-400);
+    --w-color-alert-accent: var(--color-red-500);
+    --w-color-alert-fg: var(--color-zinc-950);
+    --w-color-overlay: color-mix(in oklab, var(--color-zinc-950) 60%, transparent);
+    --w-tooltip-background: color-mix(in oklab, var(--color-zinc-800) 85%, transparent);
+    --w-tooltip-color: var(--color-zinc-100);
+}
+
+body {
+    --w-tooltip-background: color-mix(in oklab, var(--color-zinc-100) 85%, transparent);
+    --w-tooltip-color: var(--color-zinc-950);
+}
+
+.dark body {
+    --w-tooltip-background: color-mix(in oklab, var(--color-zinc-800) 85%, transparent);
+    --w-tooltip-color: var(--color-zinc-100);
+}

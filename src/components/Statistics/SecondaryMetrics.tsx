@@ -28,7 +28,7 @@ const SecondaryMetrics = ({
   return (
     <section
       aria-label="Métricas secundarias"
-      className="rounded-md border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      className="glass-surface rounded-md p-4"
     >
       <h2 className="mb-3 text-lg font-semibold">Métricas secundarias</h2>
       <dl className="grid gap-3 sm:grid-cols-3">

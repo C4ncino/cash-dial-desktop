@@ -6,20 +6,20 @@ const MODAL_TRIGGERS = [
   {
     modal_id: MODAL_ID.MOVEMENT.TRANSFER.CREATE,
     icon: "iconoir:data-transfer-up",
-    color: "bg-lime-500",
+    color: "bg-lime-600 dark:bg-lime-400",
     tooltip: "Crear Transferencia",
     iconClassName: "rotate-90",
   },
   {
     modal_id: MODAL_ID.MOVEMENT.INCOME.CREATE,
     icon: "iconoir:receive-dollars",
-    color: "bg-blue-600",
+    color: "bg-blue-600 dark:bg-blue-400",
     tooltip: "Crear Ingreso",
   },
   {
     modal_id: MODAL_ID.MOVEMENT.EXPENSE.CREATE,
     icon: "iconoir:send-dollars",
-    color: "bg-amber-600",
+    color: "bg-amber-600 dark:bg-amber-400",
     tooltip: "Crear Gasto",
   },
 ];
@@ -41,7 +41,7 @@ const MODAL_TRIGGERS = [
           >
             <Icon
               name={trigger.icon}
-              class={`text-white text-2xl rounded-full ${trigger.iconClassName || ""}`}
+              class={`text-2xl text-white rounded-full ${trigger.iconClassName || ""}`}
             />
           </button>
         </li>
@@ -52,7 +52,7 @@ const MODAL_TRIGGERS = [
   <button
     id="speed-dial-toggle"
     type="button"
-    class="p-1 rounded-full cursor-pointer bg-green-500 hover:bg-green-600 active:scale-95 transition-all duration-300 shadow-xl border-2 border-transparent"
+    class="cursor-pointer rounded-full border-2 border-transparent bg-green-600 p-1 shadow-xl transition-all duration-300 hover:bg-green-500 active:scale-95 dark:bg-green-400 dark:hover:bg-green-500"
   >
     <Icon
       name="iconoir:plus"
@@ -76,12 +76,20 @@ const MODAL_TRIGGERS = [
 
   .speed-dial.is-open #speed-dial-toggle {
     background-color: transparent;
-    border-color: rgb(239, 68, 68);
+    border-color: var(--color-red-600);
   }
 
   .speed-dial.is-open .speed-dial-icon {
     transform: rotate(135deg);
-    color: rgb(239, 68, 68);
+    color: var(--color-red-600);
+  }
+
+  :global(.dark) .speed-dial.is-open #speed-dial-toggle {
+    border-color: var(--color-red-400);
+  }
+
+  :global(.dark) .speed-dial.is-open .speed-dial-icon {
+    color: var(--color-red-400);
   }
 </style>
 

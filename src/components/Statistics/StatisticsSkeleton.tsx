@@ -15,7 +15,7 @@ export const OverviewSkeleton = () => (
     {Array.from({ length: 4 }, (_, index) => (
       <article
         key={index}
-        className="rounded-md border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+        className="glass-surface rounded-md p-4"
       >
         <SkeletonBlock className="mb-3 h-8 w-3/4" />
         <SkeletonBlock className="h-4 w-1/2" />
@@ -30,7 +30,7 @@ export const StatisticsSectionSkeleton = ({
 }: StatisticsSectionSkeletonProps) => (
   <section
     aria-label={ariaLabel}
-    className="rounded-md border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+    className="glass-surface rounded-md p-4"
   >
     <SkeletonBlock className="mb-4 h-6 w-1/3" />
     <SkeletonBlock className={`w-full ${className}`} />

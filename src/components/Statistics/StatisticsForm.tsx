@@ -28,7 +28,7 @@ const StatisticsForm = () => {
   return (
     <section
       aria-label="Controles de estadísticas"
-      className="grid gap-4 rounded-md bg-white p-4 dark:bg-zinc-900 dark:text-white"
+      className="glass-surface grid gap-4 rounded-md p-4 text-zinc-950 dark:text-zinc-100"
     >
       <section
         aria-label="Periodo de estadísticas"
@@ -76,13 +76,13 @@ const StatisticsForm = () => {
             value={period}
             onChange={(event) => setPeriod(event.target.value as StatisticsPeriod)}
           >
-            <option className="bg-zinc-950" value="week">
+            <option className="bg-zinc-100 dark:bg-zinc-800" value="week">
               Semana
             </option>
-            <option className="bg-zinc-950" value="month">
+            <option className="bg-zinc-100 dark:bg-zinc-800" value="month">
               Mes
             </option>
-            <option className="bg-zinc-950" value="year">
+            <option className="bg-zinc-100 dark:bg-zinc-800" value="year">
               Año
             </option>
           </select>
@@ -102,7 +102,7 @@ const StatisticsForm = () => {
       </fieldset>
 
       {loading && <p>Cargando estadísticas…</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
       {!currencies.length && <p>Agrega una moneda para ver las estadísticas.</p>}
     </section>
   );

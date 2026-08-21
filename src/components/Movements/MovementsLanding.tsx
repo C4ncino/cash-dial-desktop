@@ -10,8 +10,8 @@ const MovementsLanding = () => {
   const movements = allIds.map((id) => byId[id]).filter(Boolean);
 
   return (
-    <section className="px-6 py-6 rounded-xl max-w-md md:max-w-2xl mx-auto bg-white/5 backdrop-blur-md border border-white/10 shadow-lg">
-      <h2 className="text-2xl font-semibold dark:text-white pb-2">Últimos movimientos</h2>
+    <section className="glass-surface mx-auto max-w-md rounded-xl px-6 py-6 md:max-w-2xl">
+      <h2 className="pb-2 text-2xl font-semibold text-zinc-950 dark:text-zinc-100">Últimos movimientos</h2>
       <ul className="flex flex-col gap-2">
         {movements.map((movement) => (
           <li key={movement.id}>

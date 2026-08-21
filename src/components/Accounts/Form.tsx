@@ -108,7 +108,7 @@ const AccountForm = ({ modalId }: Props) => {
           required
         />
 
-        <label htmlFor="balance" className="text-gray-webui-text">
+        <label htmlFor="balance" className="text-zinc-700 dark:text-zinc-300">
           Saldo {typeId === ACCOUNT_TYPES.CREDIT ? "Gastado" : ""}
         </label>
         <div className="flex">

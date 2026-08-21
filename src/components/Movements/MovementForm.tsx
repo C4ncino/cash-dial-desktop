@@ -218,13 +218,12 @@ const MovementForm = ({ modalId, movementType }: Props) => {
           );
         }
 
-        await budgetStore.getState().refreshAffected(
-          movementData.categoryId,
-          movement?.categoryId,
-        );
+        await budgetStore.getState().refreshAffected(movementData.categoryId, movement?.categoryId);
       }
 
-      await accountsStore.getState().updateBalance(movementData.accountId, movementData.toAccountId);
+      await accountsStore
+        .getState()
+        .updateBalance(movementData.accountId, movementData.toAccountId);
 
       if (!isMounted()) return;
       toast(isEditing ? config.toastUpdated : config.toastCreated);
@@ -247,7 +246,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
   return (
     <form
-      className="box-border w-full max-w-lg h-full max-h-[calc(100vh-2rem)] mx-auto p-4 sm:p-6 space-y-4 overflow-y-auto overscroll-contain bg-zinc-950"
+      className="mx-auto box-border h-full max-h-[calc(100vh-2rem)] w-full max-w-lg space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6"
       id={config.formId}
       onSubmit={onSubmit}
       onReset={() => {
@@ -258,7 +257,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       }}
     >
       <fieldset className="space-y-4">
-        <label htmlFor="amount" className="text-gray-webui-text">
+        <label htmlFor="amount" className="text-zinc-700 dark:text-zinc-300">
           Monto
         </label>
         <div className="flex">
@@ -288,7 +287,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
         </div>
         {hasCurrencyConversion && (
           <>
-            <label htmlFor="accountAmount" className="text-gray-webui-text">
+            <label htmlFor="accountAmount" className="text-zinc-700 dark:text-zinc-300">
               {`Monto en ${accountCurrency?.code ?? "cuenta"}`}
             </label>
             <div className="flex">
@@ -306,7 +305,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
               />
               <button
                 type="button"
-                className="px-2 text-xs text-blue-400 border border-gray-webui border-l-0"
+                className="border border-l-0 border-zinc-300 px-2 text-xs text-blue-600 dark:border-zinc-700 dark:text-blue-400"
                 onClick={applyEcbRate}
               >
                 Auto Completar

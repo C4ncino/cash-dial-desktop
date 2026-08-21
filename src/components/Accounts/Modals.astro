@@ -5,11 +5,11 @@ import Form from "./Form";
 import { MODAL_ID } from "@/types/enums";
 ---
 
-<Modal id={MODAL_ID.ACCOUNT.CREATE} title="Crear Cuenta" className="min-w-md!">
+<Modal id={MODAL_ID.ACCOUNT.CREATE} title="Crear Cuenta" className="glass-elevated min-w-md! backdrop-blur-md">
     <Form client:visible modalId={MODAL_ID.ACCOUNT.CREATE} />
 </Modal>
 
-<Modal id={MODAL_ID.ACCOUNT.EDIT} title="Editar Cuenta" className="min-w-md!">
+<Modal id={MODAL_ID.ACCOUNT.EDIT} title="Editar Cuenta" className="glass-elevated min-w-md! backdrop-blur-md">
     <Form client:visible modalId={MODAL_ID.ACCOUNT.EDIT} />
 </Modal>
 

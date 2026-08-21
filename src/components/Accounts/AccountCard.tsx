@@ -7,7 +7,7 @@ export default function AccountCard(account: Account) {
 
   return (
     <a
-      className="h-28 w-48 bg-zinc-100 dark:bg-zinc-950 rounded-md p-2 px-3 shadow-lg account-card cursor-pointer"
+      className="glass-surface h-28 w-48 cursor-pointer rounded-md p-2 px-3 transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
       href={`/account?id=${account.id}`}
     >
       <hgroup className="flex flex-row gap-2 mb-1">
@@ -17,21 +17,21 @@ export default function AccountCard(account: Account) {
           icon={account.type.icon}
         />
 
-        <h2 className="uppercase text-xs text-left font-medium text-zinc-600 dark:text-zinc-400 flex-1 -mt-0.5 line-clamp-2">
+        <h2 className="-mt-0.5 line-clamp-2 flex-1 text-left text-xs font-medium uppercase text-zinc-700 dark:text-zinc-300">
           {hyphenateText(account.name, 13).padEnd(25, " ")}
         </h2>
       </hgroup>
 
       <strong
         className={`text-xl text-right font-medium ${
-          account.balance < 0 ? "text-red-500" : "dark:text-white"
+          account.balance < 0 ? "text-red-600 dark:text-red-400" : "text-zinc-950 dark:text-zinc-100"
         } line-clamp-1`}
       >
         {formatNumber(account.balance, 99999999)}
       </strong>
 
       <abbr
-        className="text-right text-lg font-light dark:text-white -mt-1 block no-underline"
+        className="-mt-1 block text-right text-lg font-light text-zinc-950 no-underline dark:text-zinc-100"
         title={currency.name}
       >
         {currency.code}

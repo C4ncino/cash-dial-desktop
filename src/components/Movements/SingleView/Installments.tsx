@@ -12,16 +12,16 @@ const Installments = ({ installmentsData, movementCurrency }: Props) => {
 
   return (
     <section className="space-y-3 mt-3">
-      <h2 className="text-lg font-semibold text-zinc-300">Mensualidades</h2>
+      <h2 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">Mensualidades</h2>
 
-      <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800">
+      <dl className="glass-surface grid grid-cols-1 gap-4 rounded-lg p-4 md:grid-cols-2">
         {installmentsData.map((installment) => (
           <div key={installment.id}>
             <dt className="text-sm text-zinc-500 font-medium">
               Mensualidad {installment.installmentNumber} de {installment.totalInstallments}
             </dt>
 
-            <dd className="text-base text-zinc-200 mt-0.5">
+            <dd className="mt-0.5 text-base text-zinc-700 dark:text-zinc-300">
               <AmountText
                 amount={installment.amount}
                 currency={movementCurrency}
@@ -30,7 +30,7 @@ const Installments = ({ installmentsData, movementCurrency }: Props) => {
               />
 
               {installment.paid && installment.paidTimestamp && (
-                <p className="text-green-400 flex flex-row items-center gap-1">
+                <p className="flex flex-row items-center gap-1 text-green-600 dark:text-green-400">
                   <Icon icon="iconoir:check-circle" />
                   Pagado el{" "}
                   <time dateTime={new Date(installment.paidTimestamp).toISOString()}>
@@ -40,7 +40,7 @@ const Installments = ({ installmentsData, movementCurrency }: Props) => {
               )}
 
               {!installment.paid && (
-                <p className="text-amber-400 flex flex-row items-center gap-1">
+                <p className="flex flex-row items-center gap-1 text-amber-600 dark:text-amber-400">
                   <Icon icon="iconoir:clock" />
                   Vence el{" "}
                   <time dateTime={new Date(installment.dueTimestamp).toISOString()}>

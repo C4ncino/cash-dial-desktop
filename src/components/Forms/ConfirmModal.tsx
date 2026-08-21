@@ -13,11 +13,11 @@ interface Props {
 }
 
 const CLASSES = {
-  default: "border-zinc-200 text-zinc-200 hover:bg-zinc-200",
-  alert: "border-red-600 text-red-600 hover:bg-red-600",
-  info: "border-blue-600 text-blue-600 hover:bg-blue-600",
-  success: "border-green-600 text-green-600 hover:bg-green-600",
-  warning: "border-yellow-600 text-yellow-600 hover:bg-yellow-600",
+  default: "border-zinc-400 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
+  alert: "border-red-600 text-red-600 hover:bg-red-600 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-400",
+  info: "border-blue-600 text-blue-600 hover:bg-blue-600 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400",
+  success: "border-green-600 text-green-600 hover:bg-green-600 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-400",
+  warning: "border-yellow-600 text-yellow-600 hover:bg-yellow-600 dark:border-yellow-400 dark:text-yellow-400 dark:hover:bg-yellow-400",
 };
 
 const ConfirmModal = ({
@@ -48,19 +48,19 @@ const ConfirmModal = ({
 
       <Modal
         id={modalId}
-        className="w-md!"
+        className="glass-elevated w-md! backdrop-blur-md"
         title={modalTitle}
         showCloseIcon={false}
         closeOnEsc={false}
         closeOnOverlay={false}
         theme={theme}
       >
-        <p className="text-zinc-400 mb-6">{description}</p>
+        <p className="mb-6 text-zinc-500 dark:text-zinc-400">{description}</p>
         <div className="flex justify-end gap-4">
           <button
             type="button"
             onClick={() => modalInstance?.close()}
-            className="border-2 border-zinc-200 text-zinc-200 hover:text-black py-2 px-4 rounded hover:bg-zinc-200 hover:cursor-pointer"
+            className="rounded border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
             Cancelar
           </button>
@@ -71,7 +71,7 @@ const ConfirmModal = ({
               onConfirm();
               modalInstance?.close();
             }}
-            className={`border-2 hover:text-white py-2 px-4 rounded ${CLASSES[theme || "default"]} hover:cursor-pointer`}
+            className={`rounded border-2 px-4 py-2 hover:text-zinc-50 dark:hover:text-zinc-950 ${CLASSES[theme || "default"]} hover:cursor-pointer`}
           >
             {buttonTitle}
           </button>

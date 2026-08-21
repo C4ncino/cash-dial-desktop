@@ -210,7 +210,7 @@ const BudgetForm = ({ modalId }: Props) => {
             <SelectCategories categoryId={categoryId} onChange={setCategoryId} />
 
             <fieldset>
-              <label htmlFor="amountLimit" className="text-gray-webui-text">
+              <label htmlFor="amountLimit" className="text-zinc-700 dark:text-zinc-300">
                 Límite
               </label>
               <div className="flex gap-2 mt-1">
@@ -236,7 +236,7 @@ const BudgetForm = ({ modalId }: Props) => {
 
         {budget && (
           <fieldset>
-            <label htmlFor="amountLimit" className="text-gray-webui-text">
+            <label htmlFor="amountLimit" className="text-zinc-700 dark:text-zinc-300">
               Límite actual
             </label>
             <div className="flex mt-1">
@@ -262,9 +262,9 @@ const BudgetForm = ({ modalId }: Props) => {
         <Modal
           id={`update-budget-type-${budget.budget.id}`}
           title="Tipo de actualización"
-          className="w-lg!"
+          className="glass-elevated w-lg! backdrop-blur-md"
         >
-          <p className="text-zinc-400 mb-4">Selecciona cómo deseas aplicar el nuevo límite.</p>
+          <p className="mb-4 text-zinc-500 dark:text-zinc-400">Selecciona cómo deseas aplicar el nuevo límite.</p>
 
           <fieldset className="mb-4 flex flex-col gap-2">
             <Radio
@@ -309,7 +309,7 @@ const BudgetForm = ({ modalId }: Props) => {
                 setShowUpdateType(false);
                 setPendingAmount(undefined);
               }}
-              className="border-2 border-zinc-200 text-zinc-200 hover:text-black py-2 px-4 rounded hover:bg-zinc-200 hover:cursor-pointer"
+              className="rounded border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
             >
               Cancelar
             </button>
@@ -317,7 +317,7 @@ const BudgetForm = ({ modalId }: Props) => {
               type="button"
               disabled={submitting}
               onClick={handleConfirmUpdateAmount}
-              className="border-2 border-blue-600 text-blue-600 hover:text-white hover:bg-blue-600 py-2 px-4 rounded hover:cursor-pointer"
+              className="rounded border-2 border-blue-600 px-4 py-2 text-blue-600 hover:cursor-pointer hover:bg-blue-600 hover:text-zinc-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-zinc-950"
             >
               Aplicar
             </button>

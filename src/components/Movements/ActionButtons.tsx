@@ -103,7 +103,7 @@ const ActionButtons = () => {
       <li className="text-sm">
         <button
           type="button"
-          className="edit-button hover:cursor-pointer w-full text-left py-2 px-4 font-medium text-white"
+          className="edit-button w-full px-4 py-2 text-left font-medium text-zinc-950 hover:cursor-pointer dark:text-zinc-100"
           onClick={handleEditClick}
         >
           Editar
@@ -117,7 +117,7 @@ const ActionButtons = () => {
           modalTitle={deleteConfig.title}
           description={deleteConfig.description}
           theme="alert"
-          buttonClassName="w-full text-left py-2 px-4 rounded text-red-500 font-medium cursor-pointer"
+          buttonClassName="w-full cursor-pointer rounded px-4 py-2 text-left font-medium text-red-600 dark:text-red-400"
         />
       </li>
     </menu>

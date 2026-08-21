@@ -47,7 +47,7 @@ const PlanningActions = ({ planningId: propPlanningId }: Props) => {
           ? "La planificación dejará de generar ocurrencias pendientes hasta que la actives de nuevo."
           : "La planificación volverá a generar ocurrencias pendientes según su regla de recurrencia."}
         theme="warning"
-        buttonClassName={isActive ? "text-zinc-300" : "text-emerald-400"}
+        buttonClassName={isActive ? "text-zinc-700 dark:text-zinc-300" : "text-emerald-600 dark:text-emerald-400"}
       />
       <ConfirmModal
         onConfirm={handleDelete}
@@ -56,7 +56,7 @@ const PlanningActions = ({ planningId: propPlanningId }: Props) => {
         modalTitle="Confirmar eliminación de planificación"
         description="¿Estás seguro de que deseas eliminar esta planificación? Sus movimientos históricos no se eliminarán."
         theme="alert"
-        buttonClassName="text-red-500 font-medium"
+        buttonClassName="font-medium text-red-600 dark:text-red-400"
       />
     </div>
   );

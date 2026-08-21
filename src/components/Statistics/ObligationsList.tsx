@@ -39,7 +39,7 @@ const ObligationMetricCard = ({ label, value, symbol, period }: MetricCardProps)
   return (
     <article
       data-testid={`obligation-metric-${period}`}
-      className="rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950"
+      className="glass-control rounded-md p-3"
     >
       <h3 className="text-sm font-normal opacity-70">{label}</h3>
       <p className="mt-1 text-lg font-semibold">{formattedValue}</p>
@@ -61,9 +61,9 @@ const ObligationRangeBar = ({
   );
   const thirdRange = Math.max(0, total - firstRange - secondRange);
   const ranges = [
-    { key: "7", label: "Próximos 7 días", amount: firstRange, color: "bg-amber-500" },
-    { key: "30", label: "Próximo Mes", amount: secondRange, color: "bg-yellow-400" },
-    { key: "90", label: "Próximos 3 Meses", amount: thirdRange, color: "bg-green-600" },
+    { key: "7", label: "Próximos 7 días", amount: firstRange, color: "bg-amber-600 dark:bg-amber-400" },
+    { key: "30", label: "Próximo Mes", amount: secondRange, color: "bg-yellow-600 dark:bg-yellow-400" },
+    { key: "90", label: "Próximos 3 Meses", amount: thirdRange, color: "bg-green-600 dark:bg-green-400" },
   ];
 
   return (
@@ -164,10 +164,10 @@ const UrgencyIndicator = ({ timestamp }: { timestamp: number }) => {
   const { dateObject } = useDate(timestamp);
   const urgency = urgencyFor(daysUntil(dateObject));
   const color = {
-    today: "bg-red-500",
-    high: "bg-orange-400",
-    medium: "bg-yellow-400",
-    neutral: "bg-green-600",
+    today: "bg-red-600 dark:bg-red-400",
+    high: "bg-orange-600 dark:bg-orange-400",
+    medium: "bg-yellow-600 dark:bg-yellow-400",
+    neutral: "bg-green-600 dark:bg-green-400",
   }[urgency];
 
   return (
@@ -225,9 +225,7 @@ const ObligationGroup = ({
           className="flex w-full items-center justify-between gap-3 rounded border border-zinc-200 px-3 py-2 text-left text-sm font-semibold uppercase tracking-wide opacity-80 hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-800"
           onClick={() => setIsOpen((open) => !open)}
         >
-          <span>
-            {label} ({items.length})
-          </span>
+          {label} ({items.length})
           <Icon
             icon="iconoir:nav-arrow-down"
             aria-hidden="true"
@@ -270,7 +268,7 @@ const ObligationsList = ({
   return (
     <section
       aria-label="Próximas obligaciones"
-      className="rounded-md border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      className="glass-surface rounded-md p-4"
     >
       <header className="mb-4 flex items-start justify-between gap-3">
         <div>

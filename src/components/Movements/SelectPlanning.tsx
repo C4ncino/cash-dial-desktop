@@ -27,34 +27,34 @@ const SelectPlanning = ({ typeId, planningId, onChange }: Props) => {
 
   return (
     <fieldset className="space-y-1">
-      <label htmlFor="planningId" className="text-gray-webui-text">
+      <label htmlFor="planningId" className="text-zinc-700 dark:text-zinc-300">
         Planificación (opcional)
       </label>
       <select
         id="planningId"
         name="planningId"
         value={planningId ?? ""}
-        className="w-full border border-[#252525] bg-transparent rounded px-3 py-2"
+        className="glass-control w-full rounded px-3 py-2 text-zinc-950 dark:text-zinc-100"
         onChange={(event) => {
           const id = event.target.value ? Number(event.target.value) : undefined;
           onChange?.(id, plannings.find((planning) => planning.id === id));
         }}
       >
-        <option value="" className="bg-black">Sin planificación</option>
+        <option value="" className="bg-zinc-100 dark:bg-zinc-800">Sin planificación</option>
         {availablePlannings.map((planning) => {
           const account = accounts.find((item) => item.id === planning.accountId);
           const currency = currencies.find((item) => item.id === planning.currencyId);
           const occurrence = planning.currentOccurrence;
 
           return (
-            <option key={planning.id} value={planning.id} className="bg-black">
+            <option key={planning.id} value={planning.id} className="bg-zinc-100 dark:bg-zinc-800">
               {planning.name} · {currency?.symbol ?? "$"}{planning.amount.toFixed(2)} · {account?.name ?? "Cuenta"} · {occurrence ? formatOccurrenceDate(occurrence.expectedDate) : ""}
             </option>
           );
         })}
       </select>
       {selectedPlanning && !availablePlannings.some((planning) => planning.id === selectedPlanning.id) && (
-        <p className="text-xs text-amber-400">La planificación seleccionada ya no tiene una ocurrencia pendiente.</p>
+        <p className="text-xs text-amber-600 dark:text-amber-400">La planificación seleccionada ya no tiene una ocurrencia pendiente.</p>
       )}
     </fieldset>
   );

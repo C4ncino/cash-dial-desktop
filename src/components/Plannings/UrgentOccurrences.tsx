@@ -39,11 +39,9 @@ const UrgentOccurrences = () => {
 
   return (
     <section aria-labelledby="urgent-occurrences-title" className="space-y-3">
-      <div>
-        <h2 id="urgent-occurrences-title" className="text-xl font-semibold">Próximas Planeaciones</h2>
-      </div>
+      <h2 id="urgent-occurrences-title" className="text-xl font-semibold">Próximas Planeaciones</h2>
       {urgent.length === 0 ? (
-        <p data-testid="urgent-empty-state" className="rounded-xl border border-dashed border-zinc-800 p-6 text-sm text-zinc-500">
+        <p data-testid="urgent-empty-state" className="glass-surface rounded-xl border-dashed p-6 text-sm text-zinc-500 dark:text-zinc-400">
           No hay ocurrencias pendientes.
         </p>
       ) : (

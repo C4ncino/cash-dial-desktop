@@ -34,28 +34,26 @@ const BudgetInfo = () => {
   const current = budget.periods[budget.periods.length - 1];
 
   return (
-    <section className="p-4 mb-4">
-      <div className="flex items-center gap-4">
-        {category && (
-          <SquareIcon
-            data-testid="square-icon"
-            className="w-12 h-12"
-            backgroundColor={category.color}
-            icon={category.icon}
-          />
-        )}
+    <section className="mb-4 flex items-center gap-4 p-4">
+      {category && (
+        <SquareIcon
+          data-testid="square-icon"
+          className="w-12 h-12"
+          backgroundColor={category.color}
+          icon={category.icon}
+        />
+      )}
 
-        <div className="flex-1">
-          <h2 className="text-2xl font-semibold dark:text-white">{budget.budget.name}</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{periodType?.name ?? "-"}</p>
-        </div>
+      <div className="flex-1">
+        <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-100">{budget.budget.name}</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{periodType?.name ?? "-"}</p>
+      </div>
 
-        <div className="text-right">
-          <p className="text-lg font-semibold dark:text-white">
-            {formatNumber(current.amountLimit, 999_999)}
-          </p>
-          <p className="text-xs text-zinc-400">{currency?.code ?? ""}</p>
-        </div>
+      <div className="text-right">
+        <p className="text-lg font-semibold text-zinc-950 dark:text-zinc-100">
+          {formatNumber(current.amountLimit, 999_999)}
+        </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">{currency?.code ?? ""}</p>
       </div>
     </section>
   );

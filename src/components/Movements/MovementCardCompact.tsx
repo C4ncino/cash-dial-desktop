@@ -22,19 +22,19 @@ const MovementCardCompact = ({ movement }: Props) => {
   return (
     <a
       href={`/movement?id=${movement.id}`}
-      className="w-full flex flex-row justify-between items-center p-2 border-t border-zinc-700 cursor-pointer"
+      className="flex w-full cursor-pointer flex-row items-center justify-between border-t border-zinc-200 p-2 transition-colors hover:bg-zinc-100/60 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
     >
       <div className="space-x-2 flex flex-row items-center">
         <div
           className="w-8 aspect-square flex justify-center items-center rounded-md"
           style={{ backgroundColor: category.color }}
         >
-          <Icon icon={`iconoir:${category.icon}`} className="text-lg" />
+          <Icon icon={`iconoir:${category.icon}`} className="text-lg text-white" />
         </div>
 
         <div className="text-left">
           <p className="text-sm font-medium">{category.name}</p>
-          <p className="text-xs text-zinc-400"><AccountName id={account.id} /></p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400"><AccountName id={account.id} /></p>
         </div>
       </div>
 
@@ -46,7 +46,7 @@ const MovementCardCompact = ({ movement }: Props) => {
           format="short"
           className="text-lg!"
         />
-        <time className="dark:text-zinc-400 text-xs text-right">{time}</time>
+        <time className="text-right text-xs text-zinc-500 dark:text-zinc-400">{time}</time>
       </div>
     </a>
   );

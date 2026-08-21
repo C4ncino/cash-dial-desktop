@@ -16,14 +16,14 @@ const Header = ({ category, currency, movementType, amount, timestamp }: Props) 
   const { dateLong, time, dateObject } = useDate(timestamp || 0);
 
   return (
-    <header className="flex flex-row gap-4 items-center pb-4 mb-4 border-b border-zinc-400">
+    <header className="mb-4 flex flex-row items-center gap-4 border-b border-zinc-400 pb-4 dark:border-zinc-600">
       <div
         className="w-14 aspect-square flex justify-center items-center rounded-lg shadow-md"
         style={{ backgroundColor: category?.color || "#52525b" }}
       >
         <Icon
           icon={category ? `iconoir:${category.icon}` : "iconoir:data-transfer-up"}
-          className="text-4xl text-white"
+          className="text-4xl text-zinc-50"
         />
       </div>
       <hgroup className="space-y-1">
@@ -36,10 +36,10 @@ const Header = ({ category, currency, movementType, amount, timestamp }: Props) 
             icon={movementType === MOVEMENT_TYPES.INCOME ? "plus" : movementType === MOVEMENT_TYPES.EXPENSE ? "minus" : "none"}
             className="text-4xl"
           />
-          <span className="text-zinc-200 text-xl font-light mt-3">{currency.code}</span>
+          <span className="mt-3 text-xl font-light text-zinc-700 dark:text-zinc-300">{currency.code}</span>
         </strong>
 
-        <time dateTime={dateObject.toISOString()} className="text-zinc-400 text-sm">
+        <time dateTime={dateObject.toISOString()} className="text-sm text-zinc-500 dark:text-zinc-400">
           {dateLong} - {time}
         </time>
       </hgroup>

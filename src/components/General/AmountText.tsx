@@ -28,10 +28,10 @@ const AmountText = ({
   inline = false,
 }: Props) => {
   const toneClass = tone === "income"
-    ? "text-green-500"
+    ? "text-green-600 dark:text-green-400"
     : tone === "expense"
-      ? "text-red-500"
-      : "text-white";
+      ? "text-red-600 dark:text-red-400"
+      : "text-zinc-950 dark:text-zinc-100";
 
   const formattedAmount = format === "short"
     ? formatShortAmount(amount)

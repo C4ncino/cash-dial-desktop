@@ -25,7 +25,7 @@ const BudgetCard = ({ budget }: Props) => {
   return (
     <a
       href={`/budget?id=${budget.budget.id}`}
-      className="bg-zinc-950 rounded-md p-3 shadow-lg hover:ring-1 hover:ring-zinc-600 transition-all max-w-2xl mx-auto w-full py-3"
+      className="glass-surface mx-auto w-full max-w-2xl rounded-md p-3 py-3 transition-all hover:ring-1 hover:ring-zinc-400 dark:hover:ring-zinc-600"
       aria-label={`Abrir presupuesto ${budget.budget.name}`}
     >
       <hgroup className="flex flex-row gap-2 items-center mb-2">
@@ -39,7 +39,7 @@ const BudgetCard = ({ budget }: Props) => {
         )}
 
         <div>
-          <h3 className="text-lg font-medium text-zinc-100 flex-1 line-clamp-1">
+          <h3 className="line-clamp-1 flex-1 text-lg font-medium text-zinc-950 dark:text-zinc-100">
             {budget.budget.name}
           </h3>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">

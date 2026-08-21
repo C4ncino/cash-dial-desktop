@@ -25,24 +25,22 @@ const AccountInfo = () => {
 
   return (
     <>
-      <header>
-        <div className="flex flex-row gap-3 items-center mb-4">
-          <SquareIcon
-            className="w-12 h-12"
-            backgroundColor={account.type.color}
-            icon={account.type.icon}
+      <header className="mb-4 flex flex-row items-center gap-3">
+        <SquareIcon
+          className="w-12 h-12"
+          backgroundColor={account.type.color}
+          icon={account.type.icon}
+        />
+        <hgroup className="flex flex-col">
+          <h1>{account.name}</h1>
+          <AmountText
+            amount={account.balance}
+            currency={currency}
+            format="currency"
+            inline
+            className="text-2xl mt-px"
           />
-          <hgroup className="flex flex-col">
-            <h1>{account.name}</h1>
-            <AmountText
-              amount={account.balance}
-              currency={currency}
-              format="currency"
-              inline
-              className="text-2xl mt-px"
-            />
-          </hgroup>
-        </div>
+        </hgroup>
       </header>
       {account.creditInfo && (
         <section>

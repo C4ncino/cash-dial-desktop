@@ -270,7 +270,7 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
 
   return (
     <form
-      className="box-border w-full max-w-lg h-full max-h-[calc(100vh-2rem)] mx-auto p-4 sm:p-6 space-y-4 overflow-y-auto overscroll-contain bg-zinc-950"
+      className="mx-auto box-border w-full max-w-lg space-y-4 p-4 sm:p-6"
       id={formId}
       onSubmit={onSubmit}
       onReset={handleReset}
@@ -289,16 +289,16 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
 
       {/* Movement Type Segmented Toggle (Income vs Expense) */}
       <fieldset className="space-y-1">
-        <label className="text-gray-webui-text text-sm block">Tipo de Movimiento</label>
-        <div className="flex border border-zinc-800 rounded bg-zinc-950">
+        <label className="block text-sm text-zinc-700 dark:text-zinc-300">Tipo de Movimiento</label>
+        <div className="glass-control flex rounded">
           <button
             type="button"
             aria-pressed={typeId === MOVEMENT_TYPES.EXPENSE}
             onClick={() => setTypeId(MOVEMENT_TYPES.EXPENSE)}
             className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer rounded-l ${
               typeId === MOVEMENT_TYPES.EXPENSE
-                ? "bg-red-600/80 text-white"
-                : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                ? "bg-red-600 text-zinc-50 dark:bg-red-400 dark:text-zinc-950"
+                : "text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
             }`}
           >
             Gasto
@@ -308,12 +308,12 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
             disabled={isCreditAccount}
             aria-pressed={typeId === MOVEMENT_TYPES.INCOME}
             onClick={() => setTypeId(MOVEMENT_TYPES.INCOME)}
-            className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer rounded-r border-l border-zinc-800 ${
+            className={`flex-1 cursor-pointer rounded-r border-l border-zinc-300 py-2 text-sm font-medium transition-colors dark:border-zinc-700 ${
               typeId === MOVEMENT_TYPES.INCOME
-                ? "bg-emerald-600/80 text-white"
+                ? "bg-emerald-600 text-zinc-50 dark:bg-emerald-400 dark:text-zinc-950"
                 : isCreditAccount
-                  ? "text-zinc-600 cursor-not-allowed opacity-50"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                  ? "cursor-not-allowed text-zinc-500 opacity-50 dark:text-zinc-400"
+                  : "text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
             }`}
             title={isCreditAccount ? "No disponible para tarjeta de crédito" : undefined}
           >
@@ -324,7 +324,7 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
 
       {/* Amount & Currency */}
       <fieldset className="space-y-1">
-        <label htmlFor="amount" className="text-gray-webui-text text-sm">
+        <label htmlFor="amount" className="text-sm text-zinc-700 dark:text-zinc-300">
           Monto Estimado
         </label>
         <div className="flex">

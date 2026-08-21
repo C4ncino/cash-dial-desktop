@@ -162,21 +162,21 @@ const PlanningRecurrenceForm = ({
         ];
 
   return (
-    <div className="space-y-4 pt-2 border-t border-zinc-800">
-      <h3 className="text-sm font-semibold text-zinc-300">Regla de Recurrencia</h3>
+    <div className="space-y-4 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+      <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Regla de Recurrencia</h3>
 
       {/* Recurrence Type Selector */}
-      <fieldset className="flex border border-zinc-800 rounded bg-zinc-950">
+      <fieldset className="glass-control flex rounded">
         {availableRecurringTypes.map((t) => (
           <button
             type="button"
             key={t.id}
             aria-pressed={recurringTypeId === t.id}
             onClick={() => handleTypeSelect(t.id)}
-            className={`flex-1 py-2 text-sm text-center font-medium transition-colors cursor-pointer first:rounded-l last:rounded-r border-r last:border-0 border-zinc-800 ${
+            className={`flex-1 cursor-pointer border-r border-zinc-300 py-2 text-center text-sm font-medium transition-colors first:rounded-l last:rounded-r last:border-0 dark:border-zinc-700 ${
               recurringTypeId === t.id
-                ? "bg-blue-600 text-white"
-                : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                ? "bg-blue-600 text-zinc-50 dark:bg-blue-400 dark:text-zinc-950"
+                : "text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
             }`}
           >
             {t.name}
@@ -186,11 +186,11 @@ const PlanningRecurrenceForm = ({
 
       {/* Interval Step Input */}
       <fieldset className="space-y-1">
-        <label htmlFor="intervalStep" className="text-gray-webui-text text-sm">
+        <label htmlFor="intervalStep" className="text-sm text-zinc-700 dark:text-zinc-300">
           Frecuencia
         </label>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-zinc-400">Cada</span>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400">Cada</span>
           <Input
             type="number"
             id="intervalStep"
@@ -201,7 +201,7 @@ const PlanningRecurrenceForm = ({
             onChange={(e) => onIntervalStepChange(Math.max(1, Number(e.target.value) || 1))}
             className="w-24!"
           />
-          <span className="text-sm text-zinc-300 font-medium">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             {intervalStep > 1 ? currentType.plural : currentType.singular}
           </span>
         </div>
@@ -210,7 +210,7 @@ const PlanningRecurrenceForm = ({
       {/* Type Specific Fields */}
       {recurringTypeId === PLANNINGS_RECURRING_TYPES.WEEKLY && (
         <fieldset className="space-y-2">
-          <label className="text-gray-webui-text text-sm block">Días de la semana</label>
+          <label className="block text-sm text-zinc-700 dark:text-zinc-300">Días de la semana</label>
           <div className="grid grid-cols-7 gap-1">
             {WEEKDAYS.map((w) => {
               const isSelected = weekDays.includes(w.id);
@@ -222,8 +222,8 @@ const PlanningRecurrenceForm = ({
                   title={w.fullName}
                   className={`py-2 text-xs font-medium rounded border cursor-pointer transition-colors ${
                     isSelected
-                      ? "bg-blue-600 border-blue-500 text-white"
-                      : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                      ? "border-blue-500 bg-blue-600 text-zinc-50 dark:bg-blue-400 dark:text-zinc-950"
+                      : "border-zinc-300 bg-zinc-100/60 text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
                   }`}
                 >
                   {w.shortName}
@@ -232,14 +232,14 @@ const PlanningRecurrenceForm = ({
             })}
           </div>
           {weekDays.length === 0 && (
-            <p className="text-xs text-amber-400">Selecciona al menos un día de la semana.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">Selecciona al menos un día de la semana.</p>
           )}
         </fieldset>
       )}
 
       {recurringTypeId === PLANNINGS_RECURRING_TYPES.MONTHLY && (
         <fieldset className="space-y-2">
-          <label className="text-gray-webui-text text-sm block">Días del mes (1 - 28)</label>
+          <label className="block text-sm text-zinc-700 dark:text-zinc-300">Días del mes (1 - 28)</label>
           <div className="grid grid-cols-7 gap-1">
             {MONTH_DAYS_ARRAY.map((d) => {
               const isSelected = monthDays.includes(d);
@@ -250,8 +250,8 @@ const PlanningRecurrenceForm = ({
                   onClick={() => toggleMonthDay(d)}
                   className={`py-1.5 text-xs font-medium rounded border cursor-pointer transition-colors ${
                     isSelected
-                      ? "bg-blue-600 border-blue-500 text-white"
-                      : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                      ? "border-blue-500 bg-blue-600 text-zinc-50 dark:bg-blue-400 dark:text-zinc-950"
+                      : "border-zinc-300 bg-zinc-100/60 text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-950 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
                   }`}
                 >
                   {d}
@@ -260,20 +260,20 @@ const PlanningRecurrenceForm = ({
             })}
           </div>
           {monthDays.length === 0 && (
-            <p className="text-xs text-amber-400">Selecciona al menos un día del mes.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">Selecciona al menos un día del mes.</p>
           )}
         </fieldset>
       )}
 
       {recurringTypeId === PLANNINGS_RECURRING_TYPES.YEARLY && (
         <fieldset className="space-y-3">
-          <label className="text-gray-webui-text text-sm block">Fechas del año</label>
+          <label className="block text-sm text-zinc-700 dark:text-zinc-300">Fechas del año</label>
           <div className="flex items-center gap-2">
             <select
               aria-label="Mes"
               value={newYearMonth}
               onChange={(e) => setNewYearMonth(Number(e.target.value))}
-              className="bg-zinc-950 border border-zinc-800 text-white text-sm rounded px-2.5 py-2 flex-1"
+              className="glass-control flex-1 rounded px-2.5 py-2 text-sm text-zinc-950 dark:text-zinc-100"
             >
               {MONTH_NAMES.map((m) => (
                 <option key={m.value} value={m.value}>
@@ -285,7 +285,7 @@ const PlanningRecurrenceForm = ({
               aria-label="Día"
               value={newYearDay}
               onChange={(e) => setNewYearDay(Number(e.target.value))}
-              className="bg-zinc-950 border border-zinc-800 text-white text-sm rounded px-2.5 py-2 w-20"
+              className="glass-control w-20 rounded px-2.5 py-2 text-sm text-zinc-950 dark:text-zinc-100"
             >
               {MONTH_DAYS_ARRAY.map((d) => (
                 <option key={d} value={d}>
@@ -296,7 +296,7 @@ const PlanningRecurrenceForm = ({
             <button
               type="button"
               onClick={addYearDay}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white text-sm px-3 py-2 rounded cursor-pointer transition-colors"
+              className="cursor-pointer rounded bg-zinc-800 px-3 py-2 text-sm text-zinc-100 transition-colors hover:bg-zinc-700 dark:bg-zinc-200 dark:text-zinc-950 dark:hover:bg-zinc-300"
             >
               Agregar
             </button>
@@ -309,15 +309,13 @@ const PlanningRecurrenceForm = ({
                 return (
                   <span
                     key={`${yd.month}-${yd.dayOfMonth}`}
-                    className="inline-flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs px-2.5 py-1 rounded-full"
+                    className="glass-control inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-zinc-700 dark:text-zinc-300"
                   >
-                    <span>
-                      {yd.dayOfMonth} de {monthLabel}
-                    </span>
+                    {yd.dayOfMonth} de {monthLabel}
                     <button
                       type="button"
                       onClick={() => removeYearDay(idx)}
-                      className="text-zinc-400 hover:text-red-400 cursor-pointer"
+                      className="cursor-pointer text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400"
                     >
                       <Icon icon="iconoir:cancel" className="w-3.5 h-3.5" />
                     </button>
@@ -326,7 +324,7 @@ const PlanningRecurrenceForm = ({
               })}
             </div>
           ) : (
-            <p className="text-xs text-amber-400">Agrega al menos una fecha para la regla anual.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">Agrega al menos una fecha para la regla anual.</p>
           )}
         </fieldset>
       )}
@@ -348,7 +346,7 @@ const PlanningRecurrenceForm = ({
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-300">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
             <input
               type="checkbox"
               checked={hasEndDate}
@@ -364,7 +362,7 @@ const PlanningRecurrenceForm = ({
                   onEndDateChange(d.getTime());
                 }
               }}
-              className="rounded bg-zinc-950 border-zinc-800"
+              className="rounded border-zinc-300 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900"
             />
             Definir fecha de finalización
           </label>

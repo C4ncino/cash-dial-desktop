@@ -9,9 +9,11 @@ import {
 } from "chart.js";
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
+import colors from "tailwindcss/colors";
 
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
+import useTheme from "@/hooks/useTheme";
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
 
@@ -25,6 +27,7 @@ const label = (timestamp: number) =>
 
 const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendProps = {}) => {
   const { response, loading, symbol: storeSymbol } = useStatisticsSection();
+  const { isDark } = useTheme();
   const points = pointsProp ?? response?.balanceTrend ?? [];
   const symbol = symbolProp ?? storeSymbol ?? "";
   const data = useMemo(
@@ -34,14 +37,14 @@ const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendPr
         {
           label: "Saldo",
           data: points.map((point) => point.balance),
-          borderColor: "#6366f1",
-          backgroundColor: "rgba(99, 102, 241, 0.12)",
+          borderColor: isDark ? colors.indigo[400] : colors.indigo[600],
+          backgroundColor: `${isDark ? colors.indigo[400] : colors.indigo[600]}1f`,
           fill: true,
           tension: 0.25,
         },
       ],
     }),
-    [points],
+    [points, isDark],
   );
 
   if (loading)
@@ -51,7 +54,7 @@ const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendPr
   return (
     <section
       aria-label="Saldo a lo largo del tiempo"
-      className="rounded-md border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+      className="glass-surface rounded-md p-4"
     >
       <h2 className="mb-1 text-lg font-semibold">Saldo a lo largo del tiempo</h2>
       {points.length ? (
@@ -63,10 +66,15 @@ const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendPr
               y: {
                 grid: {
                   color: (context) =>
-                    context.tick.value === 0 ? "#71717a" : "rgba(113, 113, 122, 0.2)",
+                    context.tick.value === 0
+                      ? isDark ? colors.zinc[400] : colors.zinc[600]
+                      : `${isDark ? colors.zinc[400] : colors.zinc[600]}33`,
                   lineWidth: (context) => (context.tick.value === 0 ? 3 : 2),
                 },
-                ticks: { callback: (value) => `${symbol}${Number(value).toFixed(2)}` },
+                ticks: {
+                  color: isDark ? colors.zinc[400] : colors.zinc[500],
+                  callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
+                },
               },
             },
             plugins: {
