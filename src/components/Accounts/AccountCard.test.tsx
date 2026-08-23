@@ -24,7 +24,7 @@ describe("AccountCard", () => {
   it("should render the account summary and detail link", () => {
     render(<AccountCard {...mockAccount} />);
 
-    const heading = screen.getByRole("heading", { level: 2 });
+    const heading = screen.getByRole("heading", { level: 3 });
 
     expect(heading.textContent?.replace(/\u00AD/g, "").trim()).toBe("My Checking Account");
     expect(screen.getByText(/1,500.50/)).toBeInTheDocument();
@@ -51,6 +51,6 @@ describe("AccountCard", () => {
     render(<AccountCard {...mockAccount} balance={0} />);
 
     expect(screen.getByText(/0/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
   });
 });

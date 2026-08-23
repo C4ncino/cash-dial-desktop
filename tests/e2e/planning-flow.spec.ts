@@ -1,4 +1,4 @@
-import { closeTauriDriver, createDriver, driver, waitForHomeReady } from "@test/driver";
+import { closeTauriDriver, createDriver, driver, findVisible, waitForHomeReady } from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -32,10 +32,7 @@ describe("Planning to linked movement user flow", () => {
   }
 
   it("creates a planning, links a compatible movement, reloads, and cancels the next occurrence", async () => {
-    const planningLink = await driver.wait(
-      until.elementLocated(By.css('a[href="/planning"]')),
-      15000,
-    );
+    const planningLink = await findVisible(By.css('a[href="/planning"]'));
     await planningLink.click();
     await driver.wait(until.elementLocated(By.id("create-planning-button")), 10000);
     await driver.findElement(By.id("create-planning-button")).click();
@@ -90,8 +87,7 @@ describe("Planning to linked movement user flow", () => {
     expect(bodyText).toMatch(/Pendiente|Vencida|Próxima/);
 
     await driver.findElement(By.id("back-link")).click();
-    await driver.wait(until.elementLocated(By.css('a[href="/"]')), 10000);
-    await driver.findElement(By.css('a[href="/"]')).click();
+    await (await findVisible(By.css('a[href="/"]'), 10000)).click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
     await driver.findElement(By.id("speed-dial-toggle")).click();
     await driver.findElement(By.id("create-expense-dialog-button")).click();
@@ -115,11 +111,13 @@ describe("Planning to linked movement user flow", () => {
 
     await driver.executeScript(
       "arguments[0].click();",
-      await driver.findElement(By.css('a[href="/planning"]')),
+      await findVisible(By.css('a[href="/planning"]')),
     );
-    await driver.wait(until.elementLocated(By.css('a[href^="/planning-detail?id="]')), 10000);
-    const createdPlanning = await driver.findElement(
-      By.xpath("//a[@data-testid='planning-card' and contains(., 'E2E Grocery Planning')]"),
+    const createdPlanning = await driver.wait(
+      until.elementLocated(
+        By.xpath("//a[@data-testid='planning-card' and contains(., 'E2E Grocery Planning')]"),
+      ),
+      10000,
     );
     await driver.executeScript("arguments[0].click();", createdPlanning);
     await driver.wait(until.elementLocated(By.xpath("//h3[contains(., 'Ocurrencias')]")), 10000);

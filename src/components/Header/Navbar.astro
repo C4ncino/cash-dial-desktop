@@ -2,6 +2,12 @@
 import { Icon } from "astro-icon/components";
 import NavbarLink from "./NavbarLink.astro";
 
+interface Props {
+  variant?: "desktop" | "mobile";
+}
+
+const { variant = "desktop" } = Astro.props;
+
 const links: Link[] = [
   {
     name: "Inicio",
@@ -23,21 +29,17 @@ const links: Link[] = [
     url: "/stats",
     icon: "iconoir:stats-up-square",
   },
-  {
-    name: "Más opciones",
-    url: "/more",
-    icon: "iconoir:more-horiz-circle",
-  },
 ];
 ---
 
-<nav>
-  <ul id="links" class="space-y-4">
+<nav aria-label={variant === "mobile" ? "Navegación móvil" : "Navegación principal"}>
+  <ul class:list={[variant === "mobile" ? "grid gap-1" : "space-y-2"]}>
     {
       links.map((link) => (
         <NavbarLink
           href={link.url}
           isSelected={Astro.url.pathname === link.url}
+          variant={variant}
         >
           <Icon name={link.icon || "iconoir:question-mark"} class="text-xl" />
           {link.name}

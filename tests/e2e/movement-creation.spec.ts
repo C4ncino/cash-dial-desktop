@@ -1,4 +1,4 @@
-import { closeTauriDriver, createDriver, driver, waitForHomeReady } from "@test/driver";
+import { closeTauriDriver, createDriver, driver, findVisible, waitForHomeReady } from "@test/driver";
 import { By, Key, until, type WebElement } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -100,7 +100,7 @@ describe("Movement E2E", () => {
   it("creates an income movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
-    const homeLink = await driver.wait(until.elementLocated(By.css('a[href="/"]')), 15000);
+    const homeLink = await findVisible(By.css('a[href="/"]'));
     await homeLink.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -145,7 +145,7 @@ describe("Movement E2E", () => {
     await incomeSubmitBtn.click();
 
     // Verify it renders on movements list page
-    const movementsLink = await driver.findElement(By.css('a[href="/movements"]'));
+    const movementsLink = await findVisible(By.css('a[href="/movements"]'));
     await movementsLink.click();
     await driver.wait(
       until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
@@ -180,7 +180,7 @@ describe("Movement E2E", () => {
       10000,
     );
 
-    const homeLinkEnd = await driver.findElement(By.css('a[href="/"]'));
+    const homeLinkEnd = await findVisible(By.css('a[href="/"]'));
     await homeLinkEnd.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -191,7 +191,7 @@ describe("Movement E2E", () => {
   it("creates an expense movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
-    const homeLink = await driver.wait(until.elementLocated(By.css('a[href="/"]')), 15000);
+    const homeLink = await findVisible(By.css('a[href="/"]'));
     await homeLink.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -239,7 +239,7 @@ describe("Movement E2E", () => {
     );
     await expenseSubmitBtn.click();
     // Verify it renders on movements list page
-    const movementsLink = await driver.findElement(By.css('a[href="/movements"]'));
+    const movementsLink = await findVisible(By.css('a[href="/movements"]'));
     await movementsLink.click();
     await driver.wait(
       until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
@@ -274,7 +274,7 @@ describe("Movement E2E", () => {
       10000,
     );
 
-    const homeLinkEnd = await driver.findElement(By.css('a[href="/"]'));
+    const homeLinkEnd = await findVisible(By.css('a[href="/"]'));
     await homeLinkEnd.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -285,7 +285,7 @@ describe("Movement E2E", () => {
   it("creates a transfer movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
-    const homeLink = await driver.wait(until.elementLocated(By.css('a[href="/"]')), 15000);
+    const homeLink = await findVisible(By.css('a[href="/"]'));
     await homeLink.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -330,7 +330,7 @@ describe("Movement E2E", () => {
     );
     await transferSubmitBtn.click();
     // Verify it renders on movements list page
-    const movementsLink = await driver.findElement(By.css('a[href="/movements"]'));
+    const movementsLink = await findVisible(By.css('a[href="/movements"]'));
     await movementsLink.click();
     await driver.wait(
       until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
@@ -366,7 +366,7 @@ describe("Movement E2E", () => {
       10000,
     );
 
-    const homeLinkEnd = await driver.findElement(By.css('a[href="/"]'));
+    const homeLinkEnd = await findVisible(By.css('a[href="/"]'));
     await homeLinkEnd.click();
     await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
@@ -408,8 +408,7 @@ describe("Movement E2E", () => {
       .sendKeys("E2E Cross Currency Transfer");
     await driver.findElement(By.css('#transfer-form button[type="submit"]')).click();
 
-    await driver.wait(until.elementLocated(By.css('a[href="/movements"]')), 10000);
-    await driver.findElement(By.css('a[href="/movements"]')).click();
+    await (await findVisible(By.css('a[href="/movements"]'), 10000)).click();
     await driver.wait(
       until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
       10000,

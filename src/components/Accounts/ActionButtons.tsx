@@ -11,7 +11,7 @@ const ActionButtons = () => {
 
   return (
     <>
-      <li className="text-sm">
+      <li>
         <ConfirmModal
           onConfirm={() => {
             logger.debug("Deactivate account id:", id);
@@ -21,9 +21,11 @@ const ActionButtons = () => {
           modalTitle="Confirmar desactivación"
           description="¿Estás seguro de que deseas desactivar esta cuenta? Ya no se podrá registrar movimientos en esta cuenta, pero los movimientos existentes no se eliminaran"
           theme="warning"
+          buttonClassName="focus-ring min-h-10 rounded-lg border border-amber-600 text-sm font-medium text-amber-600 dark:border-amber-400 dark:text-amber-400 px-4 py-2 cursor-pointer"
         />
       </li>
-      <li className="text-sm">
+
+      <li>
         <ConfirmModal
           onConfirm={async () => {
             accountsStore.getState().remove(Number(id));
@@ -34,6 +36,7 @@ const ActionButtons = () => {
           modalTitle="Confirmar eliminación"
           description="¿Estás seguro de que deseas eliminar esta cuenta? Esto eliminara todos los movimientos relacionados"
           theme="alert"
+          buttonClassName="focus-ring min-h-10 rounded-lg border border-red-600 text-sm font-medium text-red-600 dark:border-red-400 dark:text-red-400 w-full h-full px-4 py-2 cursor-pointer"
         />
       </li>
     </>

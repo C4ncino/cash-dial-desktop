@@ -99,17 +99,18 @@ const ActionButtons = () => {
   };
 
   return (
-    <menu className="flex flex-col gap-3">
-      <li className="text-sm">
+    <menu className="flex flex-wrap gap-2 sm:flex-col">
+      <li>
         <button
           type="button"
-          className="edit-button w-full px-4 py-2 text-left font-medium text-zinc-950 hover:cursor-pointer dark:text-zinc-100"
+          className="focus-ring edit-button min-h-10 rounded-lg border border-zinc-400 px-4 py-2 text-sm font-medium text-zinc-950 dark:border-zinc-600 dark:text-zinc-100"
           onClick={handleEditClick}
         >
           Editar
         </button>
       </li>
-      <li className="text-sm">
+
+      <li>
         <ConfirmModal
           onConfirm={handleConfirmDelete}
           buttonTitle="Eliminar"
@@ -117,7 +118,7 @@ const ActionButtons = () => {
           modalTitle={deleteConfig.title}
           description={deleteConfig.description}
           theme="alert"
-          buttonClassName="w-full cursor-pointer rounded px-4 py-2 text-left font-medium text-red-600 dark:text-red-400"
+          buttonClassName="focus-ring min-h-10 rounded-lg border border-red-600 px-4 py-2 text-sm font-medium text-red-600 dark:border-red-400 dark:text-red-400"
         />
       </li>
     </menu>

@@ -55,6 +55,22 @@
   .glass-control {
     @apply border border-zinc-300 bg-zinc-50/60 backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/60;
   }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-zinc-600 dark:focus-visible:ring-offset-zinc-950;
+  }
+
+  .app-toast {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .app-toast[data-show="true"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
 }
 
 .gradient-bg {

@@ -28,11 +28,11 @@ const StatisticsForm = () => {
   return (
     <section
       aria-label="Controles de estadísticas"
-      className="glass-surface grid gap-4 rounded-md p-4 text-zinc-950 dark:text-zinc-100"
+      className="glass-surface grid gap-4 rounded-xl p-4 text-zinc-950 sm:p-5 dark:text-zinc-100"
     >
       <section
         aria-label="Periodo de estadísticas"
-        className="flex items-center justify-between gap-3"
+        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"
       >
         <button
           type="button"
@@ -43,7 +43,7 @@ const StatisticsForm = () => {
           <Icon icon="iconoir:nav-arrow-left" width={20} height={20} />
         </button>
 
-        <h2 className="font-semibold flex items-center">
+        <h2 className="flex min-w-0 flex-wrap items-center justify-center text-center font-semibold">
           <Icon icon="iconoir:calendar" width={20} height={20} className="mx-2 inline" />
 
           <time dateTime={startObject.toISOString()}>{startShort}</time>
@@ -66,15 +66,16 @@ const StatisticsForm = () => {
 
       <fieldset
         aria-label="Opciones de estadísticas"
-        className="flex flex-wrap items-end gap-3 border-t border-zinc-300 pt-4 dark:border-zinc-700"
+        className="grid grid-cols-1 gap-3 border-t border-zinc-300 pt-4 dark:border-zinc-700 sm:grid-cols-2"
       >
         <legend className="sr-only">Opciones de estadísticas</legend>
-        <label className="flex flex-col gap-1" htmlFor="statisticsPeriod">
+        <label className="flex min-w-0 flex-col gap-1" htmlFor="statisticsPeriod">
           Periodo
           <select
             id="statisticsPeriod"
             value={period}
             onChange={(event) => setPeriod(event.target.value as StatisticsPeriod)}
+            className="w-full rounded-lg px-3 py-2"
           >
             <option className="bg-zinc-100 dark:bg-zinc-800" value="week">
               Semana
@@ -88,12 +89,12 @@ const StatisticsForm = () => {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1" htmlFor="currencyId">
+        <label className="flex min-w-0 flex-col gap-1" htmlFor="currencyId">
           Moneda
           <SelectCurrency
             id="currencyId"
             value={selectedCurrencyId ?? ""}
-            className=""
+            className="w-full! rounded-lg"
             onChange={(event) =>
               statisticsStore.getState().setSelectedCurrencyId(Number(event.target.value))
             }

@@ -7,14 +7,16 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Planificación" description="">
-  <section aria-labelledby="budgets-title" class="space-y-3">
-    <h1 id="budgets-title" class="text-3xl font-bold">
-      Presupuestos y planificaciones
-    </h1>
+  <section class="space-y-10">
+    <header>
+      <h1 class="text-3xl font-bold">Presupuestos y planificaciones</h1>
+      <p class="mt-1 text-zinc-700 dark:text-zinc-300">
+        Organiza límites y movimientos recurrentes.
+      </p>
+    </header>
     <Budgets />
+    <PlanningsLanding />
   </section>
-
-  <PlanningsLanding />
 
   <PlanningModals />
   <PlanningToasts />

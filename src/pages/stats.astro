@@ -10,9 +10,11 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="Estadísticas" description="">
-    <h1 class="hidden">Estadísticas</h1>
-
-    <section class="grid gap-4 max-w-5xl mx-auto">
+    <section class="grid gap-4">
+        <header class="mb-2">
+            <h1 class="text-3xl font-bold">Estadísticas</h1>
+            <p class="mt-1 text-zinc-700 dark:text-zinc-300">Analiza el comportamiento de tus finanzas por periodo.</p>
+        </header>
         <StatisticsForm client:load />
 
         <OverviewCard client:load />

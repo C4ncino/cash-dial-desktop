@@ -4,7 +4,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Builder, By, Capabilities, until, type WebDriver } from "selenium-webdriver";
+import { Builder, By, Capabilities, until, type WebDriver, type WebElement } from "selenium-webdriver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -134,6 +134,16 @@ export async function closeTauriDriver() {
 
 export async function waitForHomeReady() {
   await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 15_000);
+}
+
+export async function findVisible(locator: By, timeoutMs = 15_000): Promise<WebElement> {
+  return driver.wait<WebElement>(async () => {
+    const elements = await driver.findElements(locator);
+    for (const element of elements) {
+      if (await element.isDisplayed()) return element;
+    }
+    return false;
+  }, timeoutMs);
 }
 
 export function deleteDatabase() {

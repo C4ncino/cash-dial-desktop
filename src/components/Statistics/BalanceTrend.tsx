@@ -54,14 +54,16 @@ const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendPr
   return (
     <section
       aria-label="Saldo a lo largo del tiempo"
-      className="glass-surface rounded-md p-4"
+      className="glass-surface rounded-xl p-4 sm:p-5"
     >
       <h2 className="mb-1 text-lg font-semibold">Saldo a lo largo del tiempo</h2>
       {points.length ? (
+        <div className="relative h-64 min-w-0 sm:h-80">
         <Line
           data={data}
           options={{
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
               y: {
                 grid: {
@@ -87,6 +89,7 @@ const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendPr
             },
           }}
         />
+        </div>
       ) : (
         <p className="opacity-70">No hay actividad en este periodo.</p>
       )}

@@ -23,10 +23,10 @@ const mockUseStore = (budgets: BudgetDetails[] = []) => {
 };
 
 describe("BudgetsList", () => {
-  it("renders nothing when no budgets", () => {
+  it("renders an empty state when no budgets", () => {
     mockUseStore([]);
-    const { container } = render(<BudgetsList />);
-    expect(container.firstChild).toBeNull();
+    render(<BudgetsList />);
+    expect(screen.getByText("Aún no tienes presupuestos.")).toBeInTheDocument();
   });
 
   it("renders a BudgetCard for each budget", () => {

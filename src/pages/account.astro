@@ -5,46 +5,45 @@ import ActionButtons from "@/components/Accounts/ActionButtons";
 import DetailLayout from "@/layouts/DetailLayout.astro";
 import AccountModals from "@/components/Accounts/Modals.astro";
 import AccountsToasts from "@/components/Accounts/Toasts.astro";
+import DetailShell from "@/components/General/DetailShell.astro";
 ---
 
 <DetailLayout title="Detalles de Cuenta" description="">
-    <div class="flex justify-between mx-auto max-w-2xl">
-        <article class="flex-1 pr-4 max-w-xl">
-            <AccountInfo client:load />
-            <AccountMovements client:load />
-        </article>
-        <menu class="flex flex-col gap-3">
-            <li class="text-sm">
-                <button
-                    id="edit-account-button"
-                    class="edit-button hover:cursor-pointer"
-                >
-                    Editar
-                </button>
-            </li>
-            <ActionButtons client:load />
-        </menu>
-    </div>
+  <DetailShell>
+    <AccountInfo client:load />
+    <AccountMovements client:load />
+    <menu slot="actions" class="flex flex-wrap gap-2 sm:flex-col">
+      <li>
+        <button
+          id="edit-account-button"
+          type="button"
+          class="focus-ring edit-button min-h-10 rounded-lg border border-zinc-400 text-sm font-medium dark:border-zinc-600 w-full h-full px-4 py-2 cursor-pointer"
+          >Editar</button
+        >
+      </li>
+      <ActionButtons client:load />
+    </menu>
+  </DetailShell>
 </DetailLayout>
 
 <AccountModals />
 <AccountsToasts />
 
 <script>
-    import { EDIT_TYPES } from "@/types/enums";
-    import { editStore } from "@/stores/editStore";
+  import { EDIT_TYPES } from "@/types/enums";
+  import { editStore } from "@/stores/editStore";
 
-    document.addEventListener("astro:page-load", () => {
-        const btn = document.getElementById("edit-account-button");
+  document.addEventListener("astro:page-load", () => {
+    const btn = document.getElementById("edit-account-button");
 
-        if (!btn) return;
+    if (!btn) return;
 
-        btn.addEventListener("click", () => {
-            const id = new URLSearchParams(window.location.search).get("id");
+    btn.addEventListener("click", () => {
+      const id = new URLSearchParams(window.location.search).get("id");
 
-            if (!id) throw new Error("Account ID not found");
+      if (!id) throw new Error("Account ID not found");
 
-            editStore.getState().setId(Number(id), EDIT_TYPES.ACCOUNT);
-        });
+      editStore.getState().setId(Number(id), EDIT_TYPES.ACCOUNT);
     });
+  });
 </script>

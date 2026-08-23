@@ -38,7 +38,7 @@ describe("UrgentOccurrences", () => {
     expect(getUrgentPlannings([planning(2, "Food"), planning(1, "Rent")], { 1: [occurrence(1, "2026-08-20", true)], 2: [occurrence(2, "2026-09-20")] }).map((item) => item.planning.id)).toEqual([1, 2]);
     render(<UrgentOccurrences />);
     expect(screen.getAllByTestId("urgent-occurrence-card")).toHaveLength(2);
-    expect(screen.getByRole("heading", { name: /Planeaciones/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /planificaciones/i })).toBeInTheDocument();
     expect(screen.queryByText("Ocurrencia urgente")).not.toBeInTheDocument();
     expect(screen.getByText("Rent")).toBeInTheDocument();
     expect(screen.getByText("Vencida")).toBeInTheDocument();

@@ -90,7 +90,7 @@ const AccountForm = ({ modalId }: Props) => {
 
   return (
     <form
-      className="w-5/6 h-full m-auto space-y-4"
+      className="mx-auto w-full max-w-lg space-y-4"
       id="account-form"
       onSubmit={onSubmit}
       onReset={() => {
@@ -138,7 +138,7 @@ const AccountForm = ({ modalId }: Props) => {
             step={0.01}
           />
 
-          <div className="flex gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               type="number"
               name="cutoffDay"

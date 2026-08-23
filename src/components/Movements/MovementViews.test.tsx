@@ -68,7 +68,7 @@ describe("movement views", () => {
       "Lunch",
       "Older",
     ]);
-    expect(screen.getByRole("link", { name: "Mostrar más" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute(
       "href",
       "/movements",
     );

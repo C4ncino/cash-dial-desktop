@@ -1,20 +1,19 @@
 ---
 import PlanningList from "@/components/Plannings/PlanningList";
+import SectionHeader from "@/components/General/SectionHeader.astro";
 ---
 
 <section class="space-y-4" aria-labelledby="all-plannings-title">
-  <header class="flex items-center justify-between gap-4">
-    <h2 id="all-plannings-title" class="text-2xl font-bold">
-      Planificaciones
-    </h2>
+  <SectionHeader title="Planificaciones" description="Anticipa tus ingresos y gastos recurrentes." headingId="all-plannings-title">
     <button
+      slot="actions"
       id="create-planning-button"
       type="button"
-      class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-green-500 dark:bg-green-400 dark:text-zinc-950 dark:hover:bg-green-500"
+      class="focus-ring min-h-11 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-green-500 dark:bg-green-400 dark:text-zinc-950 dark:hover:bg-green-500"
     >
       Nueva planificación
     </button>
-  </header>
+  </SectionHeader>
 
   <PlanningList showCreateButton={false} client:load />
 </section>

@@ -37,10 +37,7 @@ const ObligationMetricCard = ({ label, value, symbol, period }: MetricCardProps)
   const formattedValue = formatMoney(value, symbol);
 
   return (
-    <article
-      data-testid={`obligation-metric-${period}`}
-      className="glass-control rounded-md p-3"
-    >
+    <article data-testid={`obligation-metric-${period}`} className="glass-control rounded-md p-3">
       <h3 className="text-sm font-normal opacity-70">{label}</h3>
       <p className="mt-1 text-lg font-semibold">{formattedValue}</p>
     </article>
@@ -61,9 +58,24 @@ const ObligationRangeBar = ({
   );
   const thirdRange = Math.max(0, total - firstRange - secondRange);
   const ranges = [
-    { key: "7", label: "Próximos 7 días", amount: firstRange, color: "bg-amber-600 dark:bg-amber-400" },
-    { key: "30", label: "Próximo Mes", amount: secondRange, color: "bg-yellow-600 dark:bg-yellow-400" },
-    { key: "90", label: "Próximos 3 Meses", amount: thirdRange, color: "bg-green-600 dark:bg-green-400" },
+    {
+      key: "7",
+      label: "Próximos 7 días",
+      amount: firstRange,
+      color: "bg-amber-600 dark:bg-amber-400",
+    },
+    {
+      key: "30",
+      label: "Próximo Mes",
+      amount: secondRange,
+      color: "bg-yellow-600 dark:bg-yellow-400",
+    },
+    {
+      key: "90",
+      label: "Próximos 3 Meses",
+      amount: thirdRange,
+      color: "bg-green-600 dark:bg-green-400",
+    },
   ];
 
   return (
@@ -266,10 +278,7 @@ const ObligationsList = ({
   const next90Days = sortedItems.filter((item) => daysUntil(new Date(item.dueTimestamp)) > 30);
 
   return (
-    <section
-      aria-label="Próximas obligaciones"
-      className="glass-surface rounded-md p-4"
-    >
+    <section aria-label="Próximas obligaciones" className="glass-surface rounded-xl p-4 sm:p-5">
       <header className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Próximas obligaciones</h2>

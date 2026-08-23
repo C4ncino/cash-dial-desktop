@@ -26,12 +26,9 @@ const SecondaryMetrics = ({
   const symbol = symbolProp ?? storeSymbol ?? "";
 
   return (
-    <section
-      aria-label="Métricas secundarias"
-      className="glass-surface rounded-md p-4"
-    >
+    <section aria-label="Métricas secundarias" className="glass-surface rounded-xl p-4 sm:p-5">
       <h2 className="mb-3 text-lg font-semibold">Métricas secundarias</h2>
-      <dl className="grid gap-3 sm:grid-cols-3">
+      <dl className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         <div>
           <dt className="text-sm opacity-70">Gasto promedio</dt>
           <dd>{metrics.avgExpense === null ? "—" : `${symbol}${metrics.avgExpense.toFixed(2)}`}</dd>

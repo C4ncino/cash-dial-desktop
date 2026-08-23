@@ -8,8 +8,7 @@ import { MODAL_ID } from "@/types/enums";
 <Modal
   id={MODAL_ID.PLANNING.CREATE}
   title="Crear Planificación"
-  className="glass-elevated min-w-lg! backdrop-blur-md"
-  style="max-height: 90vh; overflow-y: auto;"
+  className="glass-elevated w-[calc(100vw-2rem)]! max-w-lg! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-md"
 >
   <PlanningForm client:visible modalId={MODAL_ID.PLANNING.CREATE} formId="create-planning-form" />
 </Modal>
@@ -17,8 +16,7 @@ import { MODAL_ID } from "@/types/enums";
 <Modal
   id={MODAL_ID.PLANNING.EDIT}
   title="Editar Planificación"
-  className="glass-elevated min-w-lg! backdrop-blur-md"
-  style="max-height: 90vh; overflow-y: auto;"
+  className="glass-elevated w-[calc(100vw-2rem)]! max-w-lg! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-md"
 >
   <PlanningForm client:visible modalId={MODAL_ID.PLANNING.EDIT} formId="edit-planning-form" />
 </Modal>

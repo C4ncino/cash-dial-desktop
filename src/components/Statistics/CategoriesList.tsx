@@ -145,7 +145,7 @@ const CategoriesList = ({
   return (
     <section
       aria-label="Categorías"
-      className="glass-surface rounded-md p-4"
+      className="glass-surface rounded-xl p-4 sm:p-5"
     >
       <header className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Gastos por categoría</h2>
@@ -162,21 +162,21 @@ const CategoriesList = ({
       </header>
 
       {expandedCategory && (
-        <div className="glass-control mb-3 flex items-center justify-between rounded px-3 py-2 text-sm">
-          <div className="flex items-center gap-2">
+        <div className="glass-control mb-3 flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm">
+          <div className="flex min-w-0 items-center gap-2">
             <span
               aria-hidden="true"
               className="inline-block h-3 w-3 rounded-full"
               style={{ backgroundColor: colorForPath(expandedPath) }}
             />
-            <span className="font-medium">{expandedCategory.name}</span>
-            <span className="opacity-60">expandida</span>
+            <span className="truncate font-medium">{expandedCategory.name}</span>
+            <span className="hidden opacity-60 sm:inline">expandida</span>
           </div>
           <button
             type="button"
             aria-label={`Contraer ${expandedCategory.name}`}
             title={`Contraer ${expandedCategory.name}`}
-            className="flex h-6 w-6 items-center justify-center rounded text-lg leading-none opacity-70 hover:bg-zinc-200 hover:opacity-100 dark:hover:bg-zinc-800"
+            className="focus-ring flex size-10 shrink-0 items-center justify-center rounded-lg text-lg leading-none opacity-70 hover:bg-zinc-200 hover:opacity-100 dark:hover:bg-zinc-800"
             onClick={() => setExpandedPath(expandedPath.slice(0, -1))}
           >
             <Icon icon="iconoir:xmark" className="h-4 w-4" aria-hidden="true" />
@@ -184,12 +184,13 @@ const CategoriesList = ({
         </div>
       )}
       {displayedCategories.length ? (
-        <div className="grid items-center gap-4 sm:grid-cols-2">
-          <div>
+        <div className="grid min-w-0 items-center gap-6 lg:grid-cols-[minmax(16rem,0.9fr)_minmax(18rem,1.1fr)]">
+          <div className="relative mx-auto aspect-square w-full max-w-xs">
             <Pie
               data={data}
               options={{
                 responsive: true,
+                maintainAspectRatio: false,
                 onClick: (_event, elements) => {
                   const index = elements[0]?.index;
                   const selected = index === undefined ? undefined : displayedCategories[index];
@@ -211,7 +212,7 @@ const CategoriesList = ({
             />
           </div>
 
-          <ul className="space-y-2">
+          <ul className="mx-auto w-full max-w-md space-y-2 lg:justify-self-center">
             {displayedCategories.map(({ category, path }) => {
               const isActiveBranch = expandedPath.every((id, pathIndex) => path[pathIndex] === id);
               const canExpand = hasNavigableChildren(category);
@@ -220,35 +221,41 @@ const CategoriesList = ({
               const displayColor =
                 expandedPath.length && !isActiveBranch ? withOpacity(color, 0.6) : color;
 
+              const rowContent = (
+                <>
+                  <span className="min-w-0 truncate">
+                    <CategoryName
+                      id={category.categoryId}
+                      parentId={category.parentId ?? undefined}
+                      customName={category.isVirtual ? category.name : undefined}
+                      color={displayColor}
+                      fallbackName={category.name}
+                    />
+                    {canExpand && <small className="ml-2 opacity-60">Detalles</small>}
+                  </span>
+                  <span className="grid grid-cols-[minmax(5.5rem,auto)_3.5rem] items-baseline gap-2 text-right tabular-nums">
+                    <strong>{symbol}{category.amount.toFixed(2)}</strong>
+                    <small className="opacity-70">{category.percentOfTotal.toFixed(1)}%</small>
+                  </span>
+                </>
+              );
+
               return (
                 <li key={path.join("/")}>
-                  <button
-                    type="button"
-                    aria-expanded={canExpand ? isExpanded : undefined}
-                    className={`flex w-full items-center justify-between gap-3 text-left ${canExpand ? "cursor-pointer" : "cursor-default"} ${expandedPath.length && !isActiveBranch ? "text-zinc-500 dark:text-zinc-400" : ""}`}
-                    onClick={() => canExpand && setExpandedPath(path)}
-                  >
-                    <span>
-                      <CategoryName
-                        id={category.categoryId}
-                        parentId={category.parentId ?? undefined}
-                        customName={category.isVirtual ? category.name : undefined}
-                        color={displayColor}
-                        fallbackName={category.name}
-                      />
-                      {canExpand && <small className="ml-2 opacity-60">Detalles</small>}
-                    </span>
-
-                    <span className="text-right">
-                      <strong>
-                        {symbol}
-                        {category.amount.toFixed(2)}
-                      </strong>
-                      <small className="ml-2 opacity-70">
-                        {category.percentOfTotal.toFixed(1)}%
-                      </small>
-                    </span>
-                  </button>
+                  {canExpand ? (
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      className={`focus-ring grid min-h-10 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 rounded-lg text-left ${expandedPath.length && !isActiveBranch ? "text-zinc-500 dark:text-zinc-400" : ""}`}
+                      onClick={() => setExpandedPath(path)}
+                    >
+                      {rowContent}
+                    </button>
+                  ) : (
+                    <div className={`grid min-h-10 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 ${expandedPath.length && !isActiveBranch ? "text-zinc-500 dark:text-zinc-400" : ""}`}>
+                      {rowContent}
+                    </div>
+                  )}
                 </li>
               );
             })}

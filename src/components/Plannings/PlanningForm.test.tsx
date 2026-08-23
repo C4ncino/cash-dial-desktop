@@ -261,7 +261,7 @@ describe("PlanningForm Component", () => {
       "w-full",
       "mx-auto",
       "p-4",
-      "max-h-[calc(100vh-2rem)]",
+      "max-h-[calc(100dvh-2rem)]",
       "overflow-y-auto",
     );
 

@@ -71,7 +71,7 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
   return (
     <section
       aria-label="Tendencias"
-      className="glass-surface rounded-md p-4"
+      className="glass-surface rounded-xl p-4 sm:p-5"
     >
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Tendencias</h2>
@@ -93,10 +93,12 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
         </label>
       </header>
       {points.length ? (
+        <div className="relative h-64 min-w-0 sm:h-80">
         <Bar
           data={data}
           options={{
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
               y: {
                 grid: {
@@ -124,6 +126,7 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
             },
           }}
         />
+        </div>
       ) : (
         <p className="opacity-70">No hay actividad en este periodo.</p>
       )}

@@ -246,7 +246,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
 
   return (
     <form
-      className="mx-auto box-border h-full max-h-[calc(100vh-2rem)] w-full max-w-lg space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6"
+      className="mx-auto box-border w-full max-w-lg space-y-4 p-4 sm:p-6"
       id={config.formId}
       onSubmit={onSubmit}
       onReset={() => {
@@ -353,7 +353,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
         />
       )}
 
-      <fieldset className="flex gap-4">
+      <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
           type="date"
           name="date"

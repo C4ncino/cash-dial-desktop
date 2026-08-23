@@ -34,13 +34,13 @@ describe("Tauri - Account creation", () => {
 
     await submit.click();
 
-    const accountName = await driver.wait(
+    const accountCard = await driver.wait(
       until.elementLocated(
-        By.xpath('//a[starts-with(@href, "/account?id=")]//h2[contains(., "Checking")]'),
+        By.xpath('//a[starts-with(@href, "/account?id=") and .//h3[contains(., "Checking")]]'),
       ),
       10000,
     );
-    await accountName.click();
+    await driver.executeScript("arguments[0].scrollIntoView({ block: 'center' }); arguments[0].click();", accountCard);
 
     await driver.wait(until.elementLocated(By.css("body")), 10000);
 

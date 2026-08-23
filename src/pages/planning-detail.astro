@@ -7,23 +7,28 @@ import PlanningToasts from "@/components/Plannings/Toasts.astro";
 import MovementModals from "@/components/Movements/Modals.astro";
 import MovementToasts from "@/components/Movements/Toasts.astro";
 import DetailLayout from "@/layouts/DetailLayout.astro";
+import DetailShell from "@/components/General/DetailShell.astro";
 ---
 
 <DetailLayout title="Detalles de Planificación" description="">
-  <div class="flex justify-between mx-auto max-w-3xl">
-    <article class="flex-1 pr-4 max-w-2xl">
-      <PlanningInfo client:load />
-      <PlanningOccurrences client:load />
-    </article>
-    <menu class="flex flex-col gap-3">
-      <li class="text-sm">
-        <button id="edit-planning-button" class="edit-button hover:cursor-pointer" type="button">
-          Editar
-        </button>
+  <DetailShell>
+    <PlanningInfo client:load />
+    <PlanningOccurrences client:load />
+    <menu
+      slot="actions"
+      class="flex flex-wrap gap-2 sm:flex-col"
+      data-testid="planning-actions"
+    >
+      <li>
+        <button
+          id="edit-planning-button"
+          class="focus-ring edit-button min-h-10 rounded-lg border border-zinc-400 px-4 py-2 text-sm font-medium dark:border-zinc-600"
+          type="button">Editar</button
+        >
       </li>
       <PlanningActions client:load />
     </menu>
-  </div>
+  </DetailShell>
 </DetailLayout>
 
 <PlanningModals />
@@ -44,11 +49,14 @@ import DetailLayout from "@/layouts/DetailLayout.astro";
       editStore.getState().setId(Number(id), EDIT_TYPES.PLANNING);
     });
 
-    window.addEventListener("planning:movement-create", ((event: CustomEvent) => {
+    window.addEventListener("planning:movement-create", ((
+      event: CustomEvent,
+    ) => {
       const typeId = event.detail.typeId;
-      const movementModalId = typeId === MOVEMENT_TYPES.INCOME
-        ? MODAL_ID.MOVEMENT.INCOME.CREATE
-        : MODAL_ID.MOVEMENT.EXPENSE.CREATE;
+      const movementModalId =
+        typeId === MOVEMENT_TYPES.INCOME
+          ? MODAL_ID.MOVEMENT.INCOME.CREATE
+          : MODAL_ID.MOVEMENT.EXPENSE.CREATE;
       modal(`#${movementModalId}`)?.open();
     }) as EventListener);
   });

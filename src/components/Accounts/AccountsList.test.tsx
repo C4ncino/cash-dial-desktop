@@ -45,15 +45,15 @@ describe("AccountsList", () => {
     vi.clearAllMocks();
   });
 
-  it("should render empty list when no accounts exist", () => {
+  it("should render an empty state when no accounts exist", () => {
     (useStore as any).mockImplementation((_store: any, selector: any) =>
       selector({
         accounts: [],
       }),
     );
 
-    const { container } = render(<AccountsList />);
-    expect(container.firstChild?.childNodes.length).toBe(undefined);
+    render(<AccountsList />);
+    expect(screen.getByText("Aún no tienes cuentas.")).toBeInTheDocument();
   });
 
   it("should render all accounts", () => {

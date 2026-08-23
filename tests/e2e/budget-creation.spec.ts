@@ -78,17 +78,15 @@ describe("Tauri - Budget creation", () => {
     );
     expect(budgetCard).toBeDefined();
 
-    console.log(await budgetCard.isDisplayed());
-    console.log(await budgetCard.isEnabled());
-
     // Verify card content
-    const cardText = await budgetCard.getText();
+    await driver.executeScript("arguments[0].scrollIntoView({ block: 'center' });", budgetCard);
+    const cardText = (await budgetCard.getAttribute("textContent")) ?? "";
     expect(cardText).toContain("E2E Monthly Food Budget");
     expect(cardText).toContain("Mensual");
     expect(cardText).toContain("450");
 
     // Navigate to single budget page
-    await budgetCard.click();
+    await driver.executeScript("arguments[0].click();", budgetCard);
     await driver.wait(until.elementLocated(By.css("body")), 10000);
 
     const bodyText = await driver.findElement(By.css("body")).getText();

@@ -15,14 +15,24 @@ logger.debug(TEST_MODE);
 ---
 
 <BaseLayout title="Home" description="">
-  <Accounts />
-  <MovementsLanding client:load />
-  <UrgentOccurrences client:load />
-  <Budgets />
+  <div class="pb-24">
+    <header>
+      <h1 class="text-3xl font-bold">Resumen</h1>
+      <p class="mt-1 text-zinc-700 dark:text-zinc-300">
+        Una vista rápida de tus finanzas.
+      </p>
+    </header>
+    <Accounts />
+    <MovementsLanding client:load />
+    <UrgentOccurrences limit={4} client:load />
+    <Budgets />
+  </div>
 
   <CreateSpeedDial />
   <MovementModals />
   <MovementToasts />
 </BaseLayout>
+
+<style></style>
 
 {TEST_MODE && <script src="../lib/test.ts" />}

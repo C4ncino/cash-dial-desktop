@@ -25,7 +25,7 @@ const ConfirmModal = ({
   modalTitle,
   description,
   theme,
-  buttonClassName,
+  buttonClassName = "",
   onConfirm,
   modalId,
 }: Props) => {
@@ -48,7 +48,7 @@ const ConfirmModal = ({
 
       <Modal
         id={modalId}
-        className="glass-elevated w-md! backdrop-blur-md"
+        className="glass-elevated w-[calc(100vw-2rem)]! max-w-md! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-md"
         title={modalTitle}
         showCloseIcon={false}
         closeOnEsc={false}
@@ -56,11 +56,11 @@ const ConfirmModal = ({
         theme={theme}
       >
         <p className="mb-6 text-zinc-500 dark:text-zinc-400">{description}</p>
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={() => modalInstance?.close()}
-            className="rounded border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className="focus-ring min-h-11 rounded-lg border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
             Cancelar
           </button>
@@ -71,7 +71,7 @@ const ConfirmModal = ({
               onConfirm();
               modalInstance?.close();
             }}
-            className={`rounded border-2 px-4 py-2 hover:text-zinc-50 dark:hover:text-zinc-950 ${CLASSES[theme || "default"]} hover:cursor-pointer`}
+            className={`focus-ring min-h-11 rounded-lg border-2 px-4 py-2 hover:text-zinc-50 dark:hover:text-zinc-950 ${CLASSES[theme || "default"]} hover:cursor-pointer`}
           >
             {buttonTitle}
           </button>

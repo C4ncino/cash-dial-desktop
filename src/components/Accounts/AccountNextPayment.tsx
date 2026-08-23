@@ -87,7 +87,7 @@ const AccountNextPayment = ({ accountId }: Props) => {
   };
 
   return (
-    <section className="glass-surface mt-6 overflow-hidden rounded-md">
+    <section className="glass-surface mt-6 overflow-hidden rounded-xl">
       <button
         type="button"
         onClick={() => setExpanded((prev) => !prev)}

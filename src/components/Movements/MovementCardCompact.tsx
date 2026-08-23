@@ -22,7 +22,7 @@ const MovementCardCompact = ({ movement }: Props) => {
   return (
     <a
       href={`/movement?id=${movement.id}`}
-      className="flex w-full cursor-pointer flex-row items-center justify-between border-t border-zinc-200 p-2 transition-colors hover:bg-zinc-100/60 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
+      className="focus-ring flex w-full min-w-0 cursor-pointer flex-row items-center justify-between gap-3 rounded-lg border-t border-zinc-200 p-3 transition-colors hover:bg-zinc-100/60 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
     >
       <div className="space-x-2 flex flex-row items-center">
         <div

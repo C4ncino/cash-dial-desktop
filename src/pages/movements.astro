@@ -1,15 +1,23 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
 import GlobalMovements from "@/components/Movements/GlobalMovements";
 import MovementModals from "@/components/Movements/Modals.astro";
 import MovementToasts from "@/components/Movements/Toasts.astro";
 ---
 
-<BaseLayout title="Movimientos" description="Historial de todos los movimientos de cuentas">
-  <div class="max-w-2xl mx-auto">
-    <h1 class="mb-6 text-3xl font-bold text-zinc-950 dark:text-zinc-100">Movimientos</h1>
+<BaseLayout
+  title="Movimientos"
+  description="Historial de todos los movimientos de cuentas"
+>
+  <div class="mx-auto max-w-3xl">
+    <h1 class="mb-6 text-3xl font-bold text-zinc-950 dark:text-zinc-100">
+      Movimientos
+    </h1>
     <GlobalMovements client:load />
   </div>
+
+  <CreateSpeedDial />
 
   <MovementModals />
   <MovementToasts />

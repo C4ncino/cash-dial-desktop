@@ -13,9 +13,12 @@ export function getActionableOccurrence(
     .filter((occurrence) => occurrence.statusId === PLANNING_STATUS.PENDING)
     .sort((a, b) => a.expectedDate - b.expectedDate);
 
-  return pending[0] ?? (planning.currentOccurrence?.statusId === PLANNING_STATUS.PENDING
-    ? planning.currentOccurrence
-    : undefined);
+  return (
+    pending[0] ??
+    (planning.currentOccurrence?.statusId === PLANNING_STATUS.PENDING
+      ? planning.currentOccurrence
+      : undefined)
+  );
 }
 
 export function getUrgentPlannings(
@@ -24,24 +27,58 @@ export function getUrgentPlannings(
 ): Array<{ planning: Planning; occurrence: PlanningOccurrence }> {
   return plannings
     .filter((planning) => planning.recurringRule.isActive)
-    .map((planning) => ({ planning, occurrence: getActionableOccurrence(planning, occurrencesByPlanning) }))
-    .filter((item): item is { planning: Planning; occurrence: PlanningOccurrence } => Boolean(item.occurrence))
+    .map((planning) => ({
+      planning,
+      occurrence: getActionableOccurrence(planning, occurrencesByPlanning),
+    }))
+    .filter((item): item is { planning: Planning; occurrence: PlanningOccurrence } =>
+      Boolean(item.occurrence),
+    )
     .sort((a, b) => {
-      const overdue = Number(b.occurrence.isOverdue || isOccurrenceOverdue(b.occurrence)) - Number(a.occurrence.isOverdue || isOccurrenceOverdue(a.occurrence));
-      return overdue || a.occurrence.expectedDate - b.occurrence.expectedDate || a.planning.id - b.planning.id;
+      const overdue =
+        Number(b.occurrence.isOverdue || isOccurrenceOverdue(b.occurrence)) -
+        Number(a.occurrence.isOverdue || isOccurrenceOverdue(a.occurrence));
+      return (
+        overdue ||
+        a.occurrence.expectedDate - b.occurrence.expectedDate ||
+        a.planning.id - b.planning.id
+      );
     });
 }
 
-const UrgentOccurrences = () => {
+interface Props {
+  limit?: number;
+}
+
+const UrgentOccurrences = ({ limit }: Props) => {
   const plannings = useStore(planningsStore, (state) => state.plannings ?? []);
-  const occurrencesByPlanning = useStore(planningsStore, (state) => state.occurrencesByPlanning ?? {});
-  const urgent = useMemo(() => getUrgentPlannings(plannings, occurrencesByPlanning), [plannings, occurrencesByPlanning]);
+  const occurrencesByPlanning = useStore(
+    planningsStore,
+    (state) => state.occurrencesByPlanning ?? {},
+  );
+  const urgent = useMemo(() => {
+    const items = getUrgentPlannings(plannings, occurrencesByPlanning);
+    return typeof limit === "number" ? items.slice(0, limit) : items;
+  }, [plannings, occurrencesByPlanning, limit]);
 
   return (
-    <section aria-labelledby="urgent-occurrences-title" className="space-y-3">
-      <h2 id="urgent-occurrences-title" className="text-xl font-semibold">Próximas Planeaciones</h2>
+    <section aria-labelledby="urgent-occurrences-title" className="space-y-4 my-12">
+      <header className="flex items-center justify-between gap-4">
+        <h2 id="urgent-occurrences-title" className="text-2xl font-semibold">
+          Próximas planificaciones
+        </h2>
+        <a
+          href="/planning"
+          className="focus-ring shrink-0 rounded-lg px-2 py-1 text-sm font-medium text-blue-600 dark:text-blue-400"
+        >
+          Ver todas
+        </a>
+      </header>
       {urgent.length === 0 ? (
-        <p data-testid="urgent-empty-state" className="glass-surface rounded-xl border-dashed p-6 text-sm text-zinc-500 dark:text-zinc-400">
+        <p
+          data-testid="urgent-empty-state"
+          className="glass-surface rounded-xl border-dashed p-6 text-sm text-zinc-500 dark:text-zinc-400"
+        >
           No hay ocurrencias pendientes.
         </p>
       ) : (

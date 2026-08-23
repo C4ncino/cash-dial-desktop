@@ -1,28 +1,43 @@
 ---
-import colors from "tailwindcss/colors";
 import { Icon } from "astro-icon/components";
+import SectionHeader from "@/components/General/SectionHeader.astro";
 
 import AccountModals from "./Modals.astro";
 import AccountsList from "./AccountsList";
 import AccountsToasts from "./Toasts.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  headingLevel?: "h1" | "h2";
+}
+
+const {
+  title = "Cuentas",
+  description = "Consulta tus saldos y abre el detalle de cada cuenta.",
+  headingLevel = "h2",
+} = Astro.props;
 ---
 
-<section class="flex flex-row flex-wrap justify-center gap-3">
-    <AccountsList client:load />
-
+<section class="space-y-4 my-12" aria-labelledby="accounts-title">
+  <SectionHeader
+    title={title}
+    description={description}
+    headingId="accounts-title"
+    level={headingLevel}
+  >
     <button
-        class="glass-surface h-28 w-48 cursor-pointer rounded-md p-3 text-lg font-medium text-zinc-950 transition-colors hover:bg-zinc-200/60 dark:text-zinc-100 dark:hover:bg-zinc-800/60"
-        id="create-account-button"
+      slot="actions"
+      type="button"
+      class="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-500 dark:bg-green-400 dark:text-zinc-950 dark:hover:bg-green-500"
+      id="create-account-button"
     >
-        <Icon
-            name="iconoir:plus-circle-solid"
-            width={40}
-            height={40}
-            class="mx-auto"
-            color={colors.green[500]}
-        />
-        Añadir cuenta
+      <Icon name="iconoir:plus" class="size-5 text-white dark:text-zinc-950" />
+      Añadir cuenta
     </button>
+  </SectionHeader>
+
+  <AccountsList client:load />
 </section>
 
 <AccountModals />

@@ -25,8 +25,9 @@ const MODAL_TRIGGERS = [
 ];
 ---
 
-<div class="speed-dial fixed bottom-4 right-4">
+<div class="speed-dial fixed z-50">
   <ul
+    id="speed-dial-menu"
     class="speed-dial-menu space-y-2 mb-2 pointer-events-none opacity-0 transition-all duration-300 ease-out"
   >
     {
@@ -52,6 +53,9 @@ const MODAL_TRIGGERS = [
   <button
     id="speed-dial-toggle"
     type="button"
+    aria-label="Abrir acciones de movimiento"
+    aria-controls="speed-dial-menu"
+    aria-expanded="false"
     class="cursor-pointer rounded-full border-2 border-transparent bg-green-600 p-1 shadow-xl transition-all duration-300 hover:bg-green-500 active:scale-95 dark:bg-green-400 dark:hover:bg-green-500"
   >
     <Icon
@@ -65,6 +69,11 @@ const MODAL_TRIGGERS = [
   /* Initial state of the menu */
   .speed-dial-menu {
     transform: translateY(16px);
+  }
+
+  .speed-dial {
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
   /* When the container is open */
@@ -91,6 +100,10 @@ const MODAL_TRIGGERS = [
   :global(.dark) .speed-dial.is-open .speed-dial-icon {
     color: var(--color-red-400);
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .speed-dial *, .speed-dial-menu { transition-duration: 0.01ms !important; }
+  }
 </style>
 
 <script>
@@ -98,17 +111,31 @@ const MODAL_TRIGGERS = [
     const container = document.querySelector(".speed-dial");
     const toggleBtn = document.getElementById("speed-dial-toggle");
 
-    if (!container || !toggleBtn) return;
+    if (!container || !(toggleBtn instanceof HTMLButtonElement) || toggleBtn.dataset.bound === "true") return;
+    toggleBtn.dataset.bound = "true";
+
+    const setOpen = (open: boolean) => {
+      container.classList.toggle("is-open", open);
+      toggleBtn.setAttribute("aria-expanded", String(open));
+      toggleBtn.setAttribute("aria-label", open ? "Cerrar acciones de movimiento" : "Abrir acciones de movimiento");
+    };
 
     toggleBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      container.classList.toggle("is-open");
+      setOpen(!container.classList.contains("is-open"));
     });
 
     // Close when clicking outside
     document.addEventListener("click", (e) => {
       if (!container.contains(e.target as Node)) {
-        container.classList.remove("is-open");
+        setOpen(false);
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && container.classList.contains("is-open")) {
+        setOpen(false);
+        toggleBtn.focus();
       }
     });
   }

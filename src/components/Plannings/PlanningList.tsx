@@ -64,7 +64,7 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
   return (
     <section className="space-y-4">
       {/* Search and Filters Bar */}
-      <div className="glass-surface flex flex-col items-stretch justify-between gap-3 rounded-xl p-3 sm:flex-row sm:items-center">
+      <div className="glass-surface flex flex-col items-stretch gap-3 rounded-xl p-4 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Icon
             icon="iconoir:search"
@@ -80,7 +80,7 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setStatusFilter("all")}
@@ -134,6 +134,10 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
         </div>
       </div>
 
+      <p className="text-sm text-zinc-500 dark:text-zinc-400" aria-live="polite">
+        {filteredPlannings.length} {filteredPlannings.length === 1 ? "resultado" : "resultados"}
+      </p>
+
       {/* List / Empty State */}
       {filteredPlannings.length === 0 ? (
         <div className="glass-surface space-y-3 rounded-xl border-dashed px-4 py-12 text-center">
@@ -159,7 +163,7 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {filteredPlannings.map((planning) => (
             <PlanningCard key={planning.id} planning={planning} />
           ))}

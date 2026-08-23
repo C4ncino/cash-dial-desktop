@@ -27,7 +27,7 @@ const UrgentOccurrenceCard = ({ planning, occurrence }: Props) => {
     <a
       href={`/planning-detail?id=${planning.id}`}
       data-testid="urgent-occurrence-card"
-      className="glass-surface block rounded-xl p-4 transition-colors hover:border-zinc-400 hover:bg-zinc-200/60 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
+      className="focus-ring glass-surface block rounded-xl p-4 transition-colors hover:border-zinc-400 hover:bg-zinc-200/60 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="mt-1 font-semibold text-zinc-950 dark:text-zinc-100">{planning.name}</h3>

@@ -4,16 +4,14 @@ import ActionButtons from "@/components/Movements/ActionButtons";
 import DetailLayout from "@/layouts/DetailLayout.astro";
 import MovementModals from "@/components/Movements/Modals.astro";
 import MovementToasts from "@/components/Movements/Toasts.astro";
+import DetailShell from "@/components/General/DetailShell.astro";
 ---
 
 <DetailLayout title="Detalles del Movimiento" description="">
-    <div class="flex justify-between mx-auto max-w-2xl">
-        <article class="flex-1 pr-4 max-w-xl">
-            <MovementInfo client:load />
-        </article>
-
-        <ActionButtons client:load />
-    </div>
+  <DetailShell>
+    <MovementInfo client:load />
+    <ActionButtons slot="actions" client:load />
+  </DetailShell>
 </DetailLayout>
 
 <MovementModals />
