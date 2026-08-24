@@ -1,4 +1,5 @@
 import { MOVEMENT_FUNCTIONS } from "@/types/enums";
+
 import { invokeCommand } from "./invoke";
 
 export type MovementPayload = Omit<Movement, "id" | "installmentsData">;
@@ -19,8 +20,7 @@ const toCommandPayload = (movement: MovementPayload) => ({
 export const movementsCommands = {
   getAll: () => invokeCommand<Movement[]>(MOVEMENT_FUNCTIONS.get),
   getTypes: () => invokeCommand<MovementType[]>(MOVEMENT_FUNCTIONS.getTypes),
-  get: (movementId: number) =>
-    invokeCommand<Movement>(MOVEMENT_FUNCTIONS.getById, { movementId }),
+  get: (movementId: number) => invokeCommand<Movement>(MOVEMENT_FUNCTIONS.getById, { movementId }),
   getInstallments: (movementId: number) =>
     invokeCommand<MovementInstallment[]>(MOVEMENT_FUNCTIONS.getInstallments, { movementId }),
   add: (movement: MovementPayload) =>

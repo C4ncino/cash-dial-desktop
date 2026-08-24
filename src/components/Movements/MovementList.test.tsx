@@ -10,7 +10,11 @@ vi.mock("zustand/react", () => ({
 }));
 
 vi.mock("@iconify/react", () => ({
-  Icon: ({ icon, className }: any) => <span data-testid="icon" className={className}>{icon}</span>,
+  Icon: ({ icon, className }: any) => (
+    <span data-testid="icon" className={className}>
+      {icon}
+    </span>
+  ),
 }));
 
 vi.mock("@/stores/accountsStore", () => ({

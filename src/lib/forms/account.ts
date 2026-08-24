@@ -1,4 +1,4 @@
-import { validationResult, type FormDataRecord } from "@/lib/forms/general";
+import { type FormDataRecord, validationResult } from "@/lib/forms/general";
 import { ACCOUNT_TYPES } from "@/types/enums";
 
 export type AccountFormData = FormDataRecord;

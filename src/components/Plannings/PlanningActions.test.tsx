@@ -7,7 +7,9 @@ import { planningsStore } from "@/stores/planningsStore";
 
 vi.mock("@/components/Forms/ConfirmModal", () => ({
   default: ({ buttonTitle, onConfirm }: { buttonTitle: string; onConfirm: () => void }) => (
-    <button type="button" onClick={onConfirm}>{buttonTitle}</button>
+    <button type="button" onClick={onConfirm}>
+      {buttonTitle}
+    </button>
   ),
 }));
 

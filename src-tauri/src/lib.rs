@@ -54,12 +54,14 @@ fn export_logs() -> Result<String, String> {
     }
 }
 
-fn create_init_state() -> Result<AppState, String> {
+fn create_init_state(default_database_url: String) -> Result<AppState, String> {
     use crate::db::run_migrations;
 
-    let mut state = AppState::default();
-
-    state.config = models::general::Config::from_env().map_err(|error| error.to_string())?;
+    let mut state = AppState {
+        config: models::general::Config::from_env(default_database_url)
+            .map_err(|error| error.to_string())?,
+        ..AppState::default()
+    };
 
     let lang = utils::preferred_lang();
 
@@ -119,7 +121,11 @@ pub fn run() {
 
             tracing::info!("Application starting");
 
-            let state = create_init_state()?;
+            let app_data_dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&app_data_dir)?;
+            let default_database_url =
+                app_data_dir.join("db.sqlite").to_string_lossy().into_owned();
+            let state = create_init_state(default_database_url)?;
 
             let lang = tauri_plugin_os::locale();
             tracing::info!("Current locale: {:?}", lang);

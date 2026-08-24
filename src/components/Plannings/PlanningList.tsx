@@ -144,7 +144,9 @@ const PlanningList = ({ showCreateButton = true }: Props) => {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200/60 text-zinc-500 dark:bg-zinc-800/60 dark:text-zinc-400">
             <Icon icon="iconoir:calendar-xmark" className="w-6 h-6" />
           </div>
-          <h4 className="font-medium text-zinc-700 dark:text-zinc-300">No se encontraron planificaciones</h4>
+          <h4 className="font-medium text-zinc-700 dark:text-zinc-300">
+            No se encontraron planificaciones
+          </h4>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
             {plannings.length === 0
               ? "No tienes ninguna planificación configurada. Crea una para prever tus ingresos y gastos periódicos."

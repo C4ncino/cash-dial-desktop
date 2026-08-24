@@ -12,7 +12,15 @@ interface Props {
   onChange?: (id: number) => void;
 }
 
-const SelectAccounts = ({ name, label, accountId, excludeId, excludeCredit, disabled, onChange }: Props) => {
+const SelectAccounts = ({
+  name,
+  label,
+  accountId,
+  excludeId,
+  excludeCredit,
+  disabled,
+  onChange,
+}: Props) => {
   const accounts = useStore(accountsStore, (state) => state.accounts);
 
   const activeAccounts = accounts.filter((account) => {

@@ -43,7 +43,10 @@ describe("movement views", () => {
   beforeEach(() => {
     vi.mocked(useStore).mockImplementation((store: unknown, selector: (state: any) => unknown) => {
       if (store === movementsStore)
-        return selector({ allIds: [8, 7], byId: { 8: movement, 7: { ...movement, id: 7, description: "Older" } } });
+        return selector({
+          allIds: [8, 7],
+          byId: { 8: movement, 7: { ...movement, id: 7, description: "Older" } },
+        });
       return undefined;
     });
     vi.spyOn(accountsStore.getState(), "getById").mockReturnValue({ id: 2 } as Account);
@@ -67,10 +70,6 @@ describe("movement views", () => {
       "Lunch",
       "Older",
     ]);
-    expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute(
-      "href",
-      "/movements",
-    );
+    expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/movements");
   });
-
 });

@@ -65,7 +65,7 @@ pub fn get_statistics(
     // Fetch time series
     let origin_ms = opts
         .origin_timezone_override
-        .and_then(|_tz| Some(get_origin_ms_for_local_timezone()))
+        .map(|_tz| get_origin_ms_for_local_timezone())
         .unwrap_or_else(get_origin_ms_for_local_timezone);
 
     let timeseries = statistics_query::timeseries_grouped(

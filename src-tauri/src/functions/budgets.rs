@@ -660,7 +660,7 @@ fn change_budget_name(
             .execute(connection)
     })?;
 
-    return Ok(name);
+    Ok(name)
 }
 
 fn get_affected_budget_ids_internal(

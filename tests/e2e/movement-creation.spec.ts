@@ -1,4 +1,10 @@
-import { closeTauriDriver, createDriver, driver, findVisible, waitForHomeReady } from "@test/driver";
+import {
+  closeTauriDriver,
+  createDriver,
+  driver,
+  findVisible,
+  waitForHomeReady,
+} from "@test/driver";
 import { By, Key, until, type WebElement } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -114,9 +120,7 @@ describe("Movement E2E", () => {
     const incomeAmountInput = await driver.findElement(By.css('#income-form input[name="amount"]'));
     await clearAndType(incomeAmountInput, "150.00");
 
-    await driver.findElement(
-      By.css('#income-form select[name="accountId"]'),
-    );
+    await driver.findElement(By.css('#income-form select[name="accountId"]'));
     const incomeAccountOption = await driver.wait(
       until.elementLocated(By.css('#income-form select[name="accountId"] option[value="1"]')),
       10000,
@@ -207,9 +211,7 @@ describe("Movement E2E", () => {
     );
     await clearAndType(expenseAmountInput, "45.50");
 
-    await driver.findElement(
-      By.css('#expense-form select[name="accountId"]'),
-    );
+    await driver.findElement(By.css('#expense-form select[name="accountId"]'));
     const expenseAccountOption = await driver.wait(
       until.elementLocated(By.css('#expense-form select[name="accountId"] option[value="1"]')),
       10000,
@@ -302,9 +304,7 @@ describe("Movement E2E", () => {
     );
     await clearAndType(transferAmountInput, "100.00");
 
-    await driver.findElement(
-      By.css('#transfer-form select[name="accountId"]'),
-    );
+    await driver.findElement(By.css('#transfer-form select[name="accountId"]'));
     const transferAccountOption = await driver.wait(
       until.elementLocated(By.css('#transfer-form select[name="accountId"] option[value="1"]')),
       10000,

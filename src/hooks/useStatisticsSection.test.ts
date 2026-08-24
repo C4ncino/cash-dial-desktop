@@ -23,8 +23,7 @@ describe("useStatisticsSection", () => {
 
   function setState({ response = null, loading = false } = {}) {
     vi.mocked(useStore).mockImplementation((store: unknown, selector: (state: any) => unknown) => {
-      if (store === statisticsStore)
-        return selector({ response, loading, selectedCurrencyId: 2 });
+      if (store === statisticsStore) return selector({ response, loading, selectedCurrencyId: 2 });
       if (store === currencyStore)
         return selector({ currencies: [{ id: 2, symbol: "$", code: "MXN" }] });
       return undefined;

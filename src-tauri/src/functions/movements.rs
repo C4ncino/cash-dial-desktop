@@ -93,6 +93,8 @@ fn get_movement_installments_internal(
 }
 
 #[tauri::command]
+// Keep individual parameters stable for the frontend Tauri invocation contract.
+#[allow(clippy::too_many_arguments)]
 pub fn add_movement(
     state: State<'_, Mutex<AppState>>,
     type_id: i32,
@@ -145,6 +147,8 @@ pub fn add_movement(
     )
 }
 
+// This helper mirrors the established movement creation payload.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn add_movement_internal(
     connection: &mut SqliteConnection,
     type_id: i32,
@@ -287,6 +291,8 @@ pub(crate) fn create_movement_in_transaction(
 }
 
 #[tauri::command]
+// Keep individual parameters stable for the frontend Tauri invocation contract.
+#[allow(clippy::too_many_arguments)]
 pub fn update_movement(
     state: State<'_, Mutex<AppState>>,
     id: i32,
@@ -343,6 +349,8 @@ pub fn update_movement(
 }
 
 #[cfg(test)]
+// This test helper mirrors the established movement update payload.
+#[allow(clippy::too_many_arguments)]
 fn update_movement_internal(
     connection: &mut SqliteConnection,
     id: i32,
@@ -508,6 +516,8 @@ fn remove_movement_service(
     Ok(deleted_count)
 }
 
+// Validation accepts the same fields as the established movement payload.
+#[allow(clippy::too_many_arguments)]
 fn validate_movement(
     state: &AppState,
     type_id: i32,

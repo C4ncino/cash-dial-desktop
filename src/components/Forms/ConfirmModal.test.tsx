@@ -102,5 +102,4 @@ describe("ConfirmModal", () => {
 
     expect(button).toHaveClass("custom-class");
   });
-
 });

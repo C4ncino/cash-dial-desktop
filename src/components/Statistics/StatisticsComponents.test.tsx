@@ -47,12 +47,12 @@ vi.mock("@/stores/accountsStore", () => ({
 
 import BalanceTrend from "@/components/Statistics/BalanceTrend";
 import CategoriesList from "@/components/Statistics/CategoriesList";
-import { categoryStore } from "@/stores/categoryStore";
-import { accountsStore } from "@/stores/accountsStore";
 import ObligationsList from "@/components/Statistics/ObligationsList";
 import OverviewCard from "@/components/Statistics/OverviewCard";
 import SecondaryMetrics from "@/components/Statistics/SecondaryMetrics";
 import TrendsChart from "@/components/Statistics/TrendsChart";
+import { accountsStore } from "@/stores/accountsStore";
+import { categoryStore } from "@/stores/categoryStore";
 
 const overview: StatisticsOverview = {
   income: 1000,
@@ -144,7 +144,9 @@ describe("statistics components", () => {
     fireEvent.click(screen.getByRole("button", { name: /Food.*Detalles/ }));
     expect(screen.getByText("General")).toBeInTheDocument();
     expect(screen.getByText("Transport")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Restablecer selección de categoría" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Restablecer selección de categoría" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Contraer Food/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Contraer Food/ }));
@@ -268,10 +270,7 @@ describe("statistics components", () => {
     expect(screen.getByText("Internet")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Ocultar Obligaciones de 8–30 días" }));
     expect(screen.queryByText("Internet")).not.toBeInTheDocument();
-    expect(screen.getByRole("img", { name: /vence hoy/ })).toHaveAttribute(
-      "data-urgency",
-      "today",
-    );
+    expect(screen.getByRole("img", { name: /vence hoy/ })).toHaveAttribute("data-urgency", "today");
 
     vi.useRealTimers();
   });

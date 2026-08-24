@@ -102,7 +102,10 @@ const MODAL_TRIGGERS = [
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .speed-dial *, .speed-dial-menu { transition-duration: 0.01ms !important; }
+    .speed-dial *,
+    .speed-dial-menu {
+      transition-duration: 0.01ms !important;
+    }
   }
 </style>
 
@@ -111,13 +114,21 @@ const MODAL_TRIGGERS = [
     const container = document.querySelector(".speed-dial");
     const toggleBtn = document.getElementById("speed-dial-toggle");
 
-    if (!container || !(toggleBtn instanceof HTMLButtonElement) || toggleBtn.dataset.bound === "true") return;
+    if (
+      !container ||
+      !(toggleBtn instanceof HTMLButtonElement) ||
+      toggleBtn.dataset.bound === "true"
+    )
+      return;
     toggleBtn.dataset.bound = "true";
 
     const setOpen = (open: boolean) => {
       container.classList.toggle("is-open", open);
       toggleBtn.setAttribute("aria-expanded", String(open));
-      toggleBtn.setAttribute("aria-label", open ? "Cerrar acciones de movimiento" : "Abrir acciones de movimiento");
+      toggleBtn.setAttribute(
+        "aria-label",
+        open ? "Cerrar acciones de movimiento" : "Abrir acciones de movimiento",
+      );
     };
 
     toggleBtn.addEventListener("click", (e) => {

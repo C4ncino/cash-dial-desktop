@@ -15,10 +15,7 @@ interface Props {
 
 const SegmentedControl = ({ items, value, modalId, onChange }: Props) => {
   return (
-    <fieldset
-      className="glass-control flex rounded"
-      key={value === null ? "true" : "false"}
-    >
+    <fieldset className="glass-control flex rounded" key={value === null ? "true" : "false"}>
       {items.map(({ name, id, icon }) => (
         <label
           className="flex w-full cursor-pointer select-none items-center justify-center gap-2 border-r border-zinc-300 py-2 first:rounded-l last:rounded-r last:border-0 has-checked:bg-blue-600 has-checked:text-zinc-50 dark:border-zinc-700 dark:has-checked:bg-blue-400 dark:has-checked:text-zinc-950"

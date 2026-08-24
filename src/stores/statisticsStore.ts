@@ -1,7 +1,6 @@
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
-import { statisticsCommands } from "@/services/tauri/statistics";
 import {
   DEFAULT_GRANULARITY,
   isCurrentPeriod,
@@ -11,6 +10,7 @@ import {
   shiftPeriod,
   startOfPeriod,
 } from "@/lib/statisticsQuery";
+import { statisticsCommands } from "@/services/tauri/statistics";
 
 const cacheKey = (
   startMs: number,

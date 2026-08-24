@@ -1,4 +1,5 @@
 import { PLANNING_FUNCTIONS } from "@/types/enums";
+
 import { invokeCommand } from "./invoke";
 
 export const planningsCommands = {
@@ -6,8 +7,7 @@ export const planningsCommands = {
     invokeCommand<PlanningRecurringType[]>(PLANNING_FUNCTIONS.getRecurringTypes),
   getStatuses: () => invokeCommand<PlanningStatus[]>(PLANNING_FUNCTIONS.getStatuses),
   getAll: () => invokeCommand<Planning[]>(PLANNING_FUNCTIONS.getAll),
-  get: (planningId: number) =>
-    invokeCommand<Planning>(PLANNING_FUNCTIONS.get, { planningId }),
+  get: (planningId: number) => invokeCommand<Planning>(PLANNING_FUNCTIONS.get, { planningId }),
   getOccurrences: (planningId: number) =>
     invokeCommand<PlanningOccurrence[]>(PLANNING_FUNCTIONS.getOccurrences, { planningId }),
   create: (request: CreatePlanningRequest) =>

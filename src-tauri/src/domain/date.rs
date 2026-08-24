@@ -3,19 +3,19 @@ use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DateError {
-    InvalidTimestamp(i64),
-    InvalidDate { year: i32, month: u32, day: u32 },
-    InvalidLocalTime(NaiveDate),
+    Timestamp(i64),
+    CalendarDate { year: i32, month: u32, day: u32 },
+    LocalTime(NaiveDate),
 }
 
 impl fmt::Display for DateError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidTimestamp(value) => write!(formatter, "Marca de tiempo inválida: {value}"),
-            Self::InvalidDate { year, month, day } => {
+            Self::Timestamp(value) => write!(formatter, "Marca de tiempo inválida: {value}"),
+            Self::CalendarDate { year, month, day } => {
                 write!(formatter, "Fecha inválida: {year:04}-{month:02}-{day:02}")
             }
-            Self::InvalidLocalTime(date) => {
+            Self::LocalTime(date) => {
                 write!(formatter, "La fecha local {date} no tiene una hora válida")
             }
         }
@@ -29,34 +29,34 @@ pub fn ms_to_local_date(timestamp_ms: i64) -> Result<NaiveDate, DateError> {
         .timestamp_millis_opt(timestamp_ms)
         .single()
         .map(|datetime| datetime.date_naive())
-        .ok_or(DateError::InvalidTimestamp(timestamp_ms))
+        .ok_or(DateError::Timestamp(timestamp_ms))
 }
 
 pub fn local_date_to_start_ms(date: NaiveDate) -> Result<i64, DateError> {
-    let naive = date.and_hms_opt(0, 0, 0).ok_or(DateError::InvalidLocalTime(date))?;
+    let naive = date.and_hms_opt(0, 0, 0).ok_or(DateError::LocalTime(date))?;
     match Local.from_local_datetime(&naive) {
         LocalResult::Single(datetime) => Ok(datetime.timestamp_millis()),
         LocalResult::Ambiguous(earliest, _) => Ok(earliest.timestamp_millis()),
         LocalResult::None => {
-            let one_am = date.and_hms_opt(1, 0, 0).ok_or(DateError::InvalidLocalTime(date))?;
+            let one_am = date.and_hms_opt(1, 0, 0).ok_or(DateError::LocalTime(date))?;
             Local
                 .from_local_datetime(&one_am)
                 .earliest()
                 .map(|datetime| datetime.timestamp_millis())
-                .ok_or(DateError::InvalidLocalTime(date))
+                .ok_or(DateError::LocalTime(date))
         }
     }
 }
 
 pub fn date(year: i32, month: u32, day: u32) -> Result<NaiveDate, DateError> {
-    NaiveDate::from_ymd_opt(year, month, day).ok_or(DateError::InvalidDate { year, month, day })
+    NaiveDate::from_ymd_opt(year, month, day).ok_or(DateError::CalendarDate { year, month, day })
 }
 
 pub fn last_day_of_month_or_clamp(year: i32, month: u32, day: u32) -> Result<NaiveDate, DateError> {
     let (next_year, next_month) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
     let first_of_next_month = date(next_year, next_month, 1)?;
     let last_day =
-        first_of_next_month.pred_opt().ok_or(DateError::InvalidDate { year, month, day })?.day();
+        first_of_next_month.pred_opt().ok_or(DateError::CalendarDate { year, month, day })?.day();
     date(year, month, day.min(last_day))
 }
 

@@ -1,4 +1,5 @@
 import { ACCOUNT_FUNCTIONS } from "@/types/enums";
+
 import { invokeCommand } from "./invoke";
 
 export type AccountPayload = {
@@ -23,9 +24,10 @@ export const accountsCommands = {
     creditAccountId: number,
     payments: CreditCardPaymentRequest[],
     installmentIds: number[],
-  ) => invokeCommand<CreditCardPaymentResult>(ACCOUNT_FUNCTIONS.payCreditCard, {
-    creditAccountId,
-    payments,
-    installmentIds,
-  }),
+  ) =>
+    invokeCommand<CreditCardPaymentResult>(ACCOUNT_FUNCTIONS.payCreditCard, {
+      creditAccountId,
+      payments,
+      installmentIds,
+    }),
 };

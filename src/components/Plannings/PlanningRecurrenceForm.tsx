@@ -121,9 +121,7 @@ const PlanningRecurrenceForm = ({
   };
 
   const addYearDay = () => {
-    const exists = yearDays.some(
-      (yd) => yd.month === newYearMonth && yd.dayOfMonth === newYearDay,
-    );
+    const exists = yearDays.some((yd) => yd.month === newYearMonth && yd.dayOfMonth === newYearDay);
     if (!exists) {
       const updated = [...yearDays, { month: newYearMonth, dayOfMonth: newYearDay }].sort(
         (a, b) => a.month - b.month || a.dayOfMonth - b.dayOfMonth,
@@ -163,7 +161,9 @@ const PlanningRecurrenceForm = ({
 
   return (
     <div className="space-y-4 border-t border-zinc-200 pt-2 dark:border-zinc-800">
-      <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Regla de Recurrencia</h3>
+      <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+        Regla de Recurrencia
+      </h3>
 
       {/* Recurrence Type Selector */}
       <fieldset className="glass-control flex rounded">
@@ -210,7 +210,9 @@ const PlanningRecurrenceForm = ({
       {/* Type Specific Fields */}
       {recurringTypeId === PLANNINGS_RECURRING_TYPES.WEEKLY && (
         <fieldset className="space-y-2">
-          <label className="block text-sm text-zinc-700 dark:text-zinc-300">Días de la semana</label>
+          <legend className="block text-sm text-zinc-700 dark:text-zinc-300">
+            Días de la semana
+          </legend>
           <div className="grid grid-cols-7 gap-1">
             {WEEKDAYS.map((w) => {
               const isSelected = weekDays.includes(w.id);
@@ -232,14 +234,18 @@ const PlanningRecurrenceForm = ({
             })}
           </div>
           {weekDays.length === 0 && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">Selecciona al menos un día de la semana.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Selecciona al menos un día de la semana.
+            </p>
           )}
         </fieldset>
       )}
 
       {recurringTypeId === PLANNINGS_RECURRING_TYPES.MONTHLY && (
         <fieldset className="space-y-2">
-          <label className="block text-sm text-zinc-700 dark:text-zinc-300">Días del mes (1 - 28)</label>
+          <legend className="block text-sm text-zinc-700 dark:text-zinc-300">
+            Días del mes (1 - 28)
+          </legend>
           <div className="grid grid-cols-7 gap-1">
             {MONTH_DAYS_ARRAY.map((d) => {
               const isSelected = monthDays.includes(d);
@@ -260,14 +266,16 @@ const PlanningRecurrenceForm = ({
             })}
           </div>
           {monthDays.length === 0 && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">Selecciona al menos un día del mes.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Selecciona al menos un día del mes.
+            </p>
           )}
         </fieldset>
       )}
 
       {recurringTypeId === PLANNINGS_RECURRING_TYPES.YEARLY && (
         <fieldset className="space-y-3">
-          <label className="block text-sm text-zinc-700 dark:text-zinc-300">Fechas del año</label>
+          <legend className="block text-sm text-zinc-700 dark:text-zinc-300">Fechas del año</legend>
           <div className="flex items-center gap-2">
             <select
               aria-label="Mes"
@@ -324,7 +332,9 @@ const PlanningRecurrenceForm = ({
               })}
             </div>
           ) : (
-            <p className="text-xs text-amber-600 dark:text-amber-400">Agrega al menos una fecha para la regla anual.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Agrega al menos una fecha para la regla anual.
+            </p>
           )}
         </fieldset>
       )}

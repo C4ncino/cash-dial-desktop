@@ -7,7 +7,7 @@ import { accountsStore } from "@/stores/accountsStore";
 import { categoryStore } from "@/stores/categoryStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { planningsStore } from "@/stores/planningsStore";
-import { MOVEMENT_TYPES, PLANNINGS_RECURRING_TYPES, PLANNING_STATUS } from "@/types/enums";
+import { MOVEMENT_TYPES, PLANNING_STATUS, PLANNINGS_RECURRING_TYPES } from "@/types/enums";
 
 vi.mock("@iconify/react", () => ({
   Icon: ({ icon }: { icon: string }) => <span data-testid="icon" data-icon={icon} />,
@@ -44,10 +44,13 @@ const planning: Planning = {
 
 const mockStores = (currentPlanning: Planning | null = planning) => {
   vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
-    if (store === planningsStore) return selector({ plannings: currentPlanning ? [currentPlanning] : [] });
+    if (store === planningsStore)
+      return selector({ plannings: currentPlanning ? [currentPlanning] : [] });
     if (store === accountsStore) return selector({ accounts: [{ id: 2, name: "Checking" }] });
-    if (store === categoryStore) return selector({ getById: () => ({ id: 4, name: "Housing", icon: "home", color: "#fff" }) });
-    if (store === currencyStore) return selector({ currencies: [{ id: 1, name: "Peso", symbol: "$", code: "MXN" }] });
+    if (store === categoryStore)
+      return selector({ getById: () => ({ id: 4, name: "Housing", icon: "home", color: "#fff" }) });
+    if (store === currencyStore)
+      return selector({ currencies: [{ id: 1, name: "Peso", symbol: "$", code: "MXN" }] });
     return undefined;
   });
 };
@@ -65,7 +68,11 @@ describe("PlanningInfo", () => {
     expect(screen.getByText("Checking")).toBeInTheDocument();
     expect(screen.getByText("Housing")).toBeInTheDocument();
     expect(screen.getByText("MX$12,000.00")).toBeInTheDocument();
-    expect(screen.getAllByTestId("icon").some((icon) => icon.getAttribute("data-icon") === "iconoir:minus")).toBe(true);
+    expect(
+      screen
+        .getAllByTestId("icon")
+        .some((icon) => icon.getAttribute("data-icon") === "iconoir:minus"),
+    ).toBe(true);
     expect(screen.getByText("MXN")).toBeInTheDocument();
     expect(screen.getByText("Activa")).toBeInTheDocument();
   });

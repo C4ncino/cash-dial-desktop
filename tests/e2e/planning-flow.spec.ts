@@ -1,4 +1,10 @@
-import { closeTauriDriver, createDriver, driver, findVisible, waitForHomeReady } from "@test/driver";
+import {
+  closeTauriDriver,
+  createDriver,
+  driver,
+  findVisible,
+  waitForHomeReady,
+} from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 

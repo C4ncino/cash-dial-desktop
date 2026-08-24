@@ -27,4 +27,10 @@ const definitions = [
 ] as const;
 ---
 
-{definitions.map(([id, theme, message]) => <Toast id={id} className="app-toast" theme={theme}>{message}</Toast>)}
+{
+  definitions.map(([id, theme, message]) => (
+    <Toast id={id} className="app-toast" theme={theme}>
+      {message}
+    </Toast>
+  ))
+}

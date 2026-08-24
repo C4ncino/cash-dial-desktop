@@ -36,19 +36,16 @@ pub fn run_migrations(database_url: &String, environment: &Environment) -> Resul
 }
 
 fn run_seed(conn: &mut diesel::SqliteConnection, environment: &Environment) -> Result<(), String> {
-    let seed_file = match environment {
-        Environment::Development => "seeds/dev.sql",
-        Environment::Test => "seeds/test.sql",
+    let (seed_name, seed_sql) = match environment {
+        Environment::Development => ("seeds/dev.sql", include_str!("../../seeds/dev.sql")),
+        Environment::Test => ("seeds/test.sql", include_str!("../../seeds/test.sql")),
         Environment::Production => return Ok(()),
     };
 
-    tracing::info!("Seeding database with {}", seed_file);
+    tracing::info!("Seeding database with embedded {}", seed_name);
 
-    let seed_sql =
-        std::fs::read_to_string(seed_file).map_err(|e| format!("Cannot read {seed_file}: {e}"))?;
-
-    conn.batch_execute(&seed_sql)
-        .map_err(|e| format!("Failed to execute seed file {seed_file}: {e}"))?;
+    conn.batch_execute(seed_sql)
+        .map_err(|e| format!("Failed to execute seed file {seed_name}: {e}"))?;
 
     if matches!(environment, Environment::Test) {
         if let Ok(overlay_file) = std::env::var("E2E_SEED_FILE") {
@@ -70,4 +67,57 @@ fn run_seed(conn: &mut diesel::SqliteConnection, environment: &Environment) -> R
 
     tracing::info!("Seeding completed");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use diesel::{Connection, QueryDsl, RunQueryDsl, SqliteConnection};
+
+    use super::run_migrations;
+    use crate::models::general::Environment;
+
+    #[test]
+    fn fresh_development_database_does_not_depend_on_working_directory_seed_files() {
+        let database_path = std::env::temp_dir()
+            .join(format!("cash-dial-fresh-development-{}.sqlite", std::process::id()));
+        let database_url = database_path.to_string_lossy().into_owned();
+
+        let _ = fs::remove_file(&database_path);
+        run_migrations(&database_url, &Environment::Development)
+            .expect("fresh development database should migrate and seed");
+
+        let mut connection =
+            SqliteConnection::establish(&database_url).expect("fresh database should open");
+        let seeded_accounts =
+            crate::schema::accounts::table.count().get_result::<i64>(&mut connection).unwrap();
+
+        assert!(seeded_accounts > 0);
+        drop(connection);
+        fs::remove_file(database_path).expect("fresh database should be removable");
+    }
+
+    #[test]
+    fn fresh_production_database_has_reference_data_without_demo_accounts() {
+        let database_path = std::env::temp_dir()
+            .join(format!("cash-dial-fresh-production-{}.sqlite", std::process::id()));
+        let database_url = database_path.to_string_lossy().into_owned();
+
+        let _ = fs::remove_file(&database_path);
+        run_migrations(&database_url, &Environment::Production)
+            .expect("fresh production database should migrate");
+
+        let mut connection =
+            SqliteConnection::establish(&database_url).expect("fresh database should open");
+        let demo_accounts =
+            crate::schema::accounts::table.count().get_result::<i64>(&mut connection).unwrap();
+        let currencies =
+            crate::schema::currencies::table.count().get_result::<i64>(&mut connection).unwrap();
+
+        assert_eq!(demo_accounts, 0);
+        assert!(currencies > 0);
+        drop(connection);
+        fs::remove_file(database_path).expect("fresh database should be removable");
+    }
 }

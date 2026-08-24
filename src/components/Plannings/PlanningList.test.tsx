@@ -4,7 +4,7 @@ import { useStore } from "zustand";
 
 import PlanningList from "@/components/Plannings/PlanningList";
 import { planningsStore } from "@/stores/planningsStore";
-import { MOVEMENT_TYPES, PLANNINGS_RECURRING_TYPES, PLANNING_STATUS } from "@/types/enums";
+import { MOVEMENT_TYPES, PLANNING_STATUS, PLANNINGS_RECURRING_TYPES } from "@/types/enums";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 

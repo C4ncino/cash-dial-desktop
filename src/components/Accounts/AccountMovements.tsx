@@ -13,7 +13,9 @@ const AccountMovements = () => {
 
   return (
     <section className="mt-6">
-      <h2 className="mb-4 text-xl font-semibold text-zinc-950 dark:text-zinc-100">Historial de movimientos</h2>
+      <h2 className="mb-4 text-xl font-semibold text-zinc-950 dark:text-zinc-100">
+        Historial de movimientos
+      </h2>
       <MovementList movementIds={movementIds} />
     </section>
   );

@@ -222,7 +222,9 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
 
       {/* Movement Type Segmented Toggle (Income vs Expense) */}
       <fieldset className="space-y-1">
-        <label className="block text-sm text-zinc-700 dark:text-zinc-300">Tipo de Movimiento</label>
+        <legend className="block text-sm text-zinc-700 dark:text-zinc-300">
+          Tipo de Movimiento
+        </legend>
         <div className="glass-control flex rounded">
           <button
             type="button"

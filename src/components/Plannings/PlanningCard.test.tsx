@@ -2,13 +2,11 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
-import PlanningCard, {
-  formatRecurrenceRuleSummary,
-} from "@/components/Plannings/PlanningCard";
+import PlanningCard, { formatRecurrenceRuleSummary } from "@/components/Plannings/PlanningCard";
 import { accountsStore } from "@/stores/accountsStore";
 import { categoryStore } from "@/stores/categoryStore";
 import { currencyStore } from "@/stores/currencyStore";
-import { MOVEMENT_TYPES, PLANNINGS_RECURRING_TYPES, PLANNING_STATUS } from "@/types/enums";
+import { MOVEMENT_TYPES, PLANNING_STATUS, PLANNINGS_RECURRING_TYPES } from "@/types/enums";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -155,7 +153,10 @@ describe("PlanningCard Component", () => {
     expect(screen.getByText("Gimnasio")).toBeInTheDocument();
     expect(screen.getByText("Main Debit")).toBeInTheDocument();
     expect(screen.getByText("Salud")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Gimnasio/ })).toHaveAttribute("href", "/planning-detail?id=1");
+    expect(screen.getByRole("link", { name: /Gimnasio/ })).toHaveAttribute(
+      "href",
+      "/planning-detail?id=1",
+    );
     expect(screen.queryByText("Cada mes · Día 5")).not.toBeInTheDocument();
     expect(screen.queryByText("Gasto")).not.toBeInTheDocument();
     expect(screen.queryByText("Editar")).not.toBeInTheDocument();

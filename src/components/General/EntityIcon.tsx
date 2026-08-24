@@ -39,11 +39,14 @@ export default function EntityIcon({
         className,
       )}
       style={{ backgroundColor: color, ...style }}
-      role={decorative ? undefined : "img"}
+      role="img"
       aria-label={decorative ? undefined : label}
       aria-hidden={decorative ? "true" : undefined}
     >
-      <Icon icon={icon.startsWith("iconoir:") ? icon : `iconoir:${icon}`} className="size-full text-white" />
+      <Icon
+        icon={icon.startsWith("iconoir:") ? icon : `iconoir:${icon}`}
+        className="size-full text-white"
+      />
     </span>
   );
 }

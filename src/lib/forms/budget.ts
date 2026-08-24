@@ -1,4 +1,4 @@
-import { validationResult, type FormDataRecord } from "@/lib/forms/general";
+import { type FormDataRecord, validationResult } from "@/lib/forms/general";
 import { BUDGET_TYPES } from "@/types/enums";
 
 export function validateBudgetForm(data: FormDataRecord, isEditing: boolean) {

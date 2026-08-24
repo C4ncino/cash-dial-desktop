@@ -26,11 +26,7 @@ const AccountInfo = () => {
   return (
     <>
       <header className="mb-4 flex flex-row items-center gap-3">
-        <EntityIcon
-          size="lg"
-          color={account.type.color}
-          icon={account.type.icon}
-        />
+        <EntityIcon size="lg" color={account.type.color} icon={account.type.icon} />
         <hgroup className="flex flex-col">
           <h1>{account.name}</h1>
           <AmountText

@@ -29,9 +29,9 @@ export const usePlannings = <Result>(selector: Selector<typeof planningsStore, R
 export const useStatistics = <Result>(selector: Selector<typeof statisticsStore, Result>) =>
   useStore(statisticsStore, selector) ?? selector(statisticsStore.getState());
 
-export const selectAccountById = (id: number) =>
-  (state: StoreState<typeof accountsStore>) => state.getById?.(id) ?? state.accounts?.find((item) => item.id === id);
-export const selectCategoryById = (id: number) =>
-  (state: StoreState<typeof categoryStore>) => state.getById?.(id) ?? state.categories?.find((item) => item.id === id);
-export const selectCurrencyById = (id: number) =>
-  (state: StoreState<typeof currencyStore>) => state.getById?.(id) ?? state.currencies?.find((item) => item.id === id);
+export const selectAccountById = (id: number) => (state: StoreState<typeof accountsStore>) =>
+  state.getById?.(id) ?? state.accounts?.find((item) => item.id === id);
+export const selectCategoryById = (id: number) => (state: StoreState<typeof categoryStore>) =>
+  state.getById?.(id) ?? state.categories?.find((item) => item.id === id);
+export const selectCurrencyById = (id: number) => (state: StoreState<typeof currencyStore>) =>
+  state.getById?.(id) ?? state.currencies?.find((item) => item.id === id);

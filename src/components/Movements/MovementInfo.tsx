@@ -52,8 +52,12 @@ const MovementInfo = () => {
   ) {
     return (
       <div className="glass-surface flex flex-col items-center justify-center rounded-lg p-8 text-center">
-        <h2 className="mb-2 text-xl font-bold text-red-600 dark:text-red-400">Movimiento no encontrado</h2>
-        <p className="text-zinc-500 dark:text-zinc-400">El movimiento solicitado no existe o ha sido eliminado.</p>
+        <h2 className="mb-2 text-xl font-bold text-red-600 dark:text-red-400">
+          Movimiento no encontrado
+        </h2>
+        <p className="text-zinc-500 dark:text-zinc-400">
+          El movimiento solicitado no existe o ha sido eliminado.
+        </p>
       </div>
     );
   }

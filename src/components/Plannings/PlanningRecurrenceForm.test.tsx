@@ -58,9 +58,7 @@ describe("PlanningRecurrenceForm", () => {
 
     fireEvent.click(screen.getByText("Mensual"));
 
-    expect(baseProps.onRecurringTypeChange).toHaveBeenCalledWith(
-      PLANNINGS_RECURRING_TYPES.MONTHLY,
-    );
+    expect(baseProps.onRecurringTypeChange).toHaveBeenCalledWith(PLANNINGS_RECURRING_TYPES.MONTHLY);
     expect(baseProps.onWeekDaysChange).toHaveBeenCalledWith([]);
     expect(baseProps.onYearDaysChange).toHaveBeenCalledWith([]);
   });

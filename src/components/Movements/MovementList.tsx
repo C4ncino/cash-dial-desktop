@@ -44,7 +44,11 @@ const MovementList = ({ movementIds, needCompact }: Props) => {
             {group.ids.map((id) => (
               <li key={id}>
                 {byId[id] ? (
-                  <MovementCard movement={byId[id]} showTime={!needCompact} variant={needCompact ? "compact" : "default"} />
+                  <MovementCard
+                    movement={byId[id]}
+                    showTime={!needCompact}
+                    variant={needCompact ? "compact" : "default"}
+                  />
                 ) : null}
               </li>
             ))}

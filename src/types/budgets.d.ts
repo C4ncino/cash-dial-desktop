@@ -81,7 +81,11 @@ type BudgetActions = {
     startDate: number;
   }) => Promise<void>;
   remove: (id: number) => Promise<void>;
-  updateAmount: (id: number, amountLimit: number, updateType: BudgetAmountUpdateType) => Promise<void>;
+  updateAmount: (
+    id: number,
+    amountLimit: number,
+    updateType: BudgetAmountUpdateType,
+  ) => Promise<void>;
   updateName: (id: number, name: string) => Promise<void>;
   refresh: (id: number) => Promise<void>;
   refreshAffected: (categoryId: number, previousCategoryId?: number) => Promise<void>;

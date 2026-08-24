@@ -45,7 +45,9 @@ const BudgetInfo = () => {
       )}
 
       <div className="flex-1">
-        <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-100">{budget.budget.name}</h2>
+        <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-100">
+          {budget.budget.name}
+        </h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">{periodType?.name ?? "-"}</p>
       </div>
 

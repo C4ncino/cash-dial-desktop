@@ -8,8 +8,12 @@ import {
 import { By, until } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { ACCOUNT_FUNCTIONS, BUDGET_FUNCTIONS, MOVEMENT_FUNCTIONS } from "@/types/enums";
-import { PLANNING_FUNCTIONS } from "@/types/enums";
+import {
+  ACCOUNT_FUNCTIONS,
+  BUDGET_FUNCTIONS,
+  MOVEMENT_FUNCTIONS,
+  PLANNING_FUNCTIONS,
+} from "@/types/enums";
 
 const monthStart = () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
 const nextMonthStart = () =>

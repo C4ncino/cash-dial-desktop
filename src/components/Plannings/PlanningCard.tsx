@@ -28,8 +28,12 @@ export function formatRecurrenceRuleSummary(rule: PlanningRecurringRuleDetail): 
       return rule.intervalStep === 1 ? "Cada día" : `Cada ${rule.intervalStep} días`;
 
     case PLANNINGS_RECURRING_TYPES.WEEKLY: {
-      const stepText = rule.intervalStep === 1 ? "Cada semana" : `Cada ${rule.intervalStep} semanas`;
-      const days = (rule.weekDays || []).map((d) => WEEKDAY_NAMES[d]).filter(Boolean).join(", ");
+      const stepText =
+        rule.intervalStep === 1 ? "Cada semana" : `Cada ${rule.intervalStep} semanas`;
+      const days = (rule.weekDays || [])
+        .map((d) => WEEKDAY_NAMES[d])
+        .filter(Boolean)
+        .join(", ");
       return days ? `${stepText} · ${days}` : stepText;
     }
 
@@ -65,7 +69,9 @@ interface Props {
 }
 
 const PlanningCard = ({ planning }: Props) => {
-  const currency = useStore(currencyStore, (s) => s?.currencies?.find((c) => c.id === planning.currencyId));
+  const currency = useStore(currencyStore, (s) =>
+    s?.currencies?.find((c) => c.id === planning.currencyId),
+  );
 
   const isExpense = planning.typeId === MOVEMENT_TYPES.EXPENSE;
   const nextOccurrence = planning.currentOccurrence;
@@ -79,7 +85,9 @@ const PlanningCard = ({ planning }: Props) => {
       }`}
     >
       <header className="flex items-start justify-between gap-3 mb-3">
-        <h3 className="flex-1 text-base font-semibold tracking-tight text-zinc-950 dark:text-zinc-100">{planning.name}</h3>
+        <h3 className="flex-1 text-base font-semibold tracking-tight text-zinc-950 dark:text-zinc-100">
+          {planning.name}
+        </h3>
 
         <AmountText
           amount={planning.amount}
@@ -117,9 +125,13 @@ const PlanningCard = ({ planning }: Props) => {
                 {formatOccurrenceDate(nextOccurrence.expectedDate)}
               </span>
             </>
-          ) : <span className="text-xs text-zinc-500 dark:text-zinc-400">Sin próxima ocurrencia</span>}
+          ) : (
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">Sin próxima ocurrencia</span>
+          )}
         </div>
-        <span className="rounded bg-zinc-200/60 px-2.5 py-1 text-xs text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">Ver detalles</span>
+        <span className="rounded bg-zinc-200/60 px-2.5 py-1 text-xs text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
+          Ver detalles
+        </span>
       </div>
     </a>
   );

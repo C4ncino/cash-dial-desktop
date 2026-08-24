@@ -4,11 +4,13 @@ import { useStore } from "zustand";
 
 import PlanningOccurrences from "@/components/Plannings/PlanningOccurrences";
 import { planningsStore } from "@/stores/planningsStore";
-import { MOVEMENT_TYPES, PLANNINGS_RECURRING_TYPES, PLANNING_STATUS } from "@/types/enums";
+import { MOVEMENT_TYPES, PLANNING_STATUS, PLANNINGS_RECURRING_TYPES } from "@/types/enums";
 
 vi.mock("@/components/Forms/ConfirmModal", () => ({
   default: ({ buttonTitle, onConfirm }: { buttonTitle: string; onConfirm: () => void }) => (
-    <button type="button" onClick={onConfirm}>{buttonTitle}</button>
+    <button type="button" onClick={onConfirm}>
+      {buttonTitle}
+    </button>
   ),
 }));
 
@@ -50,7 +52,9 @@ const history: PlanningOccurrence[] = [
 
 describe("PlanningOccurrences", () => {
   const getOccurrences = vi.fn().mockResolvedValue(history);
-  const cancelOccurrence = vi.fn().mockResolvedValue({ ...occurrence, statusId: PLANNING_STATUS.CANCELED });
+  const cancelOccurrence = vi
+    .fn()
+    .mockResolvedValue({ ...occurrence, statusId: PLANNING_STATUS.CANCELED });
 
   beforeEach(() => {
     vi.clearAllMocks();

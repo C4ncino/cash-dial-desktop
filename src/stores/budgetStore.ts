@@ -2,7 +2,7 @@ import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
 import { budgetsCommands } from "@/services/tauri/budgets";
-import { type BUDGET_UPDATE_TYPES } from "@/types/enums";
+import type { BUDGET_UPDATE_TYPES } from "@/types/enums";
 
 export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) => ({
   budgets: [] as BudgetDetails[],
@@ -96,9 +96,7 @@ export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) =
 
     logger.debug("Refreshing affected budgets", { categoryId, previousCategoryId, affectedIds });
 
-    const refreshedBudgets = await Promise.all(
-      affectedIds.map((id) => budgetsCommands.get(id)),
-    );
+    const refreshedBudgets = await Promise.all(affectedIds.map((id) => budgetsCommands.get(id)));
 
     const refreshedMap = new Map(refreshedBudgets.map((b) => [b.budget.id, b]));
 

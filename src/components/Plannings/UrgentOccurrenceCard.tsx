@@ -1,5 +1,5 @@
-import PlanningStatusBadge from "@/components/Plannings/PlanningStatusBadge";
 import AmountText from "@/components/General/AmountText";
+import PlanningStatusBadge from "@/components/Plannings/PlanningStatusBadge";
 import { MOVEMENT_TYPES } from "@/types/enums";
 
 interface Props {

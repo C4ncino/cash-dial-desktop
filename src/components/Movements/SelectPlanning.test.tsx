@@ -6,7 +6,7 @@ import SelectPlanning from "@/components/Movements/SelectPlanning";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { planningsStore } from "@/stores/planningsStore";
-import { MOVEMENT_TYPES, PLANNINGS_RECURRING_TYPES, PLANNING_STATUS } from "@/types/enums";
+import { MOVEMENT_TYPES, PLANNING_STATUS, PLANNINGS_RECURRING_TYPES } from "@/types/enums";
 
 const activePlanning: Planning = {
   id: 7,
@@ -42,7 +42,8 @@ describe("SelectPlanning", () => {
     vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
       if (store === planningsStore) return selector({ plannings: [activePlanning] });
       if (store === accountsStore) return selector({ accounts: [{ id: 2, name: "Checking" }] });
-      if (store === currencyStore) return selector({ currencies: [{ id: 1, symbol: "$", code: "MXN" }] });
+      if (store === currencyStore)
+        return selector({ currencies: [{ id: 1, symbol: "$", code: "MXN" }] });
       return undefined;
     });
   });

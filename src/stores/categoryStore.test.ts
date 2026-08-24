@@ -10,11 +10,7 @@ vi.unmock("@/stores/categoryStore");
 
 import { invoke } from "@tauri-apps/api/core";
 
-import {
-  categoryStore,
-  getCategoriesTree,
-  isCategoryInSubtree,
-} from "@/stores/categoryStore";
+import { categoryStore, getCategoriesTree, isCategoryInSubtree } from "@/stores/categoryStore";
 
 const mockInvoke = vi.mocked(invoke);
 

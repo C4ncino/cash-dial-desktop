@@ -54,5 +54,4 @@ describe("ActionButtons", () => {
 
     expect(backSpy).toHaveBeenCalled();
   });
-
 });

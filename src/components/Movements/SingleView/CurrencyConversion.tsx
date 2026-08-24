@@ -17,13 +17,20 @@ const CurrencyConversion = ({
 
   return (
     <section className="space-y-3 mt-3">
-      <h2 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">Información de divisa</h2>
+      <h2 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">
+        Información de divisa
+      </h2>
 
       <dl className="glass-surface grid grid-cols-1 gap-4 rounded-lg p-4 md:grid-cols-2">
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Monto original</dt>
           <dd className="mt-0.5 text-base text-zinc-700 dark:text-zinc-300">
-            <AmountText amount={originalAmount} currency={movementCurrency} format="currency" inline />
+            <AmountText
+              amount={originalAmount}
+              currency={movementCurrency}
+              format="currency"
+              inline
+            />
           </dd>
         </div>
 
@@ -44,7 +51,12 @@ const CurrencyConversion = ({
         <div>
           <dt className="text-sm text-zinc-500 font-medium">Monto convertido</dt>
           <dd className="mt-0.5 text-base text-zinc-700 dark:text-zinc-300">
-            <AmountText amount={accountAmount} currency={accountCurrency} format="currency" inline />
+            <AmountText
+              amount={accountAmount}
+              currency={accountCurrency}
+              format="currency"
+              inline
+            />
           </dd>
         </div>
       </dl>

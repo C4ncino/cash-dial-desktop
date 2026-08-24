@@ -10,12 +10,25 @@ const { title, headingId, description, level = "h2" } = Astro.props;
 const Heading = level;
 ---
 
-<header class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-4">
+<header
+  class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
+>
   <div class="min-w-0">
-    <Heading id={headingId} class:list={[level === "h1" ? "text-3xl font-bold" : "text-2xl font-semibold"]}>
+    <Heading
+      id={headingId}
+      class:list={[
+        level === "h1" ? "text-3xl font-bold" : "text-2xl font-semibold",
+      ]}
+    >
       {title}
     </Heading>
-    {description && <p class="mt-1 max-w-prose text-sm text-zinc-700 dark:text-zinc-300">{description}</p>}
+    {
+      description && (
+        <p class="mt-1 max-w-prose text-sm text-zinc-700 dark:text-zinc-300">
+          {description}
+        </p>
+      )
+    }
   </div>
   <div class="flex shrink-0 flex-wrap items-center gap-2">
     <slot name="actions" />

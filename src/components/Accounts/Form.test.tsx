@@ -4,8 +4,8 @@ import { closeModal, toast } from "webcoreui";
 import { useStore } from "zustand";
 
 import AccountForm from "@/components/Accounts/Form";
-import { logger } from "@/lib/logger";
 import { createAccountFromData, validateAccountForm as validate } from "@/lib/forms/account";
+import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID } from "@/types/enums";

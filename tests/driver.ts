@@ -4,7 +4,14 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Builder, By, Capabilities, until, type WebDriver, type WebElement } from "selenium-webdriver";
+import {
+  Builder,
+  By,
+  Capabilities,
+  until,
+  type WebDriver,
+  type WebElement,
+} from "selenium-webdriver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

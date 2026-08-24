@@ -40,7 +40,10 @@ describe("Tauri - Account creation", () => {
       ),
       10000,
     );
-    await driver.executeScript("arguments[0].scrollIntoView({ block: 'center' }); arguments[0].click();", accountCard);
+    await driver.executeScript(
+      "arguments[0].scrollIntoView({ block: 'center' }); arguments[0].click();",
+      accountCard,
+    );
 
     const accountIsVisible = await driver.wait(async () => {
       try {

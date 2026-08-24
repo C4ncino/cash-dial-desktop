@@ -35,7 +35,10 @@ describe("shared form controls", () => {
     const onChange = vi.fn();
     const { rerender } = render(
       <SegmentedControl
-        items={[{ id: 1, name: "Cash" }, { id: 2, name: "Credit", icon: "card" }]}
+        items={[
+          { id: 1, name: "Cash" },
+          { id: 2, name: "Credit", icon: "card" },
+        ]}
         value={1}
         onChange={onChange}
       />,
@@ -45,7 +48,10 @@ describe("shared form controls", () => {
     expect(onChange).toHaveBeenCalledWith(2);
     rerender(
       <SegmentedControl
-        items={[{ id: 1, name: "Cash" }, { id: 2, name: "Credit" }]}
+        items={[
+          { id: 1, name: "Cash" },
+          { id: 2, name: "Credit" },
+        ]}
         value={2}
         onChange={onChange}
       />,

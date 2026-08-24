@@ -1,11 +1,11 @@
-import { useEffect } from "react";
 import { Icon } from "@iconify/react";
+import { useEffect } from "react";
 import { toast } from "webcoreui";
 import { useStore } from "zustand";
 
 import ConfirmModal from "@/components/Forms/ConfirmModal";
-import PlanningStatusBadge from "@/components/Plannings/PlanningStatusBadge";
 import { formatOccurrenceDate } from "@/components/Plannings/PlanningCard";
+import PlanningStatusBadge from "@/components/Plannings/PlanningStatusBadge";
 import { formatNumber } from "@/lib/formatters";
 import { planningsStore } from "@/stores/planningsStore";
 import { MOVEMENT_TYPES, PLANNING_STATUS } from "@/types/enums";
@@ -23,11 +23,14 @@ const occurrenceLabel = (occurrence: PlanningOccurrence) => {
 };
 
 const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
-  const queryId = typeof window !== "undefined"
-    ? Number(new URLSearchParams(window.location.search).get("id"))
-    : NaN;
+  const queryId =
+    typeof window !== "undefined"
+      ? Number(new URLSearchParams(window.location.search).get("id"))
+      : NaN;
   const planningId = propPlanningId ?? queryId;
-  const planning = useStore(planningsStore, (s) => s.plannings.find((item) => item.id === planningId));
+  const planning = useStore(planningsStore, (s) =>
+    s.plannings.find((item) => item.id === planningId),
+  );
   const occurrences = useStore(
     planningsStore,
     (s) => s.occurrencesByPlanning[planningId] ?? EMPTY_OCCURRENCES,
@@ -62,7 +65,10 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
     const handleUpdated = (event: Event) => {
       const detail = (event as CustomEvent<{ planningId?: number }>).detail;
       if (detail.planningId !== planningId) return;
-      void planningsStore.getState().get(planningId).then(() => planningsStore.getState().getOccurrences(planningId));
+      void planningsStore
+        .getState()
+        .get(planningId)
+        .then(() => planningsStore.getState().getOccurrences(planningId));
     };
     window.addEventListener("planning:occurrence-updated", handleUpdated);
     return () => window.removeEventListener("planning:occurrence-updated", handleUpdated);
@@ -75,15 +81,17 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
 
   const handleComplete = () => {
     if (!currentOccurrence) return;
-    window.dispatchEvent(new CustomEvent("planning:movement-create", {
-      detail: {
-        planningId: planning.id,
-        occurrenceId: currentOccurrence.id,
-        typeId: planning.typeId,
-        amount: planning.amount,
-        expectedDate: currentOccurrence.expectedDate,
-      },
-    }));
+    window.dispatchEvent(
+      new CustomEvent("planning:movement-create", {
+        detail: {
+          planningId: planning.id,
+          occurrenceId: currentOccurrence.id,
+          typeId: planning.typeId,
+          amount: planning.amount,
+          expectedDate: currentOccurrence.expectedDate,
+        },
+      }),
+    );
   };
 
   const handleCancel = async () => {
@@ -102,12 +110,18 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-wider text-zinc-500">Ocurrencia actual</p>
-              <p className="mt-1 text-zinc-700 dark:text-zinc-300">{formatOccurrenceDate(currentOccurrence.expectedDate)}</p>
+              <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+                {formatOccurrenceDate(currentOccurrence.expectedDate)}
+              </p>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {planning.typeId === MOVEMENT_TYPES.EXPENSE ? "Gasto" : "Ingreso"} de {formatNumber(planning.amount, 999_999)}
+                {planning.typeId === MOVEMENT_TYPES.EXPENSE ? "Gasto" : "Ingreso"} de{" "}
+                {formatNumber(planning.amount, 999_999)}
               </p>
             </div>
-            <PlanningStatusBadge occurrence={currentOccurrence} isActive={planning.recurringRule.isActive} />
+            <PlanningStatusBadge
+              occurrence={currentOccurrence}
+              isActive={planning.recurringRule.isActive}
+            />
           </div>
           {currentOccurrence.statusId === PLANNING_STATUS.PENDING && (
             <div className="flex flex-wrap gap-3 mt-4">
@@ -142,13 +156,29 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
         <ol className="space-y-3 border-l border-zinc-200 pl-4 dark:border-zinc-800">
           {occurrences.map((occurrence) => (
             <li key={occurrence.id} className="glass-surface relative rounded-lg p-3">
-              <p className={`flex items-center gap-2 text-sm font-medium ${occurrence.statusId === PLANNING_STATUS.COMPLETED ? "text-emerald-600 dark:text-emerald-400" : occurrence.statusId === PLANNING_STATUS.CANCELED ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
-                <Icon icon={occurrence.statusId === PLANNING_STATUS.COMPLETED ? "iconoir:check-circle" : occurrence.statusId === PLANNING_STATUS.CANCELED ? "iconoir:cancel" : "iconoir:clock"} className="h-4 w-4" />
+              <p
+                className={`flex items-center gap-2 text-sm font-medium ${occurrence.statusId === PLANNING_STATUS.COMPLETED ? "text-emerald-600 dark:text-emerald-400" : occurrence.statusId === PLANNING_STATUS.CANCELED ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}
+              >
+                <Icon
+                  icon={
+                    occurrence.statusId === PLANNING_STATUS.COMPLETED
+                      ? "iconoir:check-circle"
+                      : occurrence.statusId === PLANNING_STATUS.CANCELED
+                        ? "iconoir:cancel"
+                        : "iconoir:clock"
+                  }
+                  className="h-4 w-4"
+                />
                 {occurrenceLabel(occurrence)}
               </p>
-              <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{formatOccurrenceDate(occurrence.expectedDate)}</p>
+              <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                {formatOccurrenceDate(occurrence.expectedDate)}
+              </p>
               {occurrence.statusId === PLANNING_STATUS.COMPLETED && occurrence.movementId && (
-                <a className="text-xs text-blue-600 hover:underline dark:text-blue-400" href={`/movement?id=${occurrence.movementId}`}>
+                <a
+                  className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                  href={`/movement?id=${occurrence.movementId}`}
+                >
                   Ver movimiento
                 </a>
               )}

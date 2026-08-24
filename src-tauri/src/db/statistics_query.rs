@@ -122,7 +122,7 @@ pub fn timeseries_grouped(
             let sql_date = Utc
                 .timestamp_millis_opt(r.bucket_start_ms)
                 .single()
-                .ok_or(DateError::InvalidTimestamp(r.bucket_start_ms))?
+                .ok_or(DateError::Timestamp(r.bucket_start_ms))?
                 .date_naive();
             let bucket_date = match granularity {
                 "week" => {
@@ -149,13 +149,13 @@ pub fn timeseries_grouped(
         .timestamp_millis_opt(start)
         .single()
         .or_else(|| Local.timestamp_millis_opt(start).earliest())
-        .ok_or(DateError::InvalidTimestamp(start))?
+        .ok_or(DateError::Timestamp(start))?
         .date_naive();
     let end_date = Local
         .timestamp_millis_opt(end - 1)
         .single()
         .or_else(|| Local.timestamp_millis_opt(end - 1).earliest())
-        .ok_or(DateError::InvalidTimestamp(end - 1))?
+        .ok_or(DateError::Timestamp(end - 1))?
         .date_naive();
     let mut date = match granularity {
         "day" => start_date,

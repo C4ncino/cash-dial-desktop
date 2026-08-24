@@ -143,10 +143,7 @@ const CategoriesList = ({
   if (loading) return <StatisticsSectionSkeleton ariaLabel="Categorías" className="h-56" />;
 
   return (
-    <section
-      aria-label="Categorías"
-      className="glass-surface rounded-xl p-4 sm:p-5"
-    >
+    <section aria-label="Categorías" className="glass-surface rounded-xl p-4 sm:p-5">
       <header className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Gastos por categoría</h2>
         {expandedPath.length > 0 && (
@@ -234,7 +231,10 @@ const CategoriesList = ({
                     {canExpand && <small className="ml-2 opacity-60">Detalles</small>}
                   </span>
                   <span className="grid grid-cols-[minmax(5.5rem,auto)_3.5rem] items-baseline gap-2 text-right tabular-nums">
-                    <strong>{symbol}{category.amount.toFixed(2)}</strong>
+                    <strong>
+                      {symbol}
+                      {category.amount.toFixed(2)}
+                    </strong>
                     <small className="opacity-70">{category.percentOfTotal.toFixed(1)}%</small>
                   </span>
                 </>
@@ -252,7 +252,9 @@ const CategoriesList = ({
                       {rowContent}
                     </button>
                   ) : (
-                    <div className={`grid min-h-10 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 ${expandedPath.length && !isActiveBranch ? "text-zinc-500 dark:text-zinc-400" : ""}`}>
+                    <div
+                      className={`grid min-h-10 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 ${expandedPath.length && !isActiveBranch ? "text-zinc-500 dark:text-zinc-400" : ""}`}
+                    >
                       {rowContent}
                     </div>
                   )}

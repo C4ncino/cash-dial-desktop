@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+
 import StatusBadge, { type StatusTone } from "@/components/General/StatusBadge";
 import { PLANNING_STATUS } from "@/types/enums";
 
@@ -76,7 +77,9 @@ const PlanningStatusBadge = ({ occurrence, isActive = true, className = "" }: Pr
   );
 
   return (
-    <StatusBadge tone={tone} className={className}>{label}</StatusBadge>
+    <StatusBadge tone={tone} className={className}>
+      {label}
+    </StatusBadge>
   );
 };
 

@@ -79,17 +79,24 @@ function hyphenateSpanishWord(word: string) {
       (strongVowels.includes(current) && weakVowels.includes(next)) ||
       (weakVowels.includes(current) && strongVowels.includes(next)) ||
       (weakVowels.includes(current) && weakVowels.includes(next))
-    ) continue;
+    )
+      continue;
     else if (vowels.includes(current) && consonants.includes(next) && vowels.includes(nextNext))
       result += "\u00AD";
     else if (
-      consonants.includes(current) && consonants.includes(next) && vowels.includes(nextNext) &&
+      consonants.includes(current) &&
+      consonants.includes(next) &&
+      vowels.includes(nextNext) &&
       !specialGroups.includes(current + next)
-    ) result += "\u00AD";
+    )
+      result += "\u00AD";
     else if (
-      consonants.includes(current) && consonants.includes(next) && consonants.includes(nextNext) &&
+      consonants.includes(current) &&
+      consonants.includes(next) &&
+      consonants.includes(nextNext) &&
       vowels.includes(normalized[index + 3] ?? "")
-    ) result += "\u00AD";
+    )
+      result += "\u00AD";
   }
   return result;
 }
@@ -98,16 +105,19 @@ export function hyphenateText(text: string, maxLineLen: number) {
   if (!text) return "";
   const safeMax = Number.isFinite(maxLineLen) ? Math.max(0, Math.floor(maxLineLen)) : 0;
   let currentLen = 0;
-  return text.split(/(\s+)/).map((part) => {
-    if (/^\s+$/.test(part)) {
-      currentLen += part.length;
-      return part;
-    }
-    if (currentLen + part.length <= safeMax) {
-      currentLen += part.length;
-      return part;
-    }
-    currentLen = part.length;
-    return hyphenateSpanishWord(part);
-  }).join("");
+  return text
+    .split(/(\s+)/)
+    .map((part) => {
+      if (/^\s+$/.test(part)) {
+        currentLen += part.length;
+        return part;
+      }
+      if (currentLen + part.length <= safeMax) {
+        currentLen += part.length;
+        return part;
+      }
+      currentLen = part.length;
+      return hyphenateSpanishWord(part);
+    })
+    .join("");
 }

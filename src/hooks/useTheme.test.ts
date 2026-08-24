@@ -17,9 +17,7 @@ describe("useTheme", () => {
 
     act(() => {
       document.documentElement.classList.add("dark");
-      window.dispatchEvent(
-        new CustomEvent("cashdial:theme-change", { detail: { theme: "dark" } }),
-      );
+      window.dispatchEvent(new CustomEvent("cashdial:theme-change", { detail: { theme: "dark" } }));
     });
 
     expect(result.current).toEqual({ isDark: true, isLight: false });

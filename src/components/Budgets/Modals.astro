@@ -5,17 +5,11 @@ import Form from "./Form";
 import { MODAL_ID } from "@/types/enums";
 ---
 
-<AppModal
-  id={MODAL_ID.BUDGET.CREATE}
-  title="Crear Presupuesto"
->
+<AppModal id={MODAL_ID.BUDGET.CREATE} title="Crear Presupuesto">
   <Form client:visible modalId={MODAL_ID.BUDGET.CREATE} />
 </AppModal>
 
-<AppModal
-  id={MODAL_ID.BUDGET.EDIT}
-  title="Editar Presupuesto"
->
+<AppModal id={MODAL_ID.BUDGET.EDIT} title="Editar Presupuesto">
   <Form client:visible modalId={MODAL_ID.BUDGET.EDIT} />
 </AppModal>
 

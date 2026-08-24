@@ -69,10 +69,7 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
   if (!pointsProp && !response) return null;
 
   return (
-    <section
-      aria-label="Tendencias"
-      className="glass-surface rounded-xl p-4 sm:p-5"
-    >
+    <section aria-label="Tendencias" className="glass-surface rounded-xl p-4 sm:p-5">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Tendencias</h2>
         <label className="flex items-center gap-2 text-sm" htmlFor="statisticsGranularity">
@@ -94,38 +91,40 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
       </header>
       {points.length ? (
         <div className="relative h-64 min-w-0 sm:h-80">
-        <Bar
-          data={data}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                grid: {
-                  color: (context) =>
-                    context.tick.value === 0
-                      ? isDark ? colors.zinc[400] : colors.zinc[600]
-                      : `${isDark ? colors.zinc[400] : colors.zinc[600]}33`,
-                  lineWidth: (context) => (context.tick.value === 0 ? 3 : 2),
-                },
-                ticks: {
-                  color: isDark ? colors.zinc[400] : colors.zinc[500],
-                  callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
-                },
-              },
-            },
-            plugins: {
-              legend: {
-                labels: { color: isDark ? colors.zinc[300] : colors.zinc[700] },
-              },
-              tooltip: {
-                callbacks: {
-                  label: (item) => `${symbol}${Number(item.raw).toFixed(2)}`,
+          <Bar
+            data={data}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  grid: {
+                    color: (context) =>
+                      context.tick.value === 0
+                        ? isDark
+                          ? colors.zinc[400]
+                          : colors.zinc[600]
+                        : `${isDark ? colors.zinc[400] : colors.zinc[600]}33`,
+                    lineWidth: (context) => (context.tick.value === 0 ? 3 : 2),
+                  },
+                  ticks: {
+                    color: isDark ? colors.zinc[400] : colors.zinc[500],
+                    callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
+                  },
                 },
               },
-            },
-          }}
-        />
+              plugins: {
+                legend: {
+                  labels: { color: isDark ? colors.zinc[300] : colors.zinc[700] },
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (item) => `${symbol}${Number(item.raw).toFixed(2)}`,
+                  },
+                },
+              },
+            }}
+          />
         </div>
       ) : (
         <p className="opacity-70">No hay actividad en este periodo.</p>

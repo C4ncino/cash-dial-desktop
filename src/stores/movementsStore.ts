@@ -178,7 +178,9 @@ export const movementsStore = createStore<
     const updatedMovement = await movementsCommands.update(id, movement);
 
     if (updatedMovement.installments) {
-      updatedMovement.installmentsData = await movementsCommands.getInstallments(updatedMovement.id);
+      updatedMovement.installmentsData = await movementsCommands.getInstallments(
+        updatedMovement.id,
+      );
     }
     statisticsStore.getState().invalidate();
 

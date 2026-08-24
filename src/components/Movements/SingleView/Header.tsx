@@ -32,14 +32,31 @@ const Header = ({ category, currency, movementType, amount, timestamp }: Props) 
         <strong className="flex flex-row gap-1">
           <AmountText
             amount={amount}
-            tone={movementType === MOVEMENT_TYPES.INCOME ? "income" : movementType === MOVEMENT_TYPES.EXPENSE ? "expense" : "neutral"}
-            icon={movementType === MOVEMENT_TYPES.INCOME ? "plus" : movementType === MOVEMENT_TYPES.EXPENSE ? "minus" : "none"}
+            tone={
+              movementType === MOVEMENT_TYPES.INCOME
+                ? "income"
+                : movementType === MOVEMENT_TYPES.EXPENSE
+                  ? "expense"
+                  : "neutral"
+            }
+            icon={
+              movementType === MOVEMENT_TYPES.INCOME
+                ? "plus"
+                : movementType === MOVEMENT_TYPES.EXPENSE
+                  ? "minus"
+                  : "none"
+            }
             className="text-4xl"
           />
-          <span className="mt-3 text-xl font-light text-zinc-700 dark:text-zinc-300">{currency.code}</span>
+          <span className="mt-3 text-xl font-light text-zinc-700 dark:text-zinc-300">
+            {currency.code}
+          </span>
         </strong>
 
-        <time dateTime={dateObject.toISOString()} className="text-sm text-zinc-500 dark:text-zinc-400">
+        <time
+          dateTime={dateObject.toISOString()}
+          className="text-sm text-zinc-500 dark:text-zinc-400"
+        >
           {dateLong} - {time}
         </time>
       </hgroup>

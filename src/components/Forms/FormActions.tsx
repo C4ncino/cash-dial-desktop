@@ -12,21 +12,12 @@ const FormActions = ({
   return (
     <menu className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end" aria-busy={disabled}>
       <li>
-        <ActionButton
-          type="reset"
-          disabled={disabled}
-          className="w-full sm:w-auto"
-        >
+        <ActionButton type="reset" disabled={disabled} className="w-full sm:w-auto">
           {resetLabel}
         </ActionButton>
       </li>
       <li>
-        <ActionButton
-          type="submit"
-          disabled={disabled}
-          tone="success"
-          className="w-full sm:w-auto"
-        >
+        <ActionButton type="submit" disabled={disabled} tone="success" className="w-full sm:w-auto">
           {disabled ? "Guardando…" : submitLabel}
         </ActionButton>
       </li>
@@ -35,4 +26,5 @@ const FormActions = ({
 };
 
 export default FormActions;
+
 import ActionButton from "@/components/General/ActionButton";

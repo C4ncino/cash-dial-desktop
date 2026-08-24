@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { logger } from "@/lib/logger";
 
 vi.mock("@tauri-apps/api/core", () => ({

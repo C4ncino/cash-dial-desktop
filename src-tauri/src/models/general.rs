@@ -31,7 +31,14 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Self { database_url: "./db.sqlite".to_string(), environment: Environment::Development }
+        Self {
+            database_url: "./db.sqlite".to_string(),
+            environment: if cfg!(debug_assertions) {
+                Environment::Development
+            } else {
+                Environment::Production
+            },
+        }
     }
 }
 
@@ -56,13 +63,13 @@ impl FromStr for Environment {
 }
 
 impl Config {
-    pub fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_env(default_database_url: String) -> Result<Self, Box<dyn std::error::Error>> {
         dotenv().ok();
 
         let default = Self::default();
 
         Ok(Self {
-            database_url: env::var("DATABASE_URL").unwrap_or(default.database_url),
+            database_url: env::var("DATABASE_URL").unwrap_or(default_database_url),
             environment: env::var("APP_ENV")
                 .ok()
                 .map(|v| v.parse())

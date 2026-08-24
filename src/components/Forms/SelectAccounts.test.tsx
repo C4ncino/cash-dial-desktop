@@ -103,12 +103,7 @@ describe("SelectAccounts", () => {
   it("should expose the selected account value and update it through user selection", () => {
     const mockOnChange = vi.fn();
     render(
-      <SelectAccounts
-        name="source"
-        label="Cuenta Origen"
-        accountId={1}
-        onChange={mockOnChange}
-      />,
+      <SelectAccounts name="source" label="Cuenta Origen" accountId={1} onChange={mockOnChange} />,
     );
 
     const select = screen.getByLabelText("Cuenta Origen") as HTMLSelectElement;

@@ -59,36 +59,38 @@ const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendPr
       <h2 className="mb-1 text-lg font-semibold">Saldo a lo largo del tiempo</h2>
       {points.length ? (
         <div className="relative h-64 min-w-0 sm:h-80">
-        <Line
-          data={data}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                grid: {
-                  color: (context) =>
-                    context.tick.value === 0
-                      ? isDark ? colors.zinc[400] : colors.zinc[600]
-                      : `${isDark ? colors.zinc[400] : colors.zinc[600]}33`,
-                  lineWidth: (context) => (context.tick.value === 0 ? 3 : 2),
+          <Line
+            data={data}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  grid: {
+                    color: (context) =>
+                      context.tick.value === 0
+                        ? isDark
+                          ? colors.zinc[400]
+                          : colors.zinc[600]
+                        : `${isDark ? colors.zinc[400] : colors.zinc[600]}33`,
+                    lineWidth: (context) => (context.tick.value === 0 ? 3 : 2),
+                  },
+                  ticks: {
+                    color: isDark ? colors.zinc[400] : colors.zinc[500],
+                    callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
+                  },
                 },
-                ticks: {
-                  color: isDark ? colors.zinc[400] : colors.zinc[500],
-                  callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: { label: (item) => `${symbol}${Number(item.raw).toFixed(2)}` },
+                },
+                legend: {
+                  display: false,
                 },
               },
-            },
-            plugins: {
-              tooltip: {
-                callbacks: { label: (item) => `${symbol}${Number(item.raw).toFixed(2)}` },
-              },
-              legend: {
-                display: false,
-              },
-            },
-          }}
-        />
+            }}
+          />
         </div>
       ) : (
         <p className="opacity-70">No hay actividad en este periodo.</p>

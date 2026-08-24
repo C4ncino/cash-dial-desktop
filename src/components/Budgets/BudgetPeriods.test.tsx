@@ -9,7 +9,11 @@ vi.mock("zustand");
 
 vi.mock("@/components/Movements/MovementList", () => ({
   default: (props: { movementIds: number[]; needCompact?: boolean }) => (
-    <div data-testid="movement-list" data-ids={JSON.stringify(props.movementIds)} data-compact={String(!!props.needCompact)}>
+    <div
+      data-testid="movement-list"
+      data-ids={JSON.stringify(props.movementIds)}
+      data-compact={String(!!props.needCompact)}
+    >
       MovementList Mock
     </div>
   ),
@@ -31,7 +35,9 @@ describe("BudgetPeriods", () => {
   it("renders periods and passes reversed movementIds with needCompact to MovementList", () => {
     const budget = {
       budget: { id: 1, budgetPeriodTypeId: 1, categoryId: 1, currencyId: 1, name: "Test" },
-      periods: [{ startDate: 0, endDate: 1, amountLimit: 200, amountSpend: 50, movementIds: [1, 2, 3] }],
+      periods: [
+        { startDate: 0, endDate: 1, amountLimit: 200, amountSpend: 50, movementIds: [1, 2, 3] },
+      ],
     };
 
     mockUseStore({ budget });
@@ -41,8 +47,13 @@ describe("BudgetPeriods", () => {
 
     render(<BudgetPeriods />);
 
-    // Period dates should still render
-    expect(screen.getAllByText("31/12/1969").length).toBeGreaterThanOrEqual(1);
+    // Period dates should render with a timezone-independent machine-readable value.
+    const periodDates = screen.getAllByRole("time");
+    expect(periodDates).toHaveLength(2);
+    expect(periodDates.map((date) => date.getAttribute("datetime"))).toEqual([
+      "1970-01-01",
+      "1970-01-01",
+    ]);
 
     // MovementList should be rendered with correct props
     const movementList = screen.getByTestId("movement-list");

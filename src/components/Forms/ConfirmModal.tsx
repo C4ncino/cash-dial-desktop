@@ -13,11 +13,15 @@ interface Props {
 }
 
 const CLASSES = {
-  default: "border-zinc-400 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
-  alert: "border-red-600 text-red-600 hover:bg-red-600 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-400",
+  default:
+    "border-zinc-400 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
+  alert:
+    "border-red-600 text-red-600 hover:bg-red-600 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-400",
   info: "border-blue-600 text-blue-600 hover:bg-blue-600 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400",
-  success: "border-green-600 text-green-600 hover:bg-green-600 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-400",
-  warning: "border-yellow-600 text-yellow-600 hover:bg-yellow-600 dark:border-yellow-400 dark:text-yellow-400 dark:hover:bg-yellow-400",
+  success:
+    "border-green-600 text-green-600 hover:bg-green-600 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-400",
+  warning:
+    "border-yellow-600 text-yellow-600 hover:bg-yellow-600 dark:border-yellow-400 dark:text-yellow-400 dark:hover:bg-yellow-400",
 };
 
 const ConfirmModal = ({

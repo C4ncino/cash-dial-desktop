@@ -75,7 +75,9 @@ const AccountNextPayment = ({ accountId }: Props) => {
   if (!nextPayment || nextPayment.movements.length === 0) {
     return (
       <section className="mt-4">
-        <p className="text-green-600 dark:text-green-400">No hay pagos pendientes para este periodo.</p>
+        <p className="text-green-600 dark:text-green-400">
+          No hay pagos pendientes para este periodo.
+        </p>
       </section>
     );
   }
@@ -137,7 +139,9 @@ const AccountNextPayment = ({ accountId }: Props) => {
                 <li key={movementInfo.movementId} className="p-3 flex justify-between items-center">
                   <div className="flex flex-col">
                     <span className="text-zinc-700 dark:text-zinc-300">{description}</span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">{installmentText}</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {installmentText}
+                    </span>
                   </div>
                   <AmountText
                     amount={movementInfo.amount}

@@ -1,9 +1,4 @@
-import {
-  closeTauriDriver,
-  createDriver,
-  deleteDatabase,
-  invokeCommand,
-} from "@test/driver";
+import { closeTauriDriver, createDriver, deleteDatabase, invokeCommand } from "@test/driver";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { CURRENCY_FUNCTIONS } from "@/types/enums";
@@ -60,15 +55,11 @@ describe("Currency Commands", () => {
         "NZD",
       ]),
     );
-    expect(currencies.every((currency) => currency.conversionRate > 0)).toBe(
-      true,
-    );
+    expect(currencies.every((currency) => currency.conversionRate > 0)).toBe(true);
   });
 
   it("refresh_currency_rates returns the persisted currency rate shape", async () => {
-    const currencies = await invokeCommand<Currency[]>(
-      CURRENCY_FUNCTIONS.refreshRates,
-    );
+    const currencies = await invokeCommand<Currency[]>(CURRENCY_FUNCTIONS.refreshRates);
 
     expectCurrencies(currencies);
     expect(currencies.length).toBeGreaterThanOrEqual(10);

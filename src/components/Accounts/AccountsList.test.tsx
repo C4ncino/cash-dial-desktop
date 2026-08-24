@@ -98,10 +98,7 @@ describe("AccountsList", () => {
 
   it("should reflect account updates without losing other accounts", () => {
     const initialAccounts = [mockAccounts[0]];
-    const updatedAccounts = [
-      { ...mockAccounts[0], name: "Updated Checking" },
-      mockAccounts[2],
-    ];
+    const updatedAccounts = [{ ...mockAccounts[0], name: "Updated Checking" }, mockAccounts[2]];
 
     (useStore as any).mockImplementation((_store: any, selector: any) =>
       selector({

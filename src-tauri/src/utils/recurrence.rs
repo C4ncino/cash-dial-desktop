@@ -276,7 +276,7 @@ where
     sorted_dates.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
     sorted_dates.dedup();
 
-    let step = rule.interval_step as i32;
+    let step = rule.interval_step;
     let anchor_year = rule.start_date.year();
 
     let mut year_offset: i32 = 0;

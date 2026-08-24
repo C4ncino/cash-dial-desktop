@@ -94,7 +94,9 @@ describe("SelectCategories", () => {
     expect(screen.getByText("General")).toBeInTheDocument();
     expect(screen.getByText("Groceries")).toBeInTheDocument();
     expect(
-      screen.getAllByTestId("icon").some((icon) => icon.getAttribute("data-icon") === "iconoir:apple"),
+      screen
+        .getAllByTestId("icon")
+        .some((icon) => icon.getAttribute("data-icon") === "iconoir:apple"),
     ).toBe(true);
 
     fireEvent.click(parentItem);

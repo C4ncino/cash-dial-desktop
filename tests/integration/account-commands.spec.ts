@@ -186,8 +186,12 @@ describe("Tauri - Account creation", () => {
 
   it("pay_credit_card updates balances and creates transfer movement successfully", async () => {
     // 1. Get initial state
-    const initialDebitBalance = await invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, { id: 2 });
-    const initialCreditBalance = await invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, { id: 3 });
+    const initialDebitBalance = await invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, {
+      id: 2,
+    });
+    const initialCreditBalance = await invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, {
+      id: 3,
+    });
     const initialMovements = await invokeCommand<any[]>(MOVEMENT_FUNCTIONS.get);
 
     // 2. Perform payment
@@ -205,14 +209,11 @@ describe("Tauri - Account creation", () => {
       },
     ];
 
-    const result = await invokeCommand<CreditCardPaymentResult>(
-      ACCOUNT_FUNCTIONS.payCreditCard,
-      {
-        creditAccountId: 3,
-        payments,
-        installmentIds,
-      },
-    );
+    const result = await invokeCommand<CreditCardPaymentResult>(ACCOUNT_FUNCTIONS.payCreditCard, {
+      creditAccountId: 3,
+      payments,
+      installmentIds,
+    });
 
     // 3. Verify updated balances
     const newDebitBalance = await invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, { id: 2 });
@@ -236,7 +237,7 @@ describe("Tauri - Account creation", () => {
         m.typeId === 3 && // TRANSFER
         m.accountId === 2 && // fromAccountId
         m.toAccountId === 3 && // creditAccountId
-        m.originalAmount === paymentAmount
+        m.originalAmount === paymentAmount,
     );
     expect(createdMovement).toBeDefined();
     expect(createdMovement.description).toContain("Pago de tarjeta");
@@ -306,4 +307,3 @@ describe("Tauri - Account creation", () => {
     ).rejects.toThrow();
   });
 });
-

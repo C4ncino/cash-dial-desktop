@@ -1,7 +1,10 @@
 import { selectAccountById, useAccounts } from "@/hooks/useStores";
+
 import EntityLabel from "./EntityLabel";
 
-interface Props { id: number; }
+interface Props {
+  id: number;
+}
 
 export default function AccountName({ id }: Props) {
   const account = useAccounts(selectAccountById(id));

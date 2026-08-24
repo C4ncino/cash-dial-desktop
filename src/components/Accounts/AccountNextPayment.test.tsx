@@ -1,12 +1,12 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useStore } from "zustand";
 
 import AccountNextPayment from "@/components/Accounts/AccountNextPayment";
-import { useStore } from "zustand";
+import { formatAmount } from "@/lib/formatters";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { movementsStore } from "@/stores/movementsStore";
-import { formatAmount } from "@/lib/formatters";
 
 vi.mock("zustand");
 vi.mock("@/stores/accountsStore");
@@ -21,8 +21,12 @@ vi.mock("@/components/Accounts/CreditCardPaymentForm", () => ({
       <span>
         Pagar tarjeta - {creditAccountId} - {totalAmount}
       </span>
-      <button onClick={onSuccess}>Simulate Success</button>
-      <button onClick={onCancel}>Simulate Cancel</button>
+      <button type="button" onClick={onSuccess}>
+        Simulate Success
+      </button>
+      <button type="button" onClick={onCancel}>
+        Simulate Cancel
+      </button>
     </div>
   ),
 }));

@@ -102,7 +102,11 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     installmentIds: number[],
   ) => {
     try {
-      const result = await accountsCommands.payCreditCard(creditAccountId, payments, installmentIds);
+      const result = await accountsCommands.payCreditCard(
+        creditAccountId,
+        payments,
+        installmentIds,
+      );
       await get().populate();
       statisticsStore.getState().invalidate();
       return result;

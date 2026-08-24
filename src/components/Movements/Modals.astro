@@ -5,10 +5,7 @@ import MovementForm from "./MovementForm";
 import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 ---
 
-<AppModal
-    id={MODAL_ID.MOVEMENT.INCOME.CREATE}
-    title="Crear Ingreso"
->
+<AppModal id={MODAL_ID.MOVEMENT.INCOME.CREATE} title="Crear Ingreso">
     <MovementForm
         client:visible
         modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
@@ -16,10 +13,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
     />
 </AppModal>
 
-<AppModal
-    id={MODAL_ID.MOVEMENT.INCOME.EDIT}
-    title="Editar Ingreso"
->
+<AppModal id={MODAL_ID.MOVEMENT.INCOME.EDIT} title="Editar Ingreso">
     <MovementForm
         client:visible
         modalId={MODAL_ID.MOVEMENT.INCOME.EDIT}
@@ -27,10 +21,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
     />
 </AppModal>
 
-<AppModal
-    id={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
-    title="Crear Gasto"
->
+<AppModal id={MODAL_ID.MOVEMENT.EXPENSE.CREATE} title="Crear Gasto">
     <MovementForm
         client:visible
         modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
@@ -38,10 +29,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
     />
 </AppModal>
 
-<AppModal
-    id={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
-    title="Editar Gasto"
->
+<AppModal id={MODAL_ID.MOVEMENT.EXPENSE.EDIT} title="Editar Gasto">
     <MovementForm
         client:visible
         modalId={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
@@ -49,10 +37,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
     />
 </AppModal>
 
-<AppModal
-    id={MODAL_ID.MOVEMENT.TRANSFER.CREATE}
-    title="Crear Transferencia"
->
+<AppModal id={MODAL_ID.MOVEMENT.TRANSFER.CREATE} title="Crear Transferencia">
     <MovementForm
         client:visible
         modalId={MODAL_ID.MOVEMENT.TRANSFER.CREATE}
@@ -60,10 +45,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
     />
 </AppModal>
 
-<AppModal
-    id={MODAL_ID.MOVEMENT.TRANSFER.EDIT}
-    title="Editar Transferencia"
->
+<AppModal id={MODAL_ID.MOVEMENT.TRANSFER.EDIT} title="Editar Transferencia">
     <MovementForm
         client:visible
         modalId={MODAL_ID.MOVEMENT.TRANSFER.EDIT}

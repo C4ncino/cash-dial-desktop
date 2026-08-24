@@ -4,7 +4,12 @@ import AccountName from "@/components/General/AccountName";
 import AmountText from "@/components/General/AmountText";
 import EntityIcon from "@/components/General/EntityIcon";
 import useDate from "@/hooks/useDate";
-import { selectAccountById, selectCategoryById, useAccounts, useCategories } from "@/hooks/useStores";
+import {
+  selectAccountById,
+  selectCategoryById,
+  useAccounts,
+  useCategories,
+} from "@/hooks/useStores";
 import { MOVEMENT_TYPES } from "@/types/enums";
 
 interface Props {
@@ -22,8 +27,18 @@ export default function MovementCard({ movement, showTime, variant = "default" }
 
   if (!category || !account) return null;
 
-  const tone = movement.typeId === MOVEMENT_TYPES.INCOME ? "income" : movement.typeId === MOVEMENT_TYPES.EXPENSE ? "expense" : "neutral";
-  const amountIcon = movement.typeId === MOVEMENT_TYPES.INCOME ? "plus" : movement.typeId === MOVEMENT_TYPES.EXPENSE ? "minus" : "none";
+  const tone =
+    movement.typeId === MOVEMENT_TYPES.INCOME
+      ? "income"
+      : movement.typeId === MOVEMENT_TYPES.EXPENSE
+        ? "expense"
+        : "neutral";
+  const amountIcon =
+    movement.typeId === MOVEMENT_TYPES.INCOME
+      ? "plus"
+      : movement.typeId === MOVEMENT_TYPES.EXPENSE
+        ? "minus"
+        : "none";
   const textLength = category.name.length + movement.originalAmount.toString().length;
 
   return (
@@ -34,16 +49,40 @@ export default function MovementCard({ movement, showTime, variant = "default" }
       <div className={`flex min-w-0 items-center ${compact ? "gap-2" : "gap-4"}`}>
         <EntityIcon icon={category.icon} color={category.color} size={compact ? "sm" : "lg"} />
         <div className="min-w-0 text-left">
-          <p className={`${compact ? "text-sm" : "mb-0.5 text-xl"} truncate font-medium`}>{category.name}</p>
-          <span className={`${compact ? "text-xs" : "gap-2"} flex min-w-0 items-center text-zinc-700 dark:text-zinc-300`}>
+          <p className={`${compact ? "text-sm" : "mb-0.5 text-xl"} truncate font-medium`}>
+            {category.name}
+          </p>
+          <span
+            className={`${compact ? "text-xs" : "gap-2"} flex min-w-0 items-center text-zinc-700 dark:text-zinc-300`}
+          >
             <AccountName id={account.id} />
-            {!compact && toAccount && <><Icon icon="iconoir:dot-arrow-right" className="size-5 shrink-0" aria-hidden="true" /><AccountName id={toAccount.id} /></>}
+            {!compact && toAccount && (
+              <>
+                <Icon
+                  icon="iconoir:dot-arrow-right"
+                  className="size-5 shrink-0"
+                  aria-hidden="true"
+                />
+                <AccountName id={toAccount.id} />
+              </>
+            )}
           </span>
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end">
-        <AmountText amount={movement.originalAmount} tone={tone} icon={amountIcon} format={compact || textLength > 28 ? "short" : "number"} className={compact ? "text-lg" : undefined} />
-        <time dateTime={new Date(movement.timestamp).toISOString()} className="text-right text-xs text-zinc-500 dark:text-zinc-400">{compact || showTime ? time : dateShort}</time>
+        <AmountText
+          amount={movement.originalAmount}
+          tone={tone}
+          icon={amountIcon}
+          format={compact || textLength > 28 ? "short" : "number"}
+          className={compact ? "text-lg" : undefined}
+        />
+        <time
+          dateTime={new Date(movement.timestamp).toISOString()}
+          className="text-right text-xs text-zinc-500 dark:text-zinc-400"
+        >
+          {compact || showTime ? time : dateShort}
+        </time>
       </div>
     </a>
   );

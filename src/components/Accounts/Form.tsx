@@ -8,8 +8,8 @@ import FormErrors from "@/components/Forms/FormErrors";
 import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import useSubmissionGuard from "@/hooks/useSubmissionGuard";
-import { logger } from "@/lib/logger";
 import { createAccountFromData, validateAccountForm as validate } from "@/lib/forms/account";
+import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID } from "@/types/enums";
@@ -110,7 +110,7 @@ const AccountForm = ({ modalId }: Props) => {
         />
 
         <label htmlFor="balance" className="text-zinc-700 dark:text-zinc-300">
-          Saldo {typeId === ACCOUNT_TYPES.CREDIT ? "Gastado" : ""}
+          Saldo {typeId === ACCOUNT_TYPES.CREDIT ? "Disponible" : ""}
         </label>
         <div className="flex">
           <Input

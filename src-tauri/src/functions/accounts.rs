@@ -239,6 +239,8 @@ pub fn update_account(
     )
 }
 
+// This helper mirrors the established account update payload.
+#[allow(clippy::too_many_arguments)]
 fn update_account_internal(
     connection: &mut SqliteConnection,
     account_types: &[AccountType],

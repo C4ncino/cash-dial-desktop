@@ -1,3 +1,7 @@
+use std::fmt;
+
+use crate::domain::date::DateError;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Granularity {
     Day,
@@ -143,6 +147,3 @@ mod tests {
         );
     }
 }
-use std::fmt;
-
-use crate::domain::date::DateError;

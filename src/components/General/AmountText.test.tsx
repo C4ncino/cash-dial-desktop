@@ -31,7 +31,15 @@ describe("AmountText", () => {
   });
 
   it("supports inline currency rendering", () => {
-    render(<AmountText amount={150.5} currency={currency} format="currency" inline className="text-xl" />);
+    render(
+      <AmountText
+        amount={150.5}
+        currency={currency}
+        format="currency"
+        inline
+        className="text-xl"
+      />,
+    );
 
     const amount = screen.getByText("MX$150.50");
     expect(amount.tagName).toBe("STRONG");
