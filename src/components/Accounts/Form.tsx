@@ -9,7 +9,8 @@ import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import useSubmissionGuard from "@/hooks/useSubmissionGuard";
 import { logger } from "@/lib/logger";
-import { accountsStore, createAccountFromData, validate } from "@/stores/accountsStore";
+import { createAccountFromData, validateAccountForm as validate } from "@/lib/forms/account";
+import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID } from "@/types/enums";
 

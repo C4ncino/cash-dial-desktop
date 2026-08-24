@@ -136,7 +136,8 @@ describe("planningsStore", () => {
     });
 
     const updatedPlanning = { ...samplePlanning, amount: 299.0 };
-    mockInvoke.mockResolvedValueOnce(updatedPlanning);
+    const refreshedOccurrences = [{ ...sampleOccurrence, expectedDate: 1771000000000 }];
+    mockInvoke.mockResolvedValueOnce(updatedPlanning).mockResolvedValueOnce(refreshedOccurrences);
 
     const result = await planningsStore.getState().update(1, {
       typeId: 2,
@@ -153,6 +154,7 @@ describe("planningsStore", () => {
 
     expect(result.amount).toBe(299.0);
     expect(planningsStore.getState().getById(1)?.amount).toBe(299.0);
+    expect(planningsStore.getState().occurrencesByPlanning[1]).toEqual(refreshedOccurrences);
   });
 
   it("remove deletes planning and purges cached occurrences", async () => {
@@ -183,19 +185,22 @@ describe("planningsStore", () => {
       recurringRule: { ...samplePlanning.recurringRule, isActive: false },
       currentOccurrence: null,
     };
-    mockInvoke.mockResolvedValueOnce(deactivated);
+    mockInvoke.mockResolvedValueOnce(deactivated).mockResolvedValueOnce([]);
 
     await planningsStore.getState().deactivate(1);
     expect(planningsStore.getState().getById(1)?.recurringRule.isActive).toBe(false);
+    expect(planningsStore.getState().occurrencesByPlanning[1]).toEqual([]);
 
     const activated = {
       ...samplePlanning,
       recurringRule: { ...samplePlanning.recurringRule, isActive: true },
     };
-    mockInvoke.mockResolvedValueOnce(activated);
+    const activatedOccurrences = [{ ...sampleOccurrence, id: 102 }];
+    mockInvoke.mockResolvedValueOnce(activated).mockResolvedValueOnce(activatedOccurrences);
 
     await planningsStore.getState().activate(1);
     expect(planningsStore.getState().getById(1)?.recurringRule.isActive).toBe(true);
+    expect(planningsStore.getState().occurrencesByPlanning[1]).toEqual(activatedOccurrences);
   });
 
   it("cancelOccurrence cancels occurrence and refreshes planning", async () => {

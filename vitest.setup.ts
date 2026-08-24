@@ -116,6 +116,15 @@ vi.mock("@/components/General/SquareIcon", () => ({
     }),
 }));
 
+vi.mock("@/components/General/EntityIcon", () => ({
+  default: ({ icon, color }: any) =>
+    React.createElement("span", {
+      "data-testid": "square-icon",
+      "data-icon": icon,
+      "data-bg": color,
+    }),
+}));
+
 vi.mock("@tauri-apps/plugin-locale", () => ({
   locale: vi.fn().mockResolvedValue("en-US"),
 }));

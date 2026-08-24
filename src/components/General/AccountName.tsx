@@ -1,26 +1,9 @@
-import { Icon } from "@iconify/react";
-import { useStore } from "zustand";
+import { selectAccountById, useAccounts } from "@/hooks/useStores";
+import EntityLabel from "./EntityLabel";
 
-import { accountsStore } from "@/stores/accountsStore";
+interface Props { id: number; }
 
-interface Props {
-  id: number;
+export default function AccountName({ id }: Props) {
+  const account = useAccounts(selectAccountById(id));
+  return <EntityLabel label={account?.name} icon={account?.type?.icon ?? "wallet"} />;
 }
-
-const AccountName = ({ id }: Props) => {
-  const account = useStore(accountsStore, (state) =>
-    state.accounts.find((item) => item.id === id),
-  );
-
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <Icon
-        icon={`iconoir:${account?.type?.icon ?? "wallet"}`}
-        className="h-4 w-4 text-zinc-400"
-      />
-      {account?.name ?? "—"}
-    </span>
-  );
-};
-
-export default AccountName;

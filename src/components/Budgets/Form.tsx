@@ -9,38 +9,14 @@ import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCategories from "@/components/Forms/SelectCategories";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import useSubmissionGuard from "@/hooks/useSubmissionGuard";
+import { createBudgetFromData, validateBudgetForm } from "@/lib/forms/budget";
 import { logger } from "@/lib/logger";
 import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";
-import { BUDGET_TYPES, BUDGET_UPDATE_TYPES, EDIT_TYPES, MODAL_ID } from "@/types/enums";
+import { BUDGET_UPDATE_TYPES, EDIT_TYPES, MODAL_ID } from "@/types/enums";
 
 interface Props {
   modalId: string;
-}
-
-function getTimestampForBudgetType(type: BUDGET_TYPES): number {
-  const date = new Date(Date.now());
-
-  switch (type) {
-    case BUDGET_TYPES.WEEKLY: {
-      // Monday = 0, Tuesday = 1, ..., Sunday = 6
-      const daysSinceMonday = (date.getDay() + 6) % 7;
-      date.setDate(date.getDate() - daysSinceMonday);
-      break;
-    }
-
-    case BUDGET_TYPES.MONTHLY:
-      date.setDate(1);
-      break;
-
-    case BUDGET_TYPES.YEARLY:
-      date.setMonth(0, 1);
-      break;
-  }
-
-  date.setHours(0, 0, 0, 0);
-
-  return date.getTime();
 }
 
 const BudgetForm = ({ modalId }: Props) => {
@@ -85,16 +61,9 @@ const BudgetForm = ({ modalId }: Props) => {
 
     logger.debug("Budget form data:", data);
 
-    // Basic validation
-    const errs: string[] = [];
-    if (!data.name || String(data.name).trim() === "") errs.push("El nombre es requerido");
-    if (!budget && (!data.categoryId || String(data.categoryId).trim() === ""))
-      errs.push("La categoría es requerida");
-    if (!data.amountLimit || Number(data.amountLimit) <= 0)
-      errs.push("El límite debe ser mayor que 0");
-
-    if (errs.length > 0) {
-      setErrors(errs);
+    const validation = validateBudgetForm(data, Boolean(budget));
+    if (!validation.valid) {
+      setErrors(validation.errors);
       return;
     }
 
@@ -125,16 +94,7 @@ const BudgetForm = ({ modalId }: Props) => {
         // Creating new budget
         const periodType = selectedPeriodType ?? periodTypes[0]?.id ?? 0;
 
-        const payload = {
-          budgetPeriodTypeId: periodType,
-          categoryId: Number(data.categoryId),
-          currencyId: Number(data.currency),
-          name: String(data.name),
-          amountLimit: Number(data.amountLimit),
-          startDate: getTimestampForBudgetType(periodType),
-        };
-
-        await budgetStore.getState().add(payload);
+        await budgetStore.getState().add(createBudgetFromData(data, periodType));
       }
 
       if (!isMounted()) return;
@@ -264,7 +224,9 @@ const BudgetForm = ({ modalId }: Props) => {
           title="Tipo de actualización"
           className="glass-elevated w-[calc(100vw-2rem)]! max-w-lg! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-md"
         >
-          <p className="mb-4 text-zinc-500 dark:text-zinc-400">Selecciona cómo deseas aplicar el nuevo límite.</p>
+          <p className="mb-4 text-zinc-500 dark:text-zinc-400">
+            Selecciona cómo deseas aplicar el nuevo límite.
+          </p>
 
           <fieldset className="mb-4 flex flex-col gap-2">
             <Radio

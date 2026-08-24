@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand/react";
 
 import GlobalMovements from "@/components/Movements/GlobalMovements";
-import MovementCardCompact from "@/components/Movements/MovementCardCompact";
 import MovementsLanding from "@/components/Movements/MovementsLanding";
 import { accountsStore } from "@/stores/accountsStore";
 import { categoryStore } from "@/stores/categoryStore";
@@ -74,17 +73,4 @@ describe("movement views", () => {
     );
   });
 
-  it("renders compact financial semantics and detail navigation", () => {
-    render(<MovementCardCompact movement={movement} />);
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/movement?id=8");
-    expect(screen.getByText("25:expense:minus")).toBeInTheDocument();
-    expect(screen.getByText("01:05 PM")).toBeInTheDocument();
-    expect(screen.getByText("Food")).toBeInTheDocument();
-  });
-
-  it("renders nothing when account or category relations are missing", () => {
-    vi.mocked(accountsStore.getState().getById).mockReturnValue(undefined);
-    const { container } = render(<MovementCardCompact movement={movement} />);
-    expect(container).toBeEmptyDOMElement();
-  });
 });

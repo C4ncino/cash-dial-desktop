@@ -1,16 +1,16 @@
-import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
-import { BUDGET_FUNCTIONS, type BUDGET_UPDATE_TYPES } from "@/types/enums";
+import { budgetsCommands } from "@/services/tauri/budgets";
+import { type BUDGET_UPDATE_TYPES } from "@/types/enums";
 
 export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) => ({
   budgets: [] as BudgetDetails[],
   periodTypes: [] as BudgetPeriodType[],
 
   populate: async () => {
-    const periodTypes = (await invoke(BUDGET_FUNCTIONS.getPeriodTypes)) as BudgetPeriodType[];
-    const budgets = (await invoke(BUDGET_FUNCTIONS.getAll)) as BudgetDetails[];
+    const periodTypes = await budgetsCommands.getPeriodTypes();
+    const budgets = await budgetsCommands.getAll();
 
     logger.debug("Budgets:", budgets);
     logger.debug("Budget period types:", periodTypes);
@@ -31,14 +31,14 @@ export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) =
     amountLimit: number;
     startDate: number;
   }) => {
-    const newBudget = (await invoke(BUDGET_FUNCTIONS.create, {
+    const newBudget = await budgetsCommands.create({
       budgetPeriodTypeId: budget.budgetPeriodTypeId,
       categoryId: budget.categoryId,
       currencyId: budget.currencyId,
       name: budget.name,
       amountLimit: budget.amountLimit,
       startDate: budget.startDate,
-    })) as BudgetDetails;
+    });
 
     logger.info("Budget created", newBudget);
 
@@ -48,7 +48,7 @@ export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) =
   },
 
   remove: async (id: number) => {
-    await invoke(BUDGET_FUNCTIONS.delete, { id });
+    await budgetsCommands.remove(id);
 
     logger.info("Budget deleted", { id });
 
@@ -58,11 +58,7 @@ export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) =
   },
 
   updateAmount: async (id: number, amountLimit: number, updateType: BUDGET_UPDATE_TYPES) => {
-    const updatedBudget = (await invoke(BUDGET_FUNCTIONS.updateAmount, {
-      id,
-      amountLimit,
-      updateType,
-    })) as BudgetDetails;
+    const updatedBudget = await budgetsCommands.updateAmount(id, amountLimit, updateType);
 
     logger.info("Budget amount updated", updatedBudget);
 
@@ -72,10 +68,7 @@ export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) =
   },
 
   updateName: async (id: number, name: string) => {
-    const updatedName = (await invoke(BUDGET_FUNCTIONS.updateName, {
-      id,
-      name,
-    })) as string;
+    const updatedName = await budgetsCommands.updateName(id, name);
 
     logger.info("Budget name updated", { id, name: updatedName });
 
@@ -87,7 +80,7 @@ export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) =
   },
 
   refresh: async (id: number) => {
-    const updatedBudget = (await invoke(BUDGET_FUNCTIONS.get, { id })) as BudgetDetails;
+    const updatedBudget = await budgetsCommands.get(id);
 
     logger.debug("Budget refreshed", updatedBudget);
 
@@ -97,17 +90,14 @@ export const budgetStore = createStore<BudgetStore & BudgetActions>((set, get) =
   },
 
   refreshAffected: async (categoryId: number, previousCategoryId?: number) => {
-    const affectedIds = (await invoke(BUDGET_FUNCTIONS.getAffectedBudgetIds, {
-      categoryId,
-      previousCategoryId: previousCategoryId ?? null,
-    })) as number[];
+    const affectedIds = await budgetsCommands.getAffectedIds(categoryId, previousCategoryId);
 
     if (affectedIds.length === 0) return;
 
     logger.debug("Refreshing affected budgets", { categoryId, previousCategoryId, affectedIds });
 
     const refreshedBudgets = await Promise.all(
-      affectedIds.map((id) => invoke(BUDGET_FUNCTIONS.get, { id }) as Promise<BudgetDetails>),
+      affectedIds.map((id) => budgetsCommands.get(id)),
     );
 
     const refreshedMap = new Map(refreshedBudgets.map((b) => [b.budget.id, b]));

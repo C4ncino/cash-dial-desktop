@@ -9,16 +9,8 @@ import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
 import { planningsStore } from "@/stores/planningsStore";
 import { currencyStore } from "@/stores/currencyStore";
-import {
-  createMovementFromData,
-  validateMovement,
-} from "@/stores/movementsStore";
-import {
-  ACCOUNT_TYPES,
-  EDIT_TYPES,
-  MODAL_ID,
-  MOVEMENT_TYPES,
-} from "@/types/enums";
+import { createMovementFromData, validateMovement } from "@/lib/forms/movement";
+import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 vi.mock("@/stores/budgetStore", () => ({
   budgetStore: {
@@ -104,6 +96,9 @@ vi.mock("@/stores/movementsStore", () => ({
     }),
     subscribe: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/forms/movement", () => ({
   validateMovement: vi.fn(),
   createMovementFromData: vi.fn(),
 }));
@@ -164,10 +159,7 @@ const mockPlanning = {
   currentOccurrence: { statusId: 1, expectedDate: Date.now() },
 };
 
-const mockUseStoreState = ({
-  accounts = mockAccounts,
-  editState = {},
-}: any = {}) => {
+const mockUseStoreState = ({ accounts = mockAccounts, editState = {} }: any = {}) => {
   vi.mocked(useStore).mockImplementation((store: any, selector: any) => {
     if (store === accountsStore) {
       return selector({ accounts });
@@ -271,11 +263,7 @@ it("shows backend planning compatibility errors in the form", async () => {
     />,
   );
   fireEvent.submit(document.getElementById("expense-form")!);
-  await waitFor(() =>
-    expect(
-      screen.getByText("planning compatibility error"),
-    ).toBeInTheDocument(),
-  );
+  await waitFor(() => expect(screen.getByText("planning compatibility error")).toBeInTheDocument());
 });
 
 it("supports ECB conversion and manual account amount overrides", async () => {
@@ -306,9 +294,7 @@ it("supports ECB conversion and manual account amount overrides", async () => {
 
 describe("MovementForm", () => {
   beforeEach(() => {
-    logger.debug(
-      "MovementForm test beforeEach: clear mocks and setup store state",
-    );
+    logger.debug("MovementForm test beforeEach: clear mocks and setup store state");
     vi.clearAllMocks();
     mockAdd.mockResolvedValue({ id: 99 });
     mockUpdate.mockResolvedValue(undefined);
@@ -330,19 +316,15 @@ describe("MovementForm", () => {
       expect(screen.getByLabelText("Cuenta Destino")).toBeInTheDocument();
       expect(screen.getByLabelText("Fecha")).toBeInTheDocument();
       expect(screen.getByLabelText("Hora")).toBeInTheDocument();
-      expect(
-        screen.getByLabelText("Descripción (opcional)"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Guardar" }),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Descripción (opcional)")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
 
       expect(document.getElementById("income-form")).toHaveClass(
         "w-full",
         "mx-auto",
         "p-4",
-        "max-h-[calc(100vh-2rem)]",
-        "overflow-y-auto",
+        "max-w-lg",
+        "space-y-4",
       );
     });
 
@@ -374,9 +356,7 @@ describe("MovementForm", () => {
 
       fireEvent.submit(form!);
 
-      expect(
-        screen.getByText("El monto debe ser un número mayor a 0"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("El monto debe ser un número mayor a 0")).toBeInTheDocument();
       expect(mockAdd).not.toHaveBeenCalled();
     });
 
@@ -411,9 +391,7 @@ describe("MovementForm", () => {
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
       await waitFor(() => expect(toast).toHaveBeenCalledWith("#income-created"));
-      expect(closeModal).toHaveBeenCalledWith(
-        `#${MODAL_ID.MOVEMENT.INCOME.CREATE}`,
-      );
+      expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.INCOME.CREATE}`);
     });
 
     it("should update income when editing", async () => {
@@ -469,6 +447,29 @@ describe("MovementForm", () => {
       expect(screen.getByLabelText("Monto")).toHaveValue(150);
       expect(screen.getByDisplayValue("Old Movement")).toBeInTheDocument();
     });
+
+    it("restores the selected movement amount instead of the create default", () => {
+      mockUseStoreState({
+        editState: {
+          id: 1,
+          type: EDIT_TYPES.INCOME,
+        },
+      });
+
+      render(
+        <MovementForm
+          modalId={MODAL_ID.MOVEMENT.INCOME.EDIT}
+          movementType={MOVEMENT_TYPES.INCOME}
+        />,
+      );
+
+      const amount = screen.getByLabelText("Monto");
+      fireEvent.change(amount, { target: { value: "999" } });
+      expect(amount).toHaveValue(999);
+
+      fireEvent.reset(document.getElementById("income-form")!);
+      expect(amount).toHaveValue(150);
+    });
   });
 
   describe("Expense form", () => {
@@ -493,9 +494,7 @@ describe("MovementForm", () => {
         />,
       );
 
-      expect(
-        screen.queryByLabelText("Mensualidades (opcional)"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Mensualidades (opcional)")).not.toBeInTheDocument();
     });
 
     it("should show installments field when a credit account is selected", () => {
@@ -510,9 +509,7 @@ describe("MovementForm", () => {
         target: { value: "2" },
       });
 
-      expect(
-        screen.getByLabelText("Mensualidades (opcional)"),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Mensualidades (opcional)")).toBeInTheDocument();
     });
 
     it("should create expense when form is valid", async () => {
@@ -542,9 +539,7 @@ describe("MovementForm", () => {
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
       await waitFor(() => expect(toast).toHaveBeenCalledWith("#expense-created"));
-      expect(closeModal).toHaveBeenCalledWith(
-        `#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}`,
-      );
+      expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}`);
     });
 
     it("should update expense when editing", async () => {
@@ -657,9 +652,7 @@ describe("MovementForm", () => {
       });
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
       await waitFor(() => expect(toast).toHaveBeenCalledWith("#transfer-created"));
-      expect(closeModal).toHaveBeenCalledWith(
-        `#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}`,
-      );
+      expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}`);
     });
 
     it("should update transfer when editing", async () => {
@@ -784,5 +777,4 @@ describe("MovementForm", () => {
     expect(toast).not.toHaveBeenCalled();
     expect(closeModal).not.toHaveBeenCalled();
   });
-
 });

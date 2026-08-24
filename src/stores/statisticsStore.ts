@@ -1,7 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
+import { statisticsCommands } from "@/services/tauri/statistics";
 import {
   DEFAULT_GRANULARITY,
   isCurrentPeriod,
@@ -110,13 +110,13 @@ export const statisticsStore = createStore<StatisticsStore & StatisticsActions>(
 
     set({ loading: true, error: null });
     try {
-      const response = (await invoke("get_statistics", {
+      const response = await statisticsCommands.get({
         startMs: periodStartMs,
         endMs: periodEndMs,
         currencyId: selectedCurrencyId,
         granularity,
         options: null,
-      })) as StatisticsResponse;
+      });
 
       set((state) => ({
         response: requestId === latestRequestId ? response : state.response,

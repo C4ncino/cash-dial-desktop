@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 
-import { initStores } from "@/lib/init";
+import { initStores, resetInitializationForTests } from "@/lib/init";
 import { logger } from "@/lib/logger";
 
 const mocks = vi.hoisted(() => ({
@@ -43,6 +43,7 @@ vi.mock("@/stores/planningsStore", () => ({
 
 describe("initStores", () => {
   beforeEach(() => {
+    resetInitializationForTests();
     vi.clearAllMocks();
     mocks.populate.forEach((populate) => populate.mockResolvedValue(undefined));
     mocks.refreshRates.mockResolvedValue(undefined);

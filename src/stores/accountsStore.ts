@@ -1,16 +1,16 @@
-import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
+import { accountsCommands } from "@/services/tauri/accounts";
 import { statisticsStore } from "@/stores/statisticsStore";
-import { ACCOUNT_FUNCTIONS, ACCOUNT_TYPES } from "@/types/enums";
+import { ACCOUNT_TYPES } from "@/types/enums";
 
 export const accountsStore = createStore<AccountsStore & Actions<Account>>((set, get) => ({
   accounts: [] as Account[],
   types: [] as AccountType[],
   populate: async () => {
-    const types = (await invoke("get_account_types")) as AccountType[];
-    const accounts = (await invoke("get_accounts")) as Account[];
+    const types = await accountsCommands.getTypes();
+    const accounts = await accountsCommands.getAll();
 
     logger.debug("Accounts:", accounts);
     logger.debug("Account types:", types);
@@ -21,13 +21,13 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     });
   },
   add: async (account: Account) => {
-    const newAccount = (await invoke(ACCOUNT_FUNCTIONS.add, {
+    const newAccount = await accountsCommands.add({
       name: account.name,
       balance: account.balance,
       typeId: account.type.id,
       currencyId: account.currencyId,
       creditInfo: account.creditInfo,
-    })) as Account;
+    });
 
     logger.info("Account created", newAccount);
 
@@ -37,7 +37,7 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     }));
   },
   remove: async (id: number) => {
-    await invoke(ACCOUNT_FUNCTIONS.remove, { id });
+    await accountsCommands.remove(id);
 
     return set((state) => ({
       accounts: state.accounts.filter((account) => account.id !== id),
@@ -46,14 +46,13 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
   },
   getById: (id: number) => get().accounts.find((account) => account.id === id),
   update: async (id: number, account: Account) => {
-    const updatedAccount = (await invoke(ACCOUNT_FUNCTIONS.update, {
-      id,
+    const updatedAccount = await accountsCommands.update(id, {
       name: account.name,
       balance: account.balance,
       typeId: account.type.id,
       currencyId: account.currencyId,
       creditInfo: account.creditInfo,
-    })) as Account;
+    });
 
     return set((state) => ({
       accounts: state.accounts.map((acc) => (acc.id === id ? updatedAccount : acc)),
@@ -61,10 +60,10 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     }));
   },
   updateBalance: async (accountId: number, toAccountId?: number) => {
-    const balance1 = (await invoke(ACCOUNT_FUNCTIONS.getBalance, { id: accountId })) as number;
+    const balance1 = await accountsCommands.getBalance(accountId);
     let balance2: number | undefined;
     if (toAccountId !== undefined) {
-      balance2 = (await invoke(ACCOUNT_FUNCTIONS.getBalance, { id: toAccountId })) as number;
+      balance2 = await accountsCommands.getBalance(toAccountId);
     }
 
     set((state) => {
@@ -90,9 +89,7 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
   },
   getNextPayment: async (accountId: number) => {
     try {
-      const response = (await invoke(ACCOUNT_FUNCTIONS.getNextPayment, {
-        accountId,
-      })) as CreditCardNextPayment;
+      const response = await accountsCommands.getNextPayment(accountId);
       return response;
     } catch (error) {
       logger.error("Failed to get next payment", error);
@@ -105,11 +102,7 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     installmentIds: number[],
   ) => {
     try {
-      const result = (await invoke(ACCOUNT_FUNCTIONS.payCreditCard, {
-        creditAccountId,
-        payments,
-        installmentIds,
-      })) as CreditCardPaymentResult;
+      const result = await accountsCommands.payCreditCard(creditAccountId, payments, installmentIds);
       await get().populate();
       statisticsStore.getState().invalidate();
       return result;

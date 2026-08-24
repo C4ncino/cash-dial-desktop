@@ -3,7 +3,6 @@ import { useStore } from "zustand/react";
 import { groupMovementsByDate, movementsStore } from "@/stores/movementsStore";
 
 import MovementCard from "./MovementCard";
-import MovementCardCompact from "./MovementCardCompact";
 
 interface Props {
   movementIds: number[];
@@ -45,11 +44,7 @@ const MovementList = ({ movementIds, needCompact }: Props) => {
             {group.ids.map((id) => (
               <li key={id}>
                 {byId[id] ? (
-                  needCompact ? (
-                    <MovementCardCompact movement={byId[id]} />
-                  ) : (
-                    <MovementCard movement={byId[id]} showTime />
-                  )
+                  <MovementCard movement={byId[id]} showTime={!needCompact} variant={needCompact ? "compact" : "default"} />
                 ) : null}
               </li>
             ))}

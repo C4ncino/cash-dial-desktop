@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import StatusBadge, { type StatusTone } from "@/components/General/StatusBadge";
 import { PLANNING_STATUS } from "@/types/enums";
 
 interface Props {
@@ -10,32 +11,32 @@ interface Props {
 export function formatOccurrenceStatus(
   occurrence?: PlanningOccurrence | null,
   isActive = true,
-): { label: string; style: string } {
+): { label: string; tone: StatusTone } {
   if (!isActive) {
     return {
       label: "Inactiva",
-      style: "border border-zinc-200 bg-zinc-100/60 text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400",
+      tone: "neutral",
     };
   }
 
   if (!occurrence) {
     return {
       label: "Sin pendientes",
-      style: "border border-zinc-200 bg-zinc-100/60 text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400",
+      tone: "neutral",
     };
   }
 
   if (occurrence.statusId === PLANNING_STATUS.COMPLETED) {
     return {
       label: "Completada",
-      style: "border border-emerald-200/80 bg-emerald-50/80 text-emerald-700 dark:border-emerald-800/80 dark:bg-emerald-950/80 dark:text-emerald-300",
+      tone: "success",
     };
   }
 
   if (occurrence.statusId === PLANNING_STATUS.CANCELED) {
     return {
       label: "Cancelada",
-      style: "border border-zinc-200 bg-zinc-100/60 text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400",
+      tone: "neutral",
     };
   }
 
@@ -51,35 +52,31 @@ export function formatOccurrenceStatus(
   if (occurrence.isOverdue || occStartMs < todayStartMs) {
     return {
       label: "Vencida",
-      style: "border border-red-200/80 bg-red-50/80 text-red-700 dark:border-red-800/80 dark:bg-red-950/80 dark:text-red-300",
+      tone: "danger",
     };
   }
 
   if (occStartMs === todayStartMs) {
     return {
       label: "Hoy",
-      style: "border border-amber-200/80 bg-amber-50/80 text-amber-700 dark:border-amber-800/80 dark:bg-amber-950/80 dark:text-amber-300",
+      tone: "warning",
     };
   }
 
   return {
     label: "Próxima",
-    style: "border border-blue-200/80 bg-blue-50/80 text-blue-700 dark:border-blue-800/80 dark:bg-blue-950/80 dark:text-blue-300",
+    tone: "info",
   };
 }
 
 const PlanningStatusBadge = ({ occurrence, isActive = true, className = "" }: Props) => {
-  const { label, style } = useMemo(
+  const { label, tone } = useMemo(
     () => formatOccurrenceStatus(occurrence, isActive),
     [occurrence, isActive],
   );
 
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full ${style} ${className}`}
-    >
-      {label}
-    </span>
+    <StatusBadge tone={tone} className={className}>{label}</StatusBadge>
   );
 };
 

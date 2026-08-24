@@ -1,7 +1,6 @@
-import SquareIcon from "@/components/General/SquareIcon";
-import { budgetStore } from "@/stores/budgetStore";
-import { categoryStore } from "@/stores/categoryStore";
-import { currencyStore } from "@/stores/currencyStore";
+import EntityIcon from "@/components/General/EntityIcon";
+import InteractiveCard from "@/components/General/InteractiveCard";
+import { useBudgets, useCategories, useCurrencies } from "@/hooks/useStores";
 
 import BudgetMeter from "./BudgetMeter";
 
@@ -10,12 +9,9 @@ interface Props {
 }
 
 const BudgetCard = ({ budget }: Props) => {
-  const category = categoryStore.getState().getById(budget.budget.categoryId);
-  const currency = currencyStore.getState().getById(budget.budget.currencyId) as
-    | Currency
-    | undefined;
-
-  const periodTypes = budgetStore.getState().periodTypes;
+  const category = useCategories((state) => state.getById(budget.budget.categoryId));
+  const currency = useCurrencies((state) => state.getById(budget.budget.currencyId));
+  const periodTypes = useBudgets((state) => state.periodTypes);
   const periodType = periodTypes.find((p) => p.id === budget.budget.budgetPeriodTypeId);
 
   const currentPeriod = budget.periods[budget.periods.length - 1];
@@ -23,17 +19,16 @@ const BudgetCard = ({ budget }: Props) => {
   if (!currentPeriod) return null;
 
   return (
-    <a
+    <InteractiveCard
       href={`/budget?id=${budget.budget.id}`}
-      className="focus-ring glass-surface block w-full min-w-0 rounded-xl p-4 transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
       aria-label={`Abrir presupuesto ${budget.budget.name}`}
     >
       <hgroup className="mb-3 flex min-w-0 flex-row items-center gap-3">
         {category && (
-          <SquareIcon
+          <EntityIcon
             data-testid="square-icon"
-            className="w-10 h-10"
-            backgroundColor={category.color}
+            size="md"
+            color={category.color}
             icon={category.icon}
           />
         )}
@@ -53,7 +48,7 @@ const BudgetCard = ({ budget }: Props) => {
         limit={currentPeriod.amountLimit}
         currencyCode={currency?.code || ""}
       />
-    </a>
+    </InteractiveCard>
   );
 };
 

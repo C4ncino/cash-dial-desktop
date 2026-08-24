@@ -16,7 +16,8 @@ import { accountsStore } from "@/stores/accountsStore";
 import { budgetStore } from "@/stores/budgetStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { editStore } from "@/stores/editStore";
-import { createMovementFromData, movementsStore, validateMovement } from "@/stores/movementsStore";
+import { createMovementFromData, validateMovement } from "@/lib/forms/movement";
+import { movementsStore } from "@/stores/movementsStore";
 import { planningsStore } from "@/stores/planningsStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
@@ -131,6 +132,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
     hasCurrencyConversion,
     applyEcbRate,
     resetCurrencyConversion,
+    restoreCurrencyConversion,
   } = useMovementCurrencyConversion({
     currencies,
     movement,
@@ -251,8 +253,11 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       onSubmit={onSubmit}
       onReset={() => {
         setSelectedAccountId(movement?.accountId);
+        setSelectedToAccountId(movement?.toAccountId);
         setCategoryId(movement?.categoryId);
-        resetCurrencyConversion();
+        setSelectedPlanningId(movement?.planningId);
+        setSelectedPlanningOccurrenceId(undefined);
+        restoreCurrencyConversion();
         setErrors([]);
       }}
     >

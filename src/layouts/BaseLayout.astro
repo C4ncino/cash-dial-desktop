@@ -3,6 +3,7 @@ import Footer from "@/components/Footer/Footer.astro";
 import Header from "@/components/Header/Header.astro";
 import MobileHeader from "@/components/Header/MobileHeader.astro";
 import Head from "@/components/SEO/Head.astro";
+import AppToasts from "@/components/General/AppToasts.astro";
 import "@/styles/global.css";
 import "@/styles/webcore-setup.scss";
 
@@ -37,6 +38,7 @@ const props = Astro.props;
       >
         <slot />
       </main>
+      <AppToasts />
     </div>
   </body>
 </html>

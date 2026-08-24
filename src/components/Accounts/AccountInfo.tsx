@@ -4,7 +4,7 @@ import { useStore } from "zustand";
 
 import AccountNextPayment from "@/components/Accounts/AccountNextPayment";
 import AmountText from "@/components/General/AmountText";
-import SquareIcon from "@/components/General/SquareIcon";
+import EntityIcon from "@/components/General/EntityIcon";
 import { formatNumber } from "@/lib/formatters";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
@@ -26,9 +26,9 @@ const AccountInfo = () => {
   return (
     <>
       <header className="mb-4 flex flex-row items-center gap-3">
-        <SquareIcon
-          className="w-12 h-12"
-          backgroundColor={account.type.color}
+        <EntityIcon
+          size="lg"
+          color={account.type.color}
           icon={account.type.icon}
         />
         <hgroup className="flex flex-col">

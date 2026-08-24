@@ -1,6 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
+import { systemCommands } from "@/services/tauri/system";
 
 type Level = "trace" | "debug" | "info" | "warn" | "error";
+let globalHandlersBound = false;
 
 function shouldLog(level: Level) {
   const env = import.meta.env.MODE;
@@ -23,11 +24,7 @@ export const logger = {
   warn: async (...args: any[]) => {
     if (shouldLog("warn")) console.warn(...args);
     try {
-      await invoke("log_frontend_error", {
-        level: "warn",
-        message: String(args[0] || ""),
-        stack: undefined,
-      });
+      await systemCommands.logFrontendError("warn", String(args[0] || ""));
     } catch (e) {
       /* ignore */
     }
@@ -37,7 +34,7 @@ export const logger = {
     try {
       const message = String(args[0] || "");
       const stack = args[1] && args[1].stack ? String(args[1].stack) : undefined;
-      await invoke("log_frontend_error", { level: "error", message, stack });
+      await systemCommands.logFrontendError("error", message, stack);
     } catch (e) {
       /* ignore */
     }
@@ -45,6 +42,9 @@ export const logger = {
 };
 
 export function setupGlobalErrorHandlers() {
+  if (globalHandlersBound) return;
+  globalHandlersBound = true;
+
   window.addEventListener("error", (ev) => {
     const message = ev?.message || String(ev?.error || "Unknown error");
     const stack = (ev?.error && ev.error.stack) || undefined;

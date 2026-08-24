@@ -1,24 +1,21 @@
 import { Icon } from "@iconify/react";
-import { useStore } from "zustand";
 
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import useDate from "@/hooks/useDate";
+import { useCurrencies, useStatistics } from "@/hooks/useStores";
 import { isCurrentPeriod, periodRange, type StatisticsPeriod } from "@/lib/statisticsQuery";
-import { currencyStore } from "@/stores/currencyStore";
 import { statisticsStore } from "@/stores/statisticsStore";
 
 const StatisticsForm = () => {
-  const currencies = useStore(currencyStore, (state) => state.currencies);
-  const {
-    selectedCurrencyId,
-    period,
-    periodStartMs,
-    loading,
-    error,
-    setPeriod,
-    previousPeriod,
-    nextPeriod,
-  } = useStore(statisticsStore);
+  const currencies = useCurrencies((state) => state.currencies);
+  const selectedCurrencyId = useStatistics((state) => state.selectedCurrencyId);
+  const period = useStatistics((state) => state.period);
+  const periodStartMs = useStatistics((state) => state.periodStartMs);
+  const loading = useStatistics((state) => state.loading);
+  const error = useStatistics((state) => state.error);
+  const setPeriod = useStatistics((state) => state.setPeriod);
+  const previousPeriod = useStatistics((state) => state.previousPeriod);
+  const nextPeriod = useStatistics((state) => state.nextPeriod);
 
   const { endMs } = periodRange(periodStartMs, period);
 

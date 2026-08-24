@@ -5,7 +5,8 @@ import { useStore } from "zustand";
 
 import AccountForm from "@/components/Accounts/Form";
 import { logger } from "@/lib/logger";
-import { accountsStore, createAccountFromData, validate } from "@/stores/accountsStore";
+import { createAccountFromData, validateAccountForm as validate } from "@/lib/forms/account";
+import { accountsStore } from "@/stores/accountsStore";
 import { editStore } from "@/stores/editStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID } from "@/types/enums";
 
@@ -41,7 +42,10 @@ vi.mock("@/stores/accountsStore", () => ({
     }),
     subscribe: vi.fn(),
   },
-  validate: vi.fn(),
+}));
+
+vi.mock("@/lib/forms/account", () => ({
+  validateAccountForm: vi.fn(),
   createAccountFromData: vi.fn(),
 }));
 
@@ -232,7 +236,10 @@ describe("AccountForm", () => {
     fireEvent.click(screen.getByLabelText(/Cash/i));
     fireEvent.submit(document.getElementById("account-form")!);
 
-    const submittedData = vi.mocked(validate).mock.calls[0][0] as Record<string, FormDataEntryValue>;
+    const submittedData = vi.mocked(validate).mock.calls[0][0] as Record<
+      string,
+      FormDataEntryValue
+    >;
     expect(submittedData.creditLimit).toBeUndefined();
     expect(submittedData.cutoffDay).toBeUndefined();
     expect(submittedData.daysToPay).toBeUndefined();

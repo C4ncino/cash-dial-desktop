@@ -1,17 +1,17 @@
 ---
-import { Modal } from "webcoreui/astro";
+import AppModal from "@/components/General/AppModal.astro";
 
 import Form from "./Form";
 import { MODAL_ID } from "@/types/enums";
 ---
 
-<Modal id={MODAL_ID.ACCOUNT.CREATE} title="Crear Cuenta" className="glass-elevated w-[calc(100vw-2rem)]! max-w-lg! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-md">
+<AppModal id={MODAL_ID.ACCOUNT.CREATE} title="Crear Cuenta">
     <Form client:visible modalId={MODAL_ID.ACCOUNT.CREATE} />
-</Modal>
+</AppModal>
 
-<Modal id={MODAL_ID.ACCOUNT.EDIT} title="Editar Cuenta" className="glass-elevated w-[calc(100vw-2rem)]! max-w-lg! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-md">
+<AppModal id={MODAL_ID.ACCOUNT.EDIT} title="Editar Cuenta">
     <Form client:visible modalId={MODAL_ID.ACCOUNT.EDIT} />
-</Modal>
+</AppModal>
 
 <script>
     import { MODAL_ID } from "@/types/enums";

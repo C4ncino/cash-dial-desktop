@@ -1,7 +1,5 @@
-import { Icon } from "@iconify/react";
-import { useStore } from "zustand";
-
-import { categoryStore } from "@/stores/categoryStore";
+import { useCategories } from "@/hooks/useStores";
+import EntityLabel from "./EntityLabel";
 
 interface Props {
   id: number;
@@ -11,28 +9,10 @@ interface Props {
   fallbackName?: string;
 }
 
-const CategoryName = ({ id, parentId, customName, color, fallbackName }: Props) => {
-  const category = useStore(categoryStore, (state) =>
-    state?.getById
-      ? state.getById(id) ?? (parentId === undefined ? undefined : state.getById(parentId))
-      : state?.categories?.find((item) => item.id === id) ??
-        (parentId === undefined
-          ? undefined
-          : state?.categories?.find((item) => item.id === parentId)),
-  );
-
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {category && (
-        <Icon
-          icon={`iconoir:${category.icon}`}
-          style={{ color: color ?? category.color }}
-          className="h-4 w-4"
-        />
-      )}
-      {customName ?? category?.name ?? fallbackName ?? "—"}
-    </span>
-  );
-};
-
-export default CategoryName;
+export default function CategoryName({ id, parentId, customName, color, fallbackName }: Props) {
+  const category = useCategories((state) => {
+    const find = (categoryId: number) => state.getById?.(categoryId) ?? state.categories?.find((item) => item.id === categoryId);
+    return find(id) ?? (parentId === undefined ? undefined : find(parentId));
+  });
+  return <EntityLabel label={customName ?? category?.name} icon={category?.icon} color={color ?? category?.color} fallback={fallbackName} />;
+}

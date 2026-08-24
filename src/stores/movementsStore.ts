@@ -1,12 +1,12 @@
-import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
+import { movementsCommands } from "@/services/tauri/movements";
 import { planningsStore } from "@/stores/planningsStore";
 import { statisticsStore } from "@/stores/statisticsStore";
-import { MOVEMENT_FUNCTIONS, MOVEMENT_TYPES } from "@/types/enums";
+import { MOVEMENT_TYPES } from "@/types/enums";
 
-function buildByAccountIndex(movements: Movement[]): Record<number, number[]> {
+export function buildByAccountIndex(movements: Movement[]): Record<number, number[]> {
   const byAccount: Record<number, number[]> = {};
 
   for (const movement of movements) {
@@ -27,13 +27,14 @@ function buildByAccountIndex(movements: Movement[]): Record<number, number[]> {
 }
 
 async function attachInstallmentsIfNeeded(movement: Movement): Promise<Movement> {
-  if (movement.installments)
-    movement.installmentsData = (await invoke(MOVEMENT_FUNCTIONS.getInstallments, {
-      movementId: movement.id,
-    })) as MovementInstallment[];
-  else delete movement.installmentsData;
+  if (!movement.installments) return { ...movement };
 
-  return movement;
+  const installmentsData = await movementsCommands.getInstallments(movement.id);
+
+  return {
+    ...movement,
+    installmentsData: installmentsData ?? movement.installmentsData,
+  };
 }
 
 interface MovementsStoreActions {
@@ -49,8 +50,8 @@ export const movementsStore = createStore<
   types: [] as MovementType[],
 
   populate: async () => {
-    const types = (await invoke(MOVEMENT_FUNCTIONS.getTypes)) as MovementType[];
-    const movements = (await invoke(MOVEMENT_FUNCTIONS.get)) as Movement[];
+    const types = await movementsCommands.getTypes();
+    const movements = await movementsCommands.getAll();
 
     logger.debug("Movements:", movements);
     logger.debug("Movement types:", types);
@@ -81,9 +82,7 @@ export const movementsStore = createStore<
 
     const refreshedMovements = await Promise.all(
       uniqueMovementIds.map(async (id) => {
-        const movement = (await invoke(MOVEMENT_FUNCTIONS.getById, {
-          movementId: id,
-        })) as Movement;
+        const movement = await movementsCommands.get(id);
         return attachInstallmentsIfNeeded(movement);
       }),
     );
@@ -112,27 +111,11 @@ export const movementsStore = createStore<
     const planningId =
       movement.typeId === MOVEMENT_TYPES.TRANSFER ? undefined : movement.planningId;
 
-    console.log(movement);
-
-    const createdMovement = (await invoke(MOVEMENT_FUNCTIONS.add, {
-      typeId: movement.typeId,
-      accountId: movement.accountId,
-      toAccountId: movement.toAccountId,
-      categoryId: movement.categoryId,
-      currencyId: movement.currencyId,
-      originalAmount: movement.originalAmount,
-      accountAmount: movement.accountAmount,
-      installments: movement.installments,
-      timestamp: movement.timestamp,
-      description: movement.description,
-      planningId,
-    })) as Movement;
+    const createdMovement = await movementsCommands.add({ ...movement, planningId });
     const newMovement = planningId ? { ...createdMovement, planningId } : createdMovement;
 
     if (newMovement.installments) {
-      newMovement.installmentsData = (await invoke(MOVEMENT_FUNCTIONS.getInstallments, {
-        movementId: newMovement.id,
-      })) as MovementInstallment[];
+      newMovement.installmentsData = await movementsCommands.getInstallments(newMovement.id);
     }
 
     logger.info("Movement created", newMovement);
@@ -167,7 +150,7 @@ export const movementsStore = createStore<
 
   remove: async (id: number) => {
     const removedMovement = get().byId[id];
-    await invoke(MOVEMENT_FUNCTIONS.remove, { id });
+    await movementsCommands.remove(id);
 
     if (removedMovement?.planningId) {
       await planningsStore.getState().refresh(removedMovement.planningId);
@@ -192,24 +175,10 @@ export const movementsStore = createStore<
   getById: (id: number) => get().byId[id],
 
   update: async (id: number, movement: Movement) => {
-    const updatedMovement = (await invoke(MOVEMENT_FUNCTIONS.update, {
-      id,
-      typeId: movement.typeId,
-      accountId: movement.accountId,
-      toAccountId: movement.toAccountId,
-      categoryId: movement.categoryId,
-      currencyId: movement.currencyId,
-      originalAmount: movement.originalAmount,
-      accountAmount: movement.accountAmount,
-      installments: movement.installments,
-      timestamp: movement.timestamp,
-      description: movement.description,
-    })) as Movement;
+    const updatedMovement = await movementsCommands.update(id, movement);
 
     if (updatedMovement.installments) {
-      updatedMovement.installmentsData = (await invoke(MOVEMENT_FUNCTIONS.getInstallments, {
-        movementId: updatedMovement.id,
-      })) as MovementInstallment[];
+      updatedMovement.installmentsData = await movementsCommands.getInstallments(updatedMovement.id);
     }
     statisticsStore.getState().invalidate();
 

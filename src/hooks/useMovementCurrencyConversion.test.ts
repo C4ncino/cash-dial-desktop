@@ -82,6 +82,11 @@ describe("useMovementCurrencyConversion", () => {
     expect(result.current.originalAmount).toBe("0.00");
     expect(result.current.accountAmount).toBe("0.00");
     expect(result.current.selectedCurrencyId).toBeUndefined();
+
+    act(() => result.current.restoreCurrencyConversion());
+    expect(result.current.originalAmount).toBe("100");
+    expect(result.current.accountAmount).toBe("2100");
+    expect(result.current.selectedCurrencyId).toBe(2);
   });
 
   it("uses the origin account currency for transfers", async () => {

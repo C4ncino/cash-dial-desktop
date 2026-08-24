@@ -42,10 +42,15 @@ describe("Tauri - Account creation", () => {
     );
     await driver.executeScript("arguments[0].scrollIntoView({ block: 'center' }); arguments[0].click();", accountCard);
 
-    await driver.wait(until.elementLocated(By.css("body")), 10000);
+    const accountIsVisible = await driver.wait(async () => {
+      try {
+        const bodyText = await driver.findElement(By.css("body")).getText();
+        return bodyText.includes("Checking Account");
+      } catch {
+        return false;
+      }
+    }, 10000);
 
-    const bodyText = await driver.findElement(By.css("body")).getText();
-
-    expect(bodyText).toContain("Checking Account");
+    expect(accountIsVisible).toBe(true);
   });
 });

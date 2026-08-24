@@ -3,20 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { closeModal, toast } from "webcoreui";
 import { useStore } from "zustand";
 
-import PlanningForm, {
-  validatePlanningForm,
-} from "@/components/Plannings/PlanningForm";
+import PlanningForm from "@/components/Plannings/PlanningForm";
+import { validatePlanningForm } from "@/lib/forms/planning";
 import { accountsStore } from "@/stores/accountsStore";
 import { categoryStore } from "@/stores/categoryStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { editStore } from "@/stores/editStore";
 import { planningsStore } from "@/stores/planningsStore";
-import {
-  ACCOUNT_TYPES,
-  MODAL_ID,
-  MOVEMENT_TYPES,
-  PLANNINGS_RECURRING_TYPES,
-} from "@/types/enums";
+import { ACCOUNT_TYPES, MODAL_ID, MOVEMENT_TYPES, PLANNINGS_RECURRING_TYPES } from "@/types/enums";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("webcoreui", () => ({
@@ -25,9 +19,7 @@ vi.mock("webcoreui", () => ({
 }));
 
 vi.mock("@iconify/react", () => ({
-  Icon: ({ icon }: { icon: string }) => (
-    <span data-testid="icon" data-icon={icon} />
-  ),
+  Icon: ({ icon }: { icon: string }) => <span data-testid="icon" data-icon={icon} />,
 }));
 
 vi.mock("@/components/Forms/SelectCategories", () => ({
@@ -83,9 +75,7 @@ const mockUseStoreState = ({
     }
     if (store === categoryStore) {
       return selector({
-        categories: [
-          { id: 5, fatherId: null, name: "Gym", icon: "gym", color: "#3b82f6" },
-        ],
+        categories: [{ id: 5, fatherId: null, name: "Gym", icon: "gym", color: "#3b82f6" }],
         getById: (id: number) => ({
           id,
           name: "Gym",
@@ -133,9 +123,7 @@ const mockUseStoreState = ({
     }
     if (store === currencyStore) {
       return selector({
-        currencies: [
-          { id: 1, name: "Peso Mexicano", symbol: "$", code: "MXN" },
-        ],
+        currencies: [{ id: 1, name: "Peso Mexicano", symbol: "$", code: "MXN" }],
       });
     }
     return undefined;
@@ -220,9 +208,7 @@ describe("validatePlanningForm", () => {
       true,
     );
     expect(res.valid).toBe(false);
-    expect(res.errors).toContain(
-      "Las cuentas de tarjeta de crédito solo permiten gastos",
-    );
+    expect(res.errors).toContain("Las cuentas de tarjeta de crédito solo permiten gastos");
   });
 
   it("fails validation when end date is before start date", () => {
@@ -261,13 +247,11 @@ describe("PlanningForm Component", () => {
       "w-full",
       "mx-auto",
       "p-4",
-      "max-h-[calc(100dvh-2rem)]",
-      "overflow-y-auto",
+      "max-w-lg",
+      "space-y-4",
     );
 
-    expect(
-      screen.getByLabelText("Nombre de la planificación"),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Nombre de la planificación")).toBeInTheDocument();
     expect(screen.getByLabelText("Monto Estimado")).toBeInTheDocument();
     expect(screen.getByText("Gasto")).toBeInTheDocument();
     expect(screen.getByText("Ingreso")).toBeInTheDocument();
@@ -280,23 +264,14 @@ describe("PlanningForm Component", () => {
     fireEvent.click(screen.getByRole("button", { name: "Diario" }));
     fireEvent.click(screen.getByLabelText(/Definir fecha de finalizaci.n/i));
 
-    expect(screen.getByRole("button", { name: "Ingreso" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Diario" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: "Ingreso" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Diario" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText(/Definir fecha de finalizaci.n/i)).toBeChecked();
 
     fireEvent.click(screen.getByRole("button", { name: "Restaurar" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Gasto" })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
+      expect(screen.getByRole("button", { name: "Gasto" })).toHaveAttribute("aria-pressed", "true");
       expect(screen.getByRole("button", { name: "Mensual" })).toHaveAttribute(
         "aria-pressed",
         "true",
@@ -306,9 +281,7 @@ describe("PlanningForm Component", () => {
   });
 
   it("submits create planning payload on valid form submission", async () => {
-    const createSpy = vi
-      .spyOn(planningsStore.getState(), "create")
-      .mockResolvedValue({} as any);
+    const createSpy = vi.spyOn(planningsStore.getState(), "create").mockResolvedValue({} as any);
 
     render(<PlanningForm modalId={MODAL_ID.PLANNING.CREATE} />);
 

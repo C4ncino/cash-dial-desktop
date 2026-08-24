@@ -12,25 +12,27 @@ const FormActions = ({
   return (
     <menu className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end" aria-busy={disabled}>
       <li>
-        <button
+        <ActionButton
           type="reset"
           disabled={disabled}
-          className="focus-ring min-h-11 w-full rounded-lg border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 sm:w-auto dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          className="w-full sm:w-auto"
         >
           {resetLabel}
-        </button>
+        </ActionButton>
       </li>
       <li>
-        <button
+        <ActionButton
           type="submit"
           disabled={disabled}
-          className="focus-ring min-h-11 w-full rounded-lg border-2 border-green-600 bg-green-600 px-4 py-2 text-zinc-50 hover:cursor-pointer hover:border-green-500 hover:bg-green-500 sm:w-auto dark:border-green-400 dark:bg-green-400 dark:text-zinc-950 dark:hover:border-green-500 dark:hover:bg-green-500"
+          tone="success"
+          className="w-full sm:w-auto"
         >
           {disabled ? "Guardando…" : submitLabel}
-        </button>
+        </ActionButton>
       </li>
     </menu>
   );
 };
 
 export default FormActions;
+import ActionButton from "@/components/General/ActionButton";

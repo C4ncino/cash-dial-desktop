@@ -1,6 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import { logger, setupGlobalErrorHandlers } from "@/lib/logger";
+import { systemCommands } from "@/services/tauri/system";
 import { accountsStore } from "@/stores/accountsStore";
 import { budgetStore } from "@/stores/budgetStore";
 import { categoryStore } from "@/stores/categoryStore";
@@ -8,16 +7,17 @@ import { currencyStore } from "@/stores/currencyStore";
 import { movementsStore } from "@/stores/movementsStore";
 import { planningsStore } from "@/stores/planningsStore";
 
-setupGlobalErrorHandlers();
+let initialization: Promise<void> | null = null;
 
-export async function initStores() {
-  const initialized = (await invoke("get_initialize_state")) as boolean;
+async function initializeStores() {
+  setupGlobalErrorHandlers();
+  const initialized = await systemCommands.getInitializeState();
 
   logger.debug("Initialize state:", initialized);
 
   // if (initialized) return;
 
-  await invoke("initialize");
+  await systemCommands.initialize();
 
   logger.info("Initializing stores...");
 
@@ -44,4 +44,18 @@ export async function initStores() {
   }
 
   logger.info("Stores ready...");
+}
+
+export function initStores(): Promise<void> {
+  if (!initialization) {
+    initialization = initializeStores().catch((error) => {
+      initialization = null;
+      throw error;
+    });
+  }
+  return initialization;
+}
+
+export function resetInitializationForTests() {
+  initialization = null;
 }

@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import { useStore } from "zustand";
 
-import SquareIcon from "@/components/General/SquareIcon";
+import EntityIcon from "@/components/General/EntityIcon";
 import AmountText from "@/components/General/AmountText";
 import AccountName from "@/components/General/AccountName";
 import CategoryName from "@/components/General/CategoryName";
@@ -47,9 +47,9 @@ const PlanningInfo = () => {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         {category && (
-          <SquareIcon
-            className="w-12 h-12"
-            backgroundColor={category.color}
+          <EntityIcon
+            size="lg"
+            color={category.color}
             icon={category.icon}
           />
         )}

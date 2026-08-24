@@ -1,8 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
 import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
-import { CATEGORY_FUNCTIONS } from "@/types/enums";
+import { categoryCommands } from "@/services/tauri/referenceData";
 
 export const categoryStore = createStore<
   CategoryStore & Omit<Actions<Category>, "add" | "remove" | "update">
@@ -10,7 +9,7 @@ export const categoryStore = createStore<
   categories: [] as Category[],
 
   populate: async () => {
-    const categories = (await invoke(CATEGORY_FUNCTIONS.get)) as Category[];
+    const categories = await categoryCommands.getAll();
     logger.debug("Categories:", categories);
     return set({ categories });
   },

@@ -1,19 +1,20 @@
-import SquareIcon from "@/components/General/SquareIcon";
-import { formatNumber } from "@/lib/formatters";
-import { currencyStore } from "@/stores/currencyStore";
+import AmountText from "@/components/General/AmountText";
+import EntityIcon from "@/components/General/EntityIcon";
+import InteractiveCard from "@/components/General/InteractiveCard";
+import { selectCurrencyById, useCurrencies } from "@/hooks/useStores";
 
 export default function AccountCard(account: Account) {
-  const currency = currencyStore.getState().getById(account.currencyId) as Currency;
+  const currency = useCurrencies(selectCurrencyById(account.currencyId));
 
   return (
-    <a
-      className="focus-ring glass-surface block min-h-32 w-full min-w-0 cursor-pointer rounded-xl p-4 transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
+    <InteractiveCard
+      className="min-h-32 cursor-pointer"
       href={`/account?id=${account.id}`}
     >
       <hgroup className="mb-3 flex min-w-0 flex-row gap-3">
-        <SquareIcon
-          className="w-8 h-8"
-          backgroundColor={account.type.color}
+        <EntityIcon
+          size="sm"
+          color={account.type.color}
           icon={account.type.icon}
         />
 
@@ -22,20 +23,14 @@ export default function AccountCard(account: Account) {
         </h3>
       </hgroup>
 
-      <strong
-        className={`block truncate text-right text-xl font-medium tabular-nums ${
-          account.balance < 0 ? "text-red-600 dark:text-red-400" : "text-zinc-950 dark:text-zinc-100"
-        } line-clamp-1`}
-      >
-        {formatNumber(account.balance, 99999999)}
-      </strong>
+      <AmountText amount={account.balance} maximum={99999999} tone={account.balance < 0 ? "expense" : "neutral"} className="flex w-full justify-end text-xl" amountClassName="truncate font-medium" />
 
       <abbr
         className="block text-right text-sm font-light text-zinc-700 no-underline dark:text-zinc-300"
-        title={currency.name}
+        title={currency?.name}
       >
-        {currency.code}
+        {currency?.code ?? "—"}
       </abbr>
-    </a>
+    </InteractiveCard>
   );
 }

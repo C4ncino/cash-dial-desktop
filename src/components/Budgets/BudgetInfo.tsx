@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useStore } from "zustand";
 
-import SquareIcon from "@/components/General/SquareIcon";
+import EntityIcon from "@/components/General/EntityIcon";
 import { formatNumber } from "@/lib/formatters";
 import { budgetStore } from "@/stores/budgetStore";
 import { categoryStore } from "@/stores/categoryStore";
@@ -36,10 +36,10 @@ const BudgetInfo = () => {
   return (
     <section className="mb-4 flex items-center gap-4 p-4">
       {category && (
-        <SquareIcon
+        <EntityIcon
           data-testid="square-icon"
-          className="w-12 h-12"
-          backgroundColor={category.color}
+          size="lg"
+          color={category.color}
           icon={category.icon}
         />
       )}

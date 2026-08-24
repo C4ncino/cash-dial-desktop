@@ -123,6 +123,27 @@ export const useMovementCurrencyConversion = ({
     skipConversionRef.current = false;
   }, []);
 
+  const restoreCurrencyConversion = useCallback(() => {
+    if (movement) {
+      setSelectedCurrencyId(movement.currencyId);
+      setOriginalAmount(String(movement.originalAmount));
+      setAccountAmount(String(movement.accountAmount ?? movement.originalAmount));
+      skipConversionRef.current = true;
+    } else if (selectedPlanning) {
+      setSelectedCurrencyId(selectedPlanning.currencyId);
+      setOriginalAmount(String(selectedPlanning.amount));
+      setAccountAmount(DEFAULT_AMOUNT);
+      skipConversionRef.current = false;
+    } else {
+      setSelectedCurrencyId(undefined);
+      setOriginalAmount(DEFAULT_AMOUNT);
+      setAccountAmount(DEFAULT_AMOUNT);
+      skipConversionRef.current = false;
+    }
+
+    setHasManualAccountAmount(false);
+  }, [movement, selectedPlanning]);
+
   return {
     selectedCurrencyId,
     setSelectedCurrencyId,
@@ -136,6 +157,7 @@ export const useMovementCurrencyConversion = ({
     hasCurrencyConversion,
     applyEcbRate,
     resetCurrencyConversion,
+    restoreCurrencyConversion,
   };
 };
 
