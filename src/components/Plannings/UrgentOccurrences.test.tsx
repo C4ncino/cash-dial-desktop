@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
@@ -89,9 +89,11 @@ describe("UrgentOccurrences", () => {
       "dateTime",
       new Date("2026-08-20").toISOString(),
     );
-    expect(screen.getByRole("link", { name: /Rent/ })).toHaveAttribute(
-      "href",
-      "/planning-detail?id=1",
-    );
+    const rentCard = screen.getByRole("link", { name: /Rent/ });
+    const dateTerm = within(rentCard).getByText("Fecha");
+    const amountTerm = within(rentCard).getByText("Monto");
+    expect(dateTerm.nextElementSibling).toContainElement(dueDate);
+    expect(amountTerm.nextElementSibling).toContainElement(rentCard.querySelector("strong"));
+    expect(rentCard).toHaveAttribute("href", "/planning-detail?id=1");
   });
 });

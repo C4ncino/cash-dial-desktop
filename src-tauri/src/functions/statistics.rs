@@ -91,9 +91,11 @@ pub fn get_statistics(
     // Fetch category aggregation
     let category_id = opts.category_id;
     let include_descendants = opts.include_descendants.unwrap_or(true);
+    let lang = crate::utils::preferred_lang();
     let (by_category_hierarchy, by_category_flat, total_expenses) =
         statistics_query::categories_aggregation(
             connection,
+            &lang,
             start_ms,
             end_ms,
             currency_id,

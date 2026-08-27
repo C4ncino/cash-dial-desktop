@@ -9,11 +9,16 @@ import { MODAL_ID } from "@/types/enums";
   <Form client:visible modalId={MODAL_ID.BUDGET.CREATE} />
 </AppModal>
 
-<AppModal id={MODAL_ID.BUDGET.EDIT} title="Editar Presupuesto">
+<AppModal
+  id={MODAL_ID.BUDGET.EDIT}
+  title="Editar Presupuesto"
+  className="overflow-y-visible! overscroll-auto!"
+>
   <Form client:visible modalId={MODAL_ID.BUDGET.EDIT} />
 </AppModal>
 
 <script>
+  import { editStore } from "@/stores/editStore";
   import { MODAL_ID } from "@/types/enums";
   import { modal } from "webcoreui";
 
@@ -26,6 +31,7 @@ import { MODAL_ID } from "@/types/enums";
     modal({
       trigger: "#edit-budget-button",
       modal: `#${MODAL_ID.BUDGET.EDIT}`,
+      onClose: () => editStore.getState().clear(),
     });
   });
 </script>

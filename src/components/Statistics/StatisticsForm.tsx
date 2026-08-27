@@ -91,7 +91,7 @@ const StatisticsForm = () => {
           <SelectCurrency
             id="currencyId"
             value={selectedCurrencyId ?? ""}
-            className="w-full! rounded-lg"
+            className="w-full! rounded-lg px-3 py-2"
             onChange={(event) =>
               statisticsStore.getState().setSelectedCurrencyId(Number(event.target.value))
             }

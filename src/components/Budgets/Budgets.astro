@@ -1,5 +1,5 @@
 ---
-import { Icon } from "astro-icon/components";
+import AddButton from "@/components/General/AddButton";
 import SectionHeader from "@/components/General/SectionHeader.astro";
 
 import BudgetModals from "./Modals.astro";
@@ -25,15 +25,12 @@ const {
     headingId="budgets-title"
     level={headingLevel}
   >
-    <button
+    <AddButton
       slot="actions"
-      type="button"
-      class="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-500 dark:bg-green-400 dark:text-zinc-950 dark:hover:bg-green-500"
       id="create-budget-button"
     >
-      <Icon name="iconoir:plus" class="size-5 text-white dark:text-zinc-950" />
       Añadir presupuesto
-    </button>
+    </AddButton>
   </SectionHeader>
 
   <BudgetsList client:load />

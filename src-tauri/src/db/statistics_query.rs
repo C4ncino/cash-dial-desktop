@@ -222,13 +222,16 @@ pub fn balance_trend(
 
 pub fn categories_aggregation(
     c: &mut SqliteConnection,
+    lang: &str,
     start: i64,
     end: i64,
     currency: i32,
     root: Option<i32>,
     include_descendants: bool,
 ) -> StatisticsResult<(Vec<HierarchicalCategory>, Vec<CategoryEntry>, f64)> {
-    let cats: Vec<CategoryRow> = sql_query("SELECT c.id, COALESCE(t.name,c.key) AS name, c.father_id AS parent_id FROM categories c LEFT JOIN categories_translations t ON t.category_id=c.id AND t.lang='en'").load(c)?;
+    let cats: Vec<CategoryRow> = sql_query("SELECT c.id, COALESCE(t.name,c.key) AS name, c.father_id AS parent_id FROM categories c LEFT JOIN categories_translations t ON t.category_id=c.id AND t.lang=?")
+        .bind::<Text, _>(lang)
+        .load(c)?;
     let amounts: Vec<CategoryAmountRow> = sql_query("SELECT category_id, SUM(original_amount) AS amount FROM movements WHERE type_id=2 AND currency_id=? AND timestamp>=? AND timestamp<? GROUP BY category_id").bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).load(c)?;
     let mut direct: HashMap<i32, f64> =
         amounts.into_iter().map(|r| (r.category_id, r.amount.unwrap_or(0.0))).collect();
@@ -558,9 +561,10 @@ mod tests {
             .execute(&mut c).unwrap();
 
         let (hierarchy, flat, total) =
-            categories_aggregation(&mut c, start, end, 1, None, true).unwrap();
+            categories_aggregation(&mut c, "es", start, end, 1, None, true).unwrap();
         assert!((total - 3210.17).abs() < 0.0001);
         assert_eq!(flat.iter().find(|x| x.category_id == 1).unwrap().amount, 40.0);
+        assert_eq!(flat.iter().find(|x| x.category_id == 1).unwrap().name, "Comida y Bebida");
         assert_eq!(flat.iter().find(|x| x.category_id == -1).unwrap().name, "General");
         assert_eq!(
             hierarchy

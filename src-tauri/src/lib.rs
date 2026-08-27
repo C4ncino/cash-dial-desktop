@@ -121,7 +121,9 @@ pub fn run() {
 
             tracing::info!("Application starting");
 
-            let app_data_dir = app.path().app_data_dir()?;
+            // Keep persistent data outside the installer directory so upgrades can
+            // replace the application without replacing the user's database.
+            let app_data_dir = app.path().app_data_dir()?.join("cash-dial");
             std::fs::create_dir_all(&app_data_dir)?;
             let default_database_url =
                 app_data_dir.join("db.sqlite").to_string_lossy().into_owned();

@@ -22,7 +22,7 @@ const AccountForm = ({ modalId }: Props) => {
   const types = useStore(accountsStore, (state) => state.types);
   const editState = useStore(editStore, (state) => state);
 
-  const [typeId, setTypeId] = useState<number | null>(types[0]?.id ?? null);
+  const [typeId, setTypeId] = useState<number | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const { submitting, begin, finish, isMounted } = useSubmissionGuard();
 
@@ -34,10 +34,10 @@ const AccountForm = ({ modalId }: Props) => {
         ? accountsStore.getState().getById(editState.id)
         : null;
 
-    setTypeId(account ? account.type.id : (types[0]?.id ?? null));
+    setTypeId(account ? account.type.id : null);
 
     return account;
-  }, [editState.id, editState.type, modalId, types]);
+  }, [editState.id, editState.type, modalId]);
 
   const onSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -95,7 +95,7 @@ const AccountForm = ({ modalId }: Props) => {
       id="account-form"
       onSubmit={onSubmit}
       onReset={() => {
-        setTypeId(account ? account.type.id : (types[0]?.id ?? null));
+        setTypeId(account ? account.type.id : null);
         setErrors([]);
       }}
     >
@@ -125,7 +125,13 @@ const AccountForm = ({ modalId }: Props) => {
         </div>
       </fieldset>
 
-      <SegmentedControl items={types} modalId={modalId} value={typeId} onChange={setTypeId} />
+      <SegmentedControl
+        key={typeId === null ? "true" : "false"}
+        items={types}
+        modalId={modalId}
+        value={typeId}
+        onChange={setTypeId}
+      />
 
       {typeId === ACCOUNT_TYPES.CREDIT && (
         <fieldset id="credit-fields" className="space-y-4">

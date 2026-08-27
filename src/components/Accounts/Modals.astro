@@ -14,6 +14,7 @@ import { MODAL_ID } from "@/types/enums";
 </AppModal>
 
 <script>
+    import { editStore } from "@/stores/editStore";
     import { MODAL_ID } from "@/types/enums";
     import { modal } from "webcoreui";
 
@@ -26,6 +27,7 @@ import { MODAL_ID } from "@/types/enums";
         modal({
             trigger: "#edit-account-button",
             modal: `#${MODAL_ID.ACCOUNT.EDIT}`,
+            onClose: () => editStore.getState().clear(),
         });
     });
 </script>

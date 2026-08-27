@@ -5,21 +5,24 @@ import PlanningForm from "./PlanningForm";
 import { MODAL_ID } from "@/types/enums";
 ---
 
-<AppModal
-  id={MODAL_ID.PLANNING.CREATE}
-  title="Crear Planificación"
->
-  <PlanningForm client:visible modalId={MODAL_ID.PLANNING.CREATE} formId="create-planning-form" />
+<AppModal id={MODAL_ID.PLANNING.CREATE} title="Crear Planificación">
+  <PlanningForm
+    client:visible
+    modalId={MODAL_ID.PLANNING.CREATE}
+    formId="create-planning-form"
+  />
 </AppModal>
 
-<AppModal
-  id={MODAL_ID.PLANNING.EDIT}
-  title="Editar Planificación"
->
-  <PlanningForm client:visible modalId={MODAL_ID.PLANNING.EDIT} formId="edit-planning-form" />
+<AppModal id={MODAL_ID.PLANNING.EDIT} title="Editar Planificación">
+  <PlanningForm
+    client:visible
+    modalId={MODAL_ID.PLANNING.EDIT}
+    formId="edit-planning-form"
+  />
 </AppModal>
 
 <script>
+  import { editStore } from "@/stores/editStore";
   import { MODAL_ID } from "@/types/enums";
   import { modal } from "webcoreui";
 
@@ -32,6 +35,7 @@ import { MODAL_ID } from "@/types/enums";
     modal({
       trigger: "#edit-planning-button",
       modal: `#${MODAL_ID.PLANNING.EDIT}`,
+      onClose: () => editStore.getState().clear(),
     });
   });
 </script>

@@ -54,6 +54,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 </AppModal>
 
 <script>
+    import { editStore } from "@/stores/editStore";
     import { MODAL_ID } from "@/types/enums";
     import { modal } from "webcoreui";
 
@@ -76,16 +77,19 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
         modal({
             trigger: `#${MODAL_ID.MOVEMENT.INCOME.EDIT}-button`,
             modal: `#${MODAL_ID.MOVEMENT.INCOME.EDIT}`,
+            onClose: () => editStore.getState().clear(),
         });
 
         modal({
             trigger: `#${MODAL_ID.MOVEMENT.EXPENSE.EDIT}-button`,
             modal: `#${MODAL_ID.MOVEMENT.EXPENSE.EDIT}`,
+            onClose: () => editStore.getState().clear(),
         });
 
         modal({
             trigger: `#${MODAL_ID.MOVEMENT.TRANSFER.EDIT}-button`,
             modal: `#${MODAL_ID.MOVEMENT.TRANSFER.EDIT}`,
+            onClose: () => editStore.getState().clear(),
         });
     });
 </script>

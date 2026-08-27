@@ -27,28 +27,39 @@ const UrgentOccurrenceCard = ({ planning, occurrence }: Props) => {
     <a
       href={`/planning-detail?id=${planning.id}`}
       data-testid="urgent-occurrence-card"
-      className="focus-ring glass-surface block rounded-xl p-4 transition-colors hover:border-zinc-400 hover:bg-zinc-200/60 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
+      className="focus-ring glass-surface block space-y-3 rounded-lg p-3 transition-colors hover:border-zinc-400 hover:bg-zinc-200/60 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="mt-1 font-semibold text-zinc-950 dark:text-zinc-100">{planning.name}</h3>
+        <h3 className="min-w-0 truncate text-lg font-semibold text-zinc-950 dark:text-zinc-100">
+          {planning.name}
+        </h3>
         <PlanningStatusBadge occurrence={occurrence} />
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <dd>
-          <AmountText
-            amount={planning.amount}
-            tone={isExpense || planning.amount < 0 ? "expense" : "income"}
-            icon={isExpense || planning.amount < 0 ? "minus" : "plus"}
-            format="number"
-            className="text-lg"
-            amountClassName="font-semibold"
-          />
-        </dd>
-        <dd className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">
-          <time dateTime={new Date(occurrence.expectedDate).toISOString()}>
-            {formatOccurrenceDueDifference(occurrence.expectedDate)}
-          </time>
-        </dd>
+      <dl className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <dt className="sr-only">Fecha</dt>
+          <dd>
+            <time
+              dateTime={new Date(occurrence.expectedDate).toISOString()}
+              className="block leading-5 text-zinc-600 dark:text-zinc-400"
+            >
+              {formatOccurrenceDueDifference(occurrence.expectedDate)}
+            </time>
+          </dd>
+        </div>
+        <div className="shrink-0 text-right">
+          <dt className="sr-only">Monto</dt>
+          <dd>
+            <AmountText
+              amount={planning.amount}
+              tone={isExpense || planning.amount < 0 ? "expense" : "income"}
+              icon={isExpense || planning.amount < 0 ? "minus" : "plus"}
+              format="number"
+              className="leading-5"
+              amountClassName="font-semibold"
+            />
+          </dd>
+        </div>
       </dl>
     </a>
   );

@@ -20,16 +20,16 @@ type CategoriesListProps = {
 };
 
 const COLORS = [
-  "#304FFE", // Blue
-  "#00BFA5", // Teal
-  "#7C4DFF", // Violet
-  "#00A9E8", // Cyan-blue
-  "#5E35B1", // Deep purple
-  "#00E5A0", // Cool green
-  "#4169FF", // Royal blue
-  "#00B8D4", // Cyan
-  "#8E7CFF", // Light violet
-  "#45D6A5", // Mint green
+  "#7B9FE8", // Powder blue
+  "#72C7B8", // Mint
+  "#A78BDA", // Lavender
+  "#E7A977", // Peach
+  "#D98FA6", // Blush pink
+  "#6FB5D4", // Pastel sky
+  "#8FC58A", // Sage green
+  "#D9C46C", // Butter yellow
+  "#C58AC7", // Soft orchid
+  "#E38D7B", // Pastel coral
 ];
 
 const categoryColor = (path: number[]) => {

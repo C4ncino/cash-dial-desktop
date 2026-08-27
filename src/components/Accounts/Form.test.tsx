@@ -280,7 +280,6 @@ describe("AccountForm", () => {
     expect(screen.getByText("Invalid account")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Restaurar" }));
     expect(screen.queryByText("Invalid account")).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Cash/i)).toBeChecked();
   });
 
   it("suppresses completion UI effects after unmount", async () => {
