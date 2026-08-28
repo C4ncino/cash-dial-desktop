@@ -20,11 +20,6 @@ jobs:
           version: 11.5.1
           run_install: false
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -38,8 +33,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf webkit2gtk-driver xvfb
 
-      - name: Install tauri-driver
-        run: cargo install tauri-driver --locked
+      - name: Rust lint
+        working-directory: src-tauri
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --locked -- --test-threads=1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
 
       - name: Install JavaScript dependencies
         run: pnpm install --frozen-lockfile
@@ -50,27 +55,18 @@ jobs:
       - name: Biome lint
         run: pnpm lint
 
-      - name: Rust lint
-        working-directory: src-tauri
-        run: cargo clippy --locked --all-targets --all-features -- -D warnings
-
       - name: Frontend tests
         run: pnpm test
 
       - name: Release automation tests
         run: pnpm test:release
 
-      - name: Rust tests
-        working-directory: src-tauri
-        run: cargo test --locked -- --test-threads=1
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --locked
 
-      - name: Production build
-        run: pnpm build
-
-      - name: Integration and E2E tests
+      - name: Integration tests
         run: |
           xvfb-run -a pnpm test:integration
-          xvfb-run -a pnpm test:e2e:fast
 
       - name: Upload failure artifacts
         if: failure()
@@ -82,7 +78,6 @@ jobs:
           path: |
             src-tauri/test-logs
             integration-tests-front.sqlite
-            e2e-test.sqlite
             ~/.local/share/**/logs
 
   windows-e2e:
@@ -115,14 +110,31 @@ jobs:
       - name: Install matching Edge WebDriver
         shell: pwsh
         run: |
-          $edgePath = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
-          $edgeVersion = (Get-Item -LiteralPath $edgePath).VersionInfo.ProductVersion
-          $driverDirectory = Join-Path $env:RUNNER_TEMP "edge-driver"
-          $archive = Join-Path $env:RUNNER_TEMP "edge-driver.zip"
-          New-Item -ItemType Directory -Force -Path $driverDirectory | Out-Null
-          Invoke-WebRequest "https://msedgedriver.microsoft.com/$edgeVersion/edgedriver_win64.zip" -OutFile $archive
-          Expand-Archive -LiteralPath $archive -DestinationPath $driverDirectory -Force
-          Add-Content -LiteralPath $env:GITHUB_PATH -Value $driverDirectory
+          cargo install --git https://github.com/chippers/msedgedriver-tool
+          & "$HOME/.cargo/bin/msedgedriver-tool.exe"
+
+          $nativeDriver = Join-Path $PWD "msedgedriver.exe"
+          if (-not (Test-Path -LiteralPath $nativeDriver)) {
+            $installedDriver = (Get-Command msedgedriver.exe -ErrorAction Stop).Source
+            Copy-Item -LiteralPath $installedDriver -Destination $nativeDriver
+          }
+
+          $logDir = Join-Path $PWD "src-tauri\test-logs"
+          New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+          $driverLog = Join-Path $logDir "msedgedriver.log"
+          $driverWrapper = Join-Path $PWD "msedgedriver-verbose.cmd"
+
+          @'
+          @echo off
+          "%~dp0msedgedriver.exe" --verbose --append-log --log-path="%MSEDGEDRIVER_LOG_PATH%" %*
+          '@ | Set-Content -LiteralPath $driverWrapper -Encoding ascii
+
+          "MSEDGEDRIVER_LOG_PATH=$driverLog" >> $env:GITHUB_ENV
+          "TAURI_NATIVE_DRIVER=$driverWrapper" >> $env:GITHUB_ENV
+          $PWD.Path >> $env:GITHUB_PATH
+
+          Write-Host "Microsoft Edge WebDriver: $(& $nativeDriver --version)"
+          Write-Host "Verbose EdgeDriver log: $driverLog"
 
       - name: Install JavaScript dependencies
         run: pnpm install --frozen-lockfile
@@ -130,14 +142,29 @@ jobs:
       - name: E2E tests
         run: pnpm test:e2e
 
-      - name: Upload failure artifacts
+      - name: Upload EdgeDriver diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edgedriver-logs-windows
+          if-no-files-found: ignore
+          retention-days: 7
+          path: src-tauri/test-logs
+
+      - name: Upload failed E2E database
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts-windows
+          name: e2e-database-windows
           if-no-files-found: ignore
           retention-days: 7
-          path: |
-            src-tauri/test-logs
-            e2e-test.sqlite
-            ~/AppData/Roaming/**/logs
+          path: e2e-test.sqlite
+
+      - name: Upload failed application logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-logs-windows
+          if-no-files-found: ignore
+          retention-days: 7
+          path: ~/AppData/Roaming/**/logs

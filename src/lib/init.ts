@@ -15,9 +15,7 @@ async function initializeStores() {
 
   logger.debug("Initialize state:", initialized);
 
-  // if (initialized) return;
-
-  await systemCommands.initialize();
+  if (!initialized) await systemCommands.initialize();
 
   logger.info("Initializing stores...");
 

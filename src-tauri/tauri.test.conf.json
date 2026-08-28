@@ -1,0 +1,14 @@
+{
+  "app": {
+    "windows": [
+      {
+        "title": "Cash Dial",
+        "width": 1280,
+        "height": 1024,
+        "resizable": true,
+        "fullscreen": false,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required --remote-debugging-port=0 --enable-automation --enable-logging --log-level=0 --no-first-run --test-type=webdriver --v=1"
+      }
+    ]
+  }
+}

@@ -1,13 +1,17 @@
 import {
+  clickWhenReady,
   closeTauriDriver,
   createDriver,
   driver,
   findVisible,
+  invokeCommand,
   navigateTo,
   waitForHomeReady,
 } from "@test/driver";
 import { By, Key, until, type WebElement } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { ACCOUNT_FUNCTIONS, MOVEMENT_FUNCTIONS } from "@/types/enums";
 
 describe("Movement E2E", () => {
   beforeEach(async () => {
@@ -33,16 +37,7 @@ describe("Movement E2E", () => {
     if (!classes) return false;
 
     if (!classes.includes("is-open")) {
-      await driver.wait(async () => {
-        try {
-          // Locate and click in the same retry. Hydration can replace the
-          // toggle between separate findElement and click calls.
-          await driver.findElement(By.id("speed-dial-toggle")).click();
-          return true;
-        } catch {
-          return false;
-        }
-      }, 10000);
+      await clickWhenReady(By.id("speed-dial-toggle"), 10_000);
       await driver.wait(async () => {
         try {
           const cls = await driver.findElement(speedDialLocator).getAttribute("class");
@@ -57,51 +52,63 @@ describe("Movement E2E", () => {
     }
   }
 
-  async function clearAndType(element: any, text: string) {
+  async function clearAndType(element: WebElement, text: string) {
     await element.sendKeys(Key.chord(Key.CONTROL, "a"));
     await element.sendKeys(Key.BACK_SPACE);
     await element.sendKeys(text);
   }
 
   async function getAccountBalance(accountId: number): Promise<number> {
-    const cardLocator = By.css(`a[href="/account?id=${accountId}"]`);
-    return driver.wait<number>(async () => {
-      try {
-        const card = await driver.findElement(cardLocator);
-        const balanceText = await card.findElement(By.css("strong")).getText();
-        const cleaned = balanceText.replace(/[^\d.,-]/g, "");
-        const lastComma = cleaned.lastIndexOf(",");
-        const lastDot = cleaned.lastIndexOf(".");
-
-        if (lastComma > lastDot)
-          return Number.parseFloat(cleaned.replace(/\./g, "").replace(/,/g, "."));
-        if (lastDot > lastComma) return Number.parseFloat(cleaned.replace(/,/g, ""));
-        if (lastComma !== -1) {
-          return Number.parseFloat(
-            cleaned.match(/,\d{2}$/) ? cleaned.replace(/,/g, ".") : cleaned.replace(/,/g, ""),
-          );
-        }
-        return Number.parseFloat(cleaned);
-      } catch {
-        return false;
-      }
-    }, 10000);
+    return invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, { id: accountId });
   }
 
   async function getAccountBalanceByName(name: string): Promise<number> {
-    const card = await driver.wait(
-      until.elementLocated(
-        By.xpath(`//a[starts-with(@href, '/account?id=') and contains(., '${name}')]`),
-      ),
-      10000,
+    const accounts = await invokeCommand<Account[]>(ACCOUNT_FUNCTIONS.get);
+    const account = accounts.find((candidate) => candidate.name === name);
+    if (!account) {
+      throw new Error(
+        `Seeded account "${name}" was not found. Available accounts: ${accounts
+          .map((candidate) => candidate.name)
+          .join(", ")}`,
+      );
+    }
+    return getAccountBalance(account.id);
+  }
+
+  async function waitForMovement(description: string): Promise<Movement> {
+    return driver.wait<Movement>(
+      async () => {
+        try {
+          const movements = await invokeCommand<Movement[]>(MOVEMENT_FUNCTIONS.get);
+          return movements.find((movement) => movement.description === description) ?? false;
+        } catch {
+          return false;
+        }
+      },
+      15_000,
+      `Movement was not persisted: ${description}`,
     );
-    const balanceText = await card.findElement(By.css("strong")).getText();
-    const cleaned = balanceText.replace(/[^\d.,-]/g, "");
-    const lastComma = cleaned.lastIndexOf(",");
-    const lastDot = cleaned.lastIndexOf(".");
-    if (lastComma > lastDot)
-      return Number.parseFloat(cleaned.replace(/\./g, "").replace(/,/g, "."));
-    return Number.parseFloat(cleaned.replace(/,/g, ""));
+  }
+
+  async function waitForRenderedMovementCard(locator: By): Promise<WebElement> {
+    return driver.wait<WebElement>(
+      async () => {
+        try {
+          const cards = await driver.findElements(locator);
+          for (const card of cards) {
+            if (await card.isDisplayed()) {
+              await card.getText();
+              return card;
+            }
+          }
+        } catch {
+          // Astro may replace the list while its client store is loading.
+        }
+        return false;
+      },
+      15_000,
+      `Movement card was not rendered: ${locator}`,
+    );
   }
 
   it("creates an income movement and verifies its rendering and details", async () => {
@@ -111,9 +118,8 @@ describe("Movement E2E", () => {
     const initialBalance = await getAccountBalance(1);
 
     await openSpeedDial();
-    const createIncomeBtn = await driver.findElement(By.id("create-income-dialog-button"));
-    await createIncomeBtn.click();
-    await driver.wait(until.elementLocated(By.id("income-form")), 5000);
+    await clickWhenReady(By.id("create-income-dialog-button"));
+    await findVisible(By.id("income-form"));
 
     const incomeAmountInput = await driver.findElement(By.css('#income-form input[name="amount"]'));
     await clearAndType(incomeAmountInput, "150.00");
@@ -125,10 +131,7 @@ describe("Movement E2E", () => {
     );
     await incomeAccountOption.click();
 
-    const incomeCatBtn = await driver.findElement(
-      By.css("#income-form fieldset.relative > button"),
-    );
-    await incomeCatBtn.click();
+    await clickWhenReady(By.css("#income-form fieldset.relative > button"));
     const incomeParentBtn = await driver.findElement(
       By.xpath('//form[@id="income-form"]//button[contains(., "Ingresos")]'),
     );
@@ -143,15 +146,14 @@ describe("Movement E2E", () => {
     );
     await incomeDescInput.sendKeys("E2E Income Test");
 
-    const incomeSubmitBtn = await driver.findElement(By.css('#income-form button[type="submit"]'));
-    await incomeSubmitBtn.click();
+    await clickWhenReady(By.css('#income-form button[type="submit"]'));
+    await waitForMovement("E2E Income Test");
 
     // Verify it renders on movements list page
-    const movementsLink = await findVisible(By.css('a[href="/movements"]'));
-    await movementsLink.click();
-    await driver.wait(
-      until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
-      10000,
+    await navigateTo("/movements", By.xpath("//h1[contains(text(), 'Movimientos')]"));
+
+    const sueldoCardLocator = By.xpath(
+      "//a[contains(@href, '/movement') and .//p[text()='Sueldo']][1]",
     );
 
     await waitForRenderedMovementCard(sueldoCardLocator);
@@ -160,10 +162,7 @@ describe("Movement E2E", () => {
     expect(bodyText).toMatch(/150[.,]00/);
 
     // Click on the card to open single page view and validate details
-    const sueldoCard = await driver.findElement(
-      By.xpath("//a[contains(@href, '/movement') and .//p[text()='Sueldo']][1]"),
-    );
-    await sueldoCard.click();
+    await clickWhenReady(sueldoCardLocator);
 
     await driver.wait(
       until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),
@@ -197,9 +196,8 @@ describe("Movement E2E", () => {
     const initialBalance = await getAccountBalance(1);
 
     await openSpeedDial();
-    const createExpenseBtn = await driver.findElement(By.id("create-expense-dialog-button"));
-    await createExpenseBtn.click();
-    await driver.wait(until.elementLocated(By.id("expense-form")), 5000);
+    await clickWhenReady(By.id("create-expense-dialog-button"));
+    await findVisible(By.id("expense-form"));
 
     const expenseAmountInput = await driver.findElement(
       By.css('#expense-form input[name="amount"]'),
@@ -213,10 +211,7 @@ describe("Movement E2E", () => {
     );
     await expenseAccountOption.click();
 
-    const expenseCatBtn = await driver.findElement(
-      By.css("#expense-form fieldset.relative > button"),
-    );
-    await expenseCatBtn.click();
+    await clickWhenReady(By.css("#expense-form fieldset.relative > button"));
     const expenseParentBtn = await driver.findElement(
       By.xpath('//form[@id="expense-form"]//button[contains(., "Comida y Bebida")]'),
     );
@@ -231,27 +226,21 @@ describe("Movement E2E", () => {
     );
     await expenseDescInput.sendKeys("E2E Expense Test");
 
-    const expenseSubmitBtn = await driver.findElement(
-      By.css('#expense-form button[type="submit"]'),
-    );
-    await expenseSubmitBtn.click();
+    await clickWhenReady(By.css('#expense-form button[type="submit"]'));
+    await waitForMovement("E2E Expense Test");
     // Verify it renders on movements list page
-    const movementsLink = await findVisible(By.css('a[href="/movements"]'));
-    await movementsLink.click();
-    await driver.wait(
-      until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
-      10000,
-    );
+    await navigateTo("/movements", By.xpath("//h1[contains(text(), 'Movimientos')]"));
 
+    const expenseCardLocator = By.xpath(
+      "//a[contains(@href, '/movement') and .//p[text()='Supermercados']][1]",
+    );
+    await waitForRenderedMovementCard(expenseCardLocator);
     const bodyText = await driver.findElement(By.css("body")).getText();
     expect(bodyText).toContain("Supermercados");
     expect(bodyText).toMatch(/45[.,]50/);
 
     // Click on the card to open single page view and validate details
-    const expenseCard = await driver.findElement(
-      By.xpath("//a[contains(@href, '/movement') and .//p[text()='Supermercados']][1]"),
-    );
-    await expenseCard.click();
+    await clickWhenReady(expenseCardLocator);
 
     await driver.wait(
       until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),
@@ -286,9 +275,8 @@ describe("Movement E2E", () => {
     const initialDestBalance = await getAccountBalance(2);
 
     await openSpeedDial();
-    const createTransferBtn = await driver.findElement(By.id("create-transfer-dialog-button"));
-    await createTransferBtn.click();
-    await driver.wait(until.elementLocated(By.id("transfer-form")), 5000);
+    await clickWhenReady(By.id("create-transfer-dialog-button"));
+    await findVisible(By.id("transfer-form"));
 
     const transferAmountInput = await driver.findElement(
       By.css('#transfer-form input[name="amount"]'),
@@ -316,27 +304,21 @@ describe("Movement E2E", () => {
     );
     await transferDescInput.sendKeys("E2E Transfer Test");
 
-    const transferSubmitBtn = await driver.findElement(
-      By.css('#transfer-form button[type="submit"]'),
-    );
-    await transferSubmitBtn.click();
+    await clickWhenReady(By.css('#transfer-form button[type="submit"]'));
+    await waitForMovement("E2E Transfer Test");
     // Verify it renders on movements list page
-    const movementsLink = await findVisible(By.css('a[href="/movements"]'));
-    await movementsLink.click();
-    await driver.wait(
-      until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
-      10000,
-    );
+    await navigateTo("/movements", By.xpath("//h1[contains(text(), 'Movimientos')]"));
 
+    const transferCardLocator = By.xpath(
+      "//a[contains(@href, '/movement') and .//p[text()='Transferencia']][1]",
+    );
+    await waitForRenderedMovementCard(transferCardLocator);
     const bodyText = await driver.findElement(By.css("body")).getText();
     expect(bodyText).toContain("Transferencia");
     expect(bodyText).toMatch(/100[.,]00/);
 
     // Click on the card to open single page view and validate details
-    const transferCard = await driver.findElement(
-      By.xpath("//a[contains(@href, '/movement') and .//p[text()='Transferencia']][1]"),
-    );
-    await transferCard.click();
+    await clickWhenReady(transferCardLocator);
 
     await driver.wait(
       until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),
@@ -373,8 +355,8 @@ describe("Movement E2E", () => {
     const initialDestinationBalance = await getAccountBalance(1);
 
     await openSpeedDial();
-    await driver.findElement(By.id("create-transfer-dialog-button")).click();
-    await driver.wait(until.elementLocated(By.id("transfer-form")), 5000);
+    await clickWhenReady(By.id("create-transfer-dialog-button"));
+    await findVisible(By.id("transfer-form"));
 
     const amount = await driver.findElement(By.css('#transfer-form input[name="amount"]'));
     await clearAndType(amount, "10.00");
@@ -395,23 +377,17 @@ describe("Movement E2E", () => {
     await driver
       .findElement(By.css('#transfer-form input[name="description"]'))
       .sendKeys("E2E Cross Currency Transfer");
-    await driver.findElement(By.css('#transfer-form button[type="submit"]')).click();
 
-    await (await findVisible(By.css('a[href="/movements"]'), 10000)).click();
-    await driver.wait(
-      until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
-      10000,
+    await clickWhenReady(By.css('#transfer-form button[type="submit"]'));
+    await waitForMovement("E2E Cross Currency Transfer");
+
+    await navigateTo("/movements", By.xpath("//h1[contains(text(), 'Movimientos')]"));
+
+    const crossCurrencyCardLocator = By.xpath(
+      "//a[starts-with(@href, '/movement?id=') and contains(., 'USD Wallet') and contains(., '10')][1]",
     );
-
-    const movement = await driver.wait<WebElement>(async () => {
-      const cards = await driver.findElements(By.css('a[href^="/movement?id="]'));
-      for (const card of cards) {
-        const text = await card.getText();
-        if (text.includes("10") && text.includes("USD Wallet")) return card;
-      }
-      return false;
-    }, 10000);
-    await movement.click();
+    await waitForRenderedMovementCard(crossCurrencyCardLocator);
+    await clickWhenReady(crossCurrencyCardLocator);
     await driver.wait(
       until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),
       10000,
@@ -422,13 +398,19 @@ describe("Movement E2E", () => {
     expect(details).toContain("USD Wallet");
     expect(details).toContain("Efectivo");
 
-    await driver.navigate().refresh();
     await driver.wait(
       until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),
       10000,
     );
     expect(await driver.findElement(By.css("body")).getText()).toContain(
       "E2E Cross Currency Transfer",
+    );
+
+    const backLink = await driver.findElement(By.id("back-link"));
+    await backLink.click();
+    await driver.wait(
+      until.elementLocated(By.xpath("//h1[contains(text(), 'Movimientos')]")),
+      10000,
     );
 
     await navigateTo("/", By.id("speed-dial-toggle"));

@@ -1,4 +1,5 @@
 import {
+  clickWhenReady,
   closeTauriDriver,
   createDriver,
   driver,
@@ -70,8 +71,7 @@ describe("Tauri - Budget creation", () => {
   it("creates a monthly budget", async () => {
     // Wait for application UI to be ready
     // Open create budget form
-    const openForm = await findVisible(By.id("create-budget-button"));
-    await openForm.click();
+    await clickWhenReady(By.id("create-budget-button"));
 
     // Wait for form to load
     await findVisible(By.id("budget-form"));
@@ -88,25 +88,20 @@ describe("Tauri - Budget creation", () => {
     await nameInput.sendKeys("E2E Monthly Food Budget");
 
     // Select Category (Comida y bebida -> Supermercados)
-    const catBtn = await findVisible(By.css("#budget-form fieldset.relative > button"));
-    await catBtn.click();
+    await clickWhenReady(By.css("#budget-form fieldset.relative > button"));
 
     // Wait and click Comida y bebida parent category to expand it
-    const parentCat = await findVisible(
+    await clickWhenReady(
       By.xpath('//form[@id="budget-form"]//button[contains(., "Comida y Bebida")]'),
     );
 
-    await parentCat.click();
-
     // Click Supermercados child category to select it
-    const childCat = await findVisible(
+    await clickWhenReady(
       By.xpath('//form[@id="budget-form"]//button[contains(., "Supermercados")]'),
     );
-    await childCat.click();
 
     // Select Period Type: select option "Mensual"
-    const monthlyType = await driver.findElement(By.xpath("//label[contains(., 'Mensual')]"));
-    await monthlyType.click();
+    await clickWhenReady(By.xpath("//label[contains(., 'Mensual')]"));
 
     // Fill Limit Amount
     const amountLimitInput = await driver.findElement(By.id("amountLimit"));
@@ -122,8 +117,7 @@ describe("Tauri - Budget creation", () => {
     await currencyOption.click();
 
     // Submit form
-    const submitBtn = await driver.findElement(By.css('#budget-form button[type="submit"]'));
-    await submitBtn.click();
+    await clickWhenReady(By.css('#budget-form button[type="submit"]'));
 
     // Verify it renders on the page
     const budgetCard = await driver.wait(

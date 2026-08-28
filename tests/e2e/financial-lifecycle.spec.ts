@@ -74,6 +74,7 @@ describe("Financial lifecycle E2E", () => {
       creditInfo: { creditLimit: 4321, cutoffDay: 17, daysToPay: 23 },
     });
 
+    await driver.navigate().refresh();
     await navigateTo(`/account?id=${card.id}`, By.css("main"));
     const text = await waitForBodyText("E2E Platinum");
     expect(text).toContain("E2E Platinum");
@@ -216,7 +217,9 @@ describe("Financial lifecycle E2E", () => {
     });
     expect(restored.periods.every((period) => !period.movementIds.includes(expense.id))).toBe(true);
 
-    await navigateTo("/budgets", By.id("create-budget-button"));
+    await driver.navigate().refresh();
+
+    await navigateTo("/planning", By.id("create-budget-button"));
     expect(await waitForBodyText("E2E Parent Budget")).toContain("E2E Parent Budget");
   });
 
@@ -268,7 +271,9 @@ describe("Financial lifecycle E2E", () => {
     });
     expect(details.periods.at(-1)?.amountLimit).toBe(300);
 
-    await navigateTo("/budgets", By.id("create-budget-button"));
+    await driver.navigate().refresh();
+
+    await navigateTo("/planning", By.id("create-budget-button"));
     expect(await waitForBodyText("E2E Future Budget")).toContain("E2E Future Budget");
   });
 

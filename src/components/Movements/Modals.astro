@@ -7,7 +7,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 <AppModal id={MODAL_ID.MOVEMENT.INCOME.CREATE} title="Crear Ingreso">
     <MovementForm
-        client:visible
+        client:load
         modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
         movementType={MOVEMENT_TYPES.INCOME}
     />
@@ -15,7 +15,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 <AppModal id={MODAL_ID.MOVEMENT.INCOME.EDIT} title="Editar Ingreso">
     <MovementForm
-        client:visible
+        client:load
         modalId={MODAL_ID.MOVEMENT.INCOME.EDIT}
         movementType={MOVEMENT_TYPES.INCOME}
     />
@@ -23,7 +23,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 <AppModal id={MODAL_ID.MOVEMENT.EXPENSE.CREATE} title="Crear Gasto">
     <MovementForm
-        client:visible
+        client:load
         modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
         movementType={MOVEMENT_TYPES.EXPENSE}
     />
@@ -31,7 +31,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 <AppModal id={MODAL_ID.MOVEMENT.EXPENSE.EDIT} title="Editar Gasto">
     <MovementForm
-        client:visible
+        client:load
         modalId={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
         movementType={MOVEMENT_TYPES.EXPENSE}
     />
@@ -39,7 +39,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 <AppModal id={MODAL_ID.MOVEMENT.TRANSFER.CREATE} title="Crear Transferencia">
     <MovementForm
-        client:visible
+        client:load
         modalId={MODAL_ID.MOVEMENT.TRANSFER.CREATE}
         movementType={MOVEMENT_TYPES.TRANSFER}
     />
@@ -47,7 +47,7 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 <AppModal id={MODAL_ID.MOVEMENT.TRANSFER.EDIT} title="Editar Transferencia">
     <MovementForm
-        client:visible
+        client:load
         modalId={MODAL_ID.MOVEMENT.TRANSFER.EDIT}
         movementType={MOVEMENT_TYPES.TRANSFER}
     />

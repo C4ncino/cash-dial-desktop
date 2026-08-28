@@ -14,7 +14,7 @@
     "lint": "biome lint .",
     "test": "vitest run src",
     "test:release": "node --test .github/scripts/release-version.test.mjs",
-    "build:test": "cross-env-shell VITE_TEST_MODE=true pnpm tauri build --debug --no-bundle",
+    "build:test": "cross-env-shell VITE_TEST_MODE=true pnpm tauri build --debug --no-bundle --config src-tauri/tauri.test.conf.json",
     "test:e2e": "pnpm run build:test && cross-env DATABASE_URL=./e2e-test.sqlite vitest run tests/e2e --fileParallelism=false",
     "test:e2e:fast": "cross-env DATABASE_URL=./e2e-test.sqlite vitest run tests/e2e --fileParallelism=false",
     "test:integration": "pnpm run build:test && cross-env DATABASE_URL=./integration-tests-front.sqlite vitest run tests/integration --fileParallelism=false",

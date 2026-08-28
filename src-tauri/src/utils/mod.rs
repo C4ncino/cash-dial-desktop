@@ -7,7 +7,7 @@ pub fn lock_app_state(
     state.lock().map_err(|_| "El estado de la aplicación no está disponible".to_string())
 }
 
-pub const SUPPORTED_LANGUAGES: &[&str] = &["es", "en"];
+pub const SUPPORTED_LANGUAGES: &[&str] = &["es"];
 
 pub fn preferred_lang() -> String {
     let lang = tauri_plugin_os::locale()

@@ -1,4 +1,5 @@
 import {
+  clickWhenReady,
   closeTauriDriver,
   createDriver,
   driver,
@@ -26,22 +27,16 @@ describe("Planning to linked movement user flow", () => {
   }
 
   async function selectPlanningCategory(formId: string) {
-    const categoryButton = await driver.findElement(
-      By.css(`#${formId} fieldset.relative > button`),
+    await clickWhenReady(By.css(`#${formId} fieldset.relative > button`));
+    await clickWhenReady(
+      By.xpath(`//form[@id='${formId}']//button[contains(., 'Comida y Bebida')]`),
     );
-    await categoryButton.click();
-    await driver
-      .findElement(By.xpath(`//form[@id='${formId}']//button[contains(., 'Comida y Bebida')]`))
-      .click();
-    await driver
-      .findElement(By.xpath(`//form[@id='${formId}']//button[contains(., 'Supermercados')]`))
-      .click();
+    await clickWhenReady(By.xpath(`//form[@id='${formId}']//button[contains(., 'Supermercados')]`));
   }
 
   it("creates a planning, links a compatible movement, reloads, and cancels the next occurrence", async () => {
-    const planningLink = await findVisible(By.css('a[href="/planning"]'));
-    await planningLink.click();
-    await (await findVisible(By.id("create-planning-button"))).click();
+    await navigateTo("/planning", By.id("create-planning-button"));
+    await clickWhenReady(By.id("create-planning-button"));
     const planningFormElement = By.css('form[id="create-planning-form"]');
     await findVisible(planningFormElement);
     const planningForm = "create-planning-form";
@@ -67,7 +62,7 @@ describe("Planning to linked movement user flow", () => {
     );
     await currencySelect.findElement(By.css('option:not([value=""])')).click();
     await selectPlanningCategory(planningForm);
-    await driver.findElement(By.css(`form#${planningForm} button[type="submit"]`)).click();
+    await clickWhenReady(By.css(`form#${planningForm} button[type="submit"]`));
 
     const planningCard = await driver.wait(
       until.elementLocated(
@@ -94,9 +89,9 @@ describe("Planning to linked movement user flow", () => {
     await driver.findElement(By.id("back-link")).click();
     await navigateTo("/", By.id("speed-dial-toggle"));
     await waitForHomeReady();
-    await driver.findElement(By.id("speed-dial-toggle")).click();
-    await driver.findElement(By.id("create-expense-dialog-button")).click();
-    await driver.wait(until.elementLocated(By.id("expense-form")), 5000);
+    await clickWhenReady(By.id("speed-dial-toggle"));
+    await clickWhenReady(By.id("create-expense-dialog-button"));
+    await findVisible(By.id("expense-form"));
 
     const movementPlanningSelect = await driver.findElement(
       By.css('#expense-form select[name="planningId"]'),
@@ -112,7 +107,7 @@ describe("Planning to linked movement user flow", () => {
       By.css('#expense-form input[name="categoryId"]'),
     );
     expect(await movementCategory.getAttribute("value")).not.toBe("");
-    await driver.findElement(By.css('#expense-form button[type="submit"]')).click();
+    await clickWhenReady(By.css('#expense-form button[type="submit"]'));
 
     await driver.executeScript(
       "arguments[0].click();",
@@ -139,9 +134,8 @@ describe("Planning to linked movement user flow", () => {
       .findElement(By.xpath("//button[contains(., 'Cancelar ocurrencia')]"))
       .catch(() => null);
     if (cancelButton) {
-      await cancelButton.click();
-      const confirmButton = await driver.findElement(By.css('[data-testid="confirm-button"]'));
-      await confirmButton.click();
+      await clickWhenReady(By.xpath("//button[contains(., 'Cancelar ocurrencia')]"));
+      await clickWhenReady(By.css('[data-testid="confirm-button"]'));
       await driver.wait(async () => {
         const text = await driver.findElement(By.css("body")).getText();
         return text.includes("Cancelada");
