@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact semantic version to build or retry (for example, 1.0.0)
+        required: true
+        type: string
+      ref:
+        description: Branch, tag, or commit to build
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare semantic release
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.version.outputs.should_release }}
+      bump: ${{ steps.version.outputs.bump }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      reused: ${{ steps.version.outputs.reused }}
+      source_sha: ${{ steps.source.outputs.sha }}
+      source_label: ${{ steps.source.outputs.label }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve release source
+        id: source
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          MANUAL_REF: ${{ inputs.ref }}
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "label=Manual release from ${MANUAL_REF}" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=Merged PR #${PR_NUMBER}: ${PR_TITLE}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Calculate release version
+        id: version
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          MERGE_SHA: ${{ steps.source.outputs.sha }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: node .github/scripts/release-version.mjs prepare
+
+  release:
+    name: Release / ${{ matrix.name }}
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            platform: windows-latest
+            args: ""
+          - name: macOS Apple Silicon
+            platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+          - name: macOS Intel
+            platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+          - name: Linux x64
+            platform: ubuntu-22.04
+            args: ""
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Linux native dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.1
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply release version
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: node .github/scripts/release-version.mjs apply
+
+      - name: Build and attach release bundles
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: Cash Dial v__VERSION__
+          releaseBody: |
+            Automated draft release.
+
+            ${{ needs.prepare.outputs.source_label }}
+            Source commit: ${{ needs.prepare.outputs.source_sha }}
+          generateReleaseNotes: true
+          releaseDraft: true
+          prerelease: false
+          releaseCommitish: ${{ needs.prepare.outputs.source_sha }}
+          args: ${{ matrix.args }}
