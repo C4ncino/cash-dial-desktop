@@ -433,27 +433,33 @@ mod tests {
     fn seeded_statistics_preserve_currency_and_transfer_semantics() {
         let state = crate::tests::setup();
         let mut connection = crate::db::connect::establish_connection(&state.config.database_url);
+        // Bound the query by the seeded epoch timestamps instead of local
+        // calendar midnights. CI runners commonly use UTC while developer
+        // machines may not, and the final two expenses occur at midnight UTC.
         let start = 1_751_328_000_000_i64;
-        let end = Local.with_ymd_and_hms(2025, 7, 7, 0, 0, 0).single().unwrap().timestamp_millis();
+        let end = 1_751_846_800_000_i64 + 1;
         let (income, expenses) = overview(&mut connection, start, end, 1).unwrap();
         assert_eq!(income, 3500.0);
         assert_eq!(expenses, 3170.17);
 
         let series = timeseries_grouped(&mut connection, start, end, 1, "day", 0).unwrap();
-        // The selected interval covers June 30 through July 6 locally.
-        // Two seeded movements share a calendar day, but empty days remain.
+        // The seven seeded timestamps span seven local calendar days. Two
+        // movements share the final local calendar day, but empty days remain.
         assert_eq!(series.len(), 7);
         assert_eq!(series.iter().map(|p| p.income).sum::<f64>(), income);
         assert_eq!(series.iter().map(|p| p.expense).sum::<f64>(), expenses);
 
-        // Seeded timestamps are June 30 through July 6, 2025 in the local
-        // timezone: six day buckets, one ISO week, two months, one year.
+        // The number of calendar weeks and months depends on the host timezone
+        // (for example, the first timestamp is June 30 in Mexico and July 1 in
+        // UTC), but every grouping must preserve the same totals.
         let weekly = timeseries_grouped(&mut connection, start, end, 1, "week", 0).unwrap();
         let monthly = timeseries_grouped(&mut connection, start, end, 1, "month", 0).unwrap();
         let yearly = timeseries_grouped(&mut connection, start, end, 1, "year", 0).unwrap();
-        assert_eq!(weekly.len(), 1);
-        assert_eq!(monthly.len(), 2);
         assert_eq!(yearly.len(), 1);
+        for grouped in [&weekly, &monthly, &yearly] {
+            assert_eq!(grouped.iter().map(|point| point.income).sum::<f64>(), income);
+            assert_eq!(grouped.iter().map(|point| point.expense).sum::<f64>(), expenses);
+        }
         assert!(weekly.windows(2).all(|w| w[0].bucket_start_ms < w[1].bucket_start_ms));
         assert!(monthly.windows(2).all(|w| w[0].bucket_start_ms < w[1].bucket_start_ms));
         assert!(yearly.windows(2).all(|w| w[0].bucket_start_ms < w[1].bucket_start_ms));
