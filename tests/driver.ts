@@ -4,14 +4,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  Builder,
-  By,
-  Capabilities,
-  until,
-  type WebDriver,
-  type WebElement,
-} from "selenium-webdriver";
+import { Builder, By, Capabilities, type WebDriver, type WebElement } from "selenium-webdriver";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -126,7 +119,24 @@ export async function closeTauriDriver() {
 
   const activeProcess = tauriDriver;
   tauriDriver = undefined;
-  if (activeProcess && activeProcess.exitCode === null) activeProcess.kill();
+  if (activeProcess && activeProcess.exitCode === null) {
+    await new Promise<void>((resolve) => {
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(forceKill);
+        resolve();
+      };
+      const forceKill = setTimeout(() => {
+        if (activeProcess.exitCode === null) activeProcess.kill("SIGKILL");
+        finish();
+      }, 5_000);
+
+      activeProcess.once("exit", finish);
+      if (!activeProcess.kill()) finish();
+    });
+  }
 
   if (ownedTempDir) {
     const target = path.resolve(ownedTempDir);
@@ -140,7 +150,12 @@ export async function closeTauriDriver() {
 }
 
 export async function waitForHomeReady() {
-  await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 15_000);
+  await findVisible(By.id("speed-dial-toggle"), 15_000);
+  await driver.wait(
+    async () => Boolean(await driver.executeScript("return Boolean(window.testApi?.invoke);")),
+    15_000,
+  );
+  await findVisible(By.css('a[href^="/account?id="]'), 15_000);
 }
 
 export async function findVisible(locator: By, timeoutMs = 15_000): Promise<WebElement> {
@@ -150,6 +165,49 @@ export async function findVisible(locator: By, timeoutMs = 15_000): Promise<WebE
       if (await element.isDisplayed()) return element;
     }
     return false;
+  }, timeoutMs);
+}
+
+export async function navigateTo(
+  path: string,
+  marker: By,
+  timeoutMs = 15_000,
+): Promise<WebElement> {
+  const expectedUrl = new URL(path, "http://cash-dial.test");
+  const expectedPath = `${expectedUrl.pathname}${expectedUrl.search}`;
+
+  await driver.executeScript(
+    "window.location.assign(new URL(arguments[0], window.location.href).href);",
+    path,
+  );
+  await driver.wait(async () => {
+    try {
+      return (
+        (await driver.executeScript<string>(
+          "return window.location.pathname + window.location.search;",
+        )) === expectedPath
+      );
+    } catch {
+      return false;
+    }
+  }, timeoutMs);
+
+  return findVisible(marker, timeoutMs);
+}
+
+export async function waitForBodyText(expected: string, timeoutMs = 15_000): Promise<string> {
+  return driver.wait<string>(async () => {
+    try {
+      // Read from the active document in one WebDriver command. Astro page
+      // transitions can replace <body> between findElement() and getText(),
+      // which makes an otherwise valid element reference stale.
+      const body = await driver.executeScript<string>(
+        "return document.body ? document.body.innerText : '';",
+      );
+      return body.includes(expected) ? body : false;
+    } catch {
+      return false;
+    }
   }, timeoutMs);
 }
 

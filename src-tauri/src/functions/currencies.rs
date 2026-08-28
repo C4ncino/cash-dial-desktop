@@ -156,12 +156,16 @@ pub async fn refresh_currency_rates(
     state: State<'_, Mutex<AppState>>,
 ) -> Result<Vec<Currency>, String> {
     let today = Utc::now().date_naive().to_string();
-    let (database_url, currencies) = {
+    let (database_url, currencies, is_test) = {
         let state = crate::utils::lock_app_state(&state)?;
-        (state.config.database_url.clone(), state.currencies.clone())
+        (
+            state.config.database_url.clone(),
+            state.currencies.clone(),
+            state.config.environment == crate::models::general::Environment::Test,
+        )
     };
 
-    if rates_are_current(&currencies, &today) {
+    if is_test || rates_are_current(&currencies, &today) {
         return Ok(currencies);
     }
 

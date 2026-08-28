@@ -3,9 +3,11 @@ import {
   createDriver,
   driver,
   invokeCommand,
+  navigateTo,
+  waitForBodyText,
   waitForHomeReady,
 } from "@test/driver";
-import { By, until } from "selenium-webdriver";
+import { By } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
@@ -18,12 +20,6 @@ import {
 const monthStart = () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
 const nextMonthStart = () =>
   new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).getTime();
-
-async function navigate(path: string, marker: ReturnType<typeof By.css>) {
-  await driver.executeScript("window.location.href = arguments[0]", path);
-  await driver.navigate().refresh();
-  await driver.wait(until.elementLocated(marker), 10_000);
-}
 
 const movementRequest = (overrides: Record<string, unknown> = {}) => ({
   typeId: 2,
@@ -64,9 +60,7 @@ describe("Financial lifecycle E2E", () => {
 
     await driver.navigate().refresh();
     await waitForHomeReady();
-    const text = (await driver.findElement(By.css("body")).getText())
-      .replaceAll("\u00ad", "")
-      .toLowerCase();
+    const text = (await waitForBodyText("Reloaded Wallet")).replaceAll("\u00ad", "").toLowerCase();
     expect(text).toContain("reloaded wallet");
   });
 
@@ -79,8 +73,8 @@ describe("Financial lifecycle E2E", () => {
       creditInfo: { creditLimit: 4321, cutoffDay: 17, daysToPay: 23 },
     });
 
-    await navigate(`/account?id=${card.id}`, By.css("body"));
-    const text = await driver.findElement(By.css("body")).getText();
+    await navigateTo(`/account?id=${card.id}`, By.css("main"));
+    const text = await waitForBodyText("E2E Platinum");
     expect(text).toContain("E2E Platinum");
     expect(text).toMatch(/4[,.]?321/);
     expect(text).toMatch(/dito disponible/);
@@ -221,8 +215,8 @@ describe("Financial lifecycle E2E", () => {
     });
     expect(restored.periods.every((period) => !period.movementIds.includes(expense.id))).toBe(true);
 
-    await navigate("/budgets", By.css("body"));
-    expect(await driver.findElement(By.css("body")).getText()).toContain("E2E Parent Budget");
+    await navigateTo("/budgets", By.id("create-budget-button"));
+    expect(await waitForBodyText("E2E Parent Budget")).toContain("E2E Parent Budget");
   });
 
   it("refreshes deterministic statistics after a financial mutation", async () => {
@@ -246,7 +240,7 @@ describe("Financial lifecycle E2E", () => {
     });
     expect(after.overview.expenses).toBeCloseTo(before.overview.expenses + 77, 2);
 
-    await navigate("/stats", By.css("body"));
+    await navigateTo("/stats", By.id("statisticsPeriod"));
     const text = await driver.wait(async () => {
       const body = await driver.findElement(By.css("body")).getText();
       return body.includes("77") ? body : false;
@@ -273,8 +267,8 @@ describe("Financial lifecycle E2E", () => {
     });
     expect(details.periods.at(-1)?.amountLimit).toBe(300);
 
-    await navigate("/budgets", By.css("body"));
-    expect(await driver.findElement(By.css("body")).getText()).toContain("E2E Future Budget");
+    await navigateTo("/budgets", By.id("create-budget-button"));
+    expect(await waitForBodyText("E2E Future Budget")).toContain("E2E Future Budget");
   });
 
   it("deactivates and reactivates a planning without losing its actionable state", async () => {

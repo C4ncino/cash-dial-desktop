@@ -3,6 +3,7 @@ import {
   createDriver,
   driver,
   findVisible,
+  navigateTo,
   waitForHomeReady,
 } from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
@@ -40,11 +41,9 @@ describe("Planning to linked movement user flow", () => {
   it("creates a planning, links a compatible movement, reloads, and cancels the next occurrence", async () => {
     const planningLink = await findVisible(By.css('a[href="/planning"]'));
     await planningLink.click();
-    await driver.wait(until.elementLocated(By.id("create-planning-button")), 10000);
-    await driver.findElement(By.id("create-planning-button")).click();
+    await (await findVisible(By.id("create-planning-button"))).click();
     const planningFormElement = By.css('form[id="create-planning-form"]');
-    await driver.wait(until.elementLocated(planningFormElement), 5000);
-    await driver.wait(until.elementIsVisible(driver.findElement(planningFormElement)), 5000);
+    await findVisible(planningFormElement);
     const planningForm = "create-planning-form";
     const nameInput = await driver.findElement(By.css(`form#${planningForm} input[name="name"]`));
     await driver.executeScript(
@@ -93,8 +92,8 @@ describe("Planning to linked movement user flow", () => {
     expect(bodyText).toMatch(/Pendiente|Vencida|Próxima/);
 
     await driver.findElement(By.id("back-link")).click();
-    await (await findVisible(By.css('a[href="/"]'), 10000)).click();
-    await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
+    await navigateTo("/", By.id("speed-dial-toggle"));
+    await waitForHomeReady();
     await driver.findElement(By.id("speed-dial-toggle")).click();
     await driver.findElement(By.id("create-expense-dialog-button")).click();
     await driver.wait(until.elementLocated(By.id("expense-form")), 5000);

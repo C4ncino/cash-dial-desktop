@@ -1,4 +1,11 @@
-import { closeTauriDriver, createDriver, driver, waitForHomeReady } from "@test/driver";
+import {
+  closeTauriDriver,
+  createDriver,
+  driver,
+  findVisible,
+  waitForBodyText,
+  waitForHomeReady,
+} from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -21,29 +28,29 @@ describe("Tauri - Budget creation", () => {
   it("creates a monthly budget", async () => {
     // Wait for application UI to be ready
     // Open create budget form
-    const openForm = await driver.wait(until.elementLocated(By.id("create-budget-button")), 15000);
+    const openForm = await findVisible(By.id("create-budget-button"));
     await openForm.click();
 
     // Wait for form to load
-    await driver.wait(until.elementLocated(By.id("budget-form")), 5000);
+    await findVisible(By.id("budget-form"));
 
     // Fill Name
     const nameInput = await driver.findElement(By.css('#budget-form input[name="name"]'));
     await nameInput.sendKeys("E2E Monthly Food Budget");
 
     // Select Category (Comida y bebida -> Supermercados)
-    const catBtn = await driver.findElement(By.css("#budget-form fieldset.relative > button"));
+    const catBtn = await findVisible(By.css("#budget-form fieldset.relative > button"));
     await catBtn.click();
 
     // Wait and click Comida y bebida parent category to expand it
-    const parentCat = await driver.findElement(
+    const parentCat = await findVisible(
       By.xpath('//form[@id="budget-form"]//button[contains(., "Comida y Bebida")]'),
     );
 
     await parentCat.click();
 
     // Click Supermercados child category to select it
-    const childCat = await driver.findElement(
+    const childCat = await findVisible(
       By.xpath('//form[@id="budget-form"]//button[contains(., "Supermercados")]'),
     );
     await childCat.click();
@@ -87,9 +94,7 @@ describe("Tauri - Budget creation", () => {
 
     // Navigate to single budget page
     await driver.executeScript("arguments[0].click();", budgetCard);
-    await driver.wait(until.elementLocated(By.css("body")), 10000);
-
-    const bodyText = await driver.findElement(By.css("body")).getText();
+    const bodyText = await waitForBodyText("E2E Monthly Food Budget");
     expect(bodyText).toContain("E2E Monthly Food Budget");
   });
 });

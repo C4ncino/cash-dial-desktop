@@ -1,4 +1,4 @@
-import { closeTauriDriver, createDriver, driver } from "@test/driver";
+import { closeTauriDriver, createDriver, driver, navigateTo } from "@test/driver";
 import { By, Key, until } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -12,8 +12,7 @@ describe("Statistics user flow", () => {
   });
 
   it("loads the statistics dashboard and changes its period controls", async () => {
-    await driver.get("http://tauri.localhost/stats");
-    await driver.wait(until.elementLocated(By.id("statisticsPeriod")), 15000);
+    await navigateTo("/stats", By.id("statisticsPeriod"));
 
     const period = await driver.findElement(By.id("statisticsPeriod"));
     await period.click();

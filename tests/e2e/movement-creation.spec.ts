@@ -3,6 +3,7 @@ import {
   createDriver,
   driver,
   findVisible,
+  navigateTo,
   waitForHomeReady,
 } from "@test/driver";
 import { By, Key, until, type WebElement } from "selenium-webdriver";
@@ -106,9 +107,6 @@ describe("Movement E2E", () => {
   it("creates an income movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
-    const homeLink = await findVisible(By.css('a[href="/"]'));
-    await homeLink.click();
-    await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
     const initialBalance = await getAccountBalance(1);
 
@@ -184,9 +182,8 @@ describe("Movement E2E", () => {
       10000,
     );
 
-    const homeLinkEnd = await findVisible(By.css('a[href="/"]'));
-    await homeLinkEnd.click();
-    await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
+    await navigateTo("/", By.id("speed-dial-toggle"));
+    await waitForHomeReady();
 
     const finalBalance = await getAccountBalance(1);
     expect(finalBalance).toBeCloseTo(initialBalance + 150.0, 2);
@@ -195,9 +192,6 @@ describe("Movement E2E", () => {
   it("creates an expense movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
-    const homeLink = await findVisible(By.css('a[href="/"]'));
-    await homeLink.click();
-    await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
     const initialBalance = await getAccountBalance(1);
 
@@ -276,9 +270,8 @@ describe("Movement E2E", () => {
       10000,
     );
 
-    const homeLinkEnd = await findVisible(By.css('a[href="/"]'));
-    await homeLinkEnd.click();
-    await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
+    await navigateTo("/", By.id("speed-dial-toggle"));
+    await waitForHomeReady();
 
     const finalBalance = await getAccountBalance(1);
     expect(finalBalance).toBeCloseTo(initialBalance - 45.5, 2);
@@ -287,9 +280,6 @@ describe("Movement E2E", () => {
   it("creates a transfer movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
-    const homeLink = await findVisible(By.css('a[href="/"]'));
-    await homeLink.click();
-    await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
 
     const initialSourceBalance = await getAccountBalance(1);
     const initialDestBalance = await getAccountBalance(2);
@@ -366,9 +356,8 @@ describe("Movement E2E", () => {
       10000,
     );
 
-    const homeLinkEnd = await findVisible(By.css('a[href="/"]'));
-    await homeLinkEnd.click();
-    await driver.wait(until.elementLocated(By.id("speed-dial-toggle")), 10000);
+    await navigateTo("/", By.id("speed-dial-toggle"));
+    await waitForHomeReady();
 
     const finalSourceBalance = await getAccountBalance(1);
     const finalDestBalance = await getAccountBalance(2);
@@ -377,7 +366,6 @@ describe("Movement E2E", () => {
   });
 
   it("creates a cross-currency transfer with distinct charged and received amounts", async () => {
-    await driver.get("http://tauri.localhost/");
     await waitForHomeReady();
 
     const initialSourceBalance = await getAccountBalanceByName("USD Wallet");
@@ -442,7 +430,7 @@ describe("Movement E2E", () => {
       "E2E Cross Currency Transfer",
     );
 
-    await driver.get("http://tauri.localhost/");
+    await navigateTo("/", By.id("speed-dial-toggle"));
     await waitForHomeReady();
     expect(await getAccountBalanceByName("USD Wallet")).toBeCloseTo(initialSourceBalance - 10, 2);
     expect(await getAccountBalance(1)).toBeCloseTo(initialDestinationBalance + 180, 2);

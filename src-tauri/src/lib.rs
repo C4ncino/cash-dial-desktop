@@ -71,8 +71,14 @@ fn create_init_state(default_database_url: String) -> Result<AppState, String> {
 
     let currencies_results = get_currencies(connection, lang.clone())?;
 
-    state.currencies =
-        functions::currencies::get_conversions_rate(connection, &currencies_results)?;
+    // Test databases contain deterministic cached rates. Avoid external ECB
+    // requests during integration and E2E runs so startup and teardown cannot
+    // race a network request that still holds the temporary database path.
+    state.currencies = if state.config.environment == models::general::Environment::Test {
+        currencies_results
+    } else {
+        functions::currencies::get_conversions_rate(connection, &currencies_results)?
+    };
 
     let accounts_types_results = get_account_types(connection, lang.clone())?;
 
