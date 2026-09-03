@@ -12,6 +12,12 @@ import { editStore } from "@/stores/editStore";
 import { planningsStore } from "@/stores/planningsStore";
 import { ACCOUNT_TYPES, EDIT_TYPES, MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
+function getMovementForm(id: string) {
+  const form = document.getElementById(id);
+  if (!(form instanceof HTMLFormElement)) throw new Error(`Movement form ${id} was not rendered`);
+  return form;
+}
+
 vi.mock("@/stores/budgetStore", () => ({
   budgetStore: {
     getState: () => ({
@@ -203,7 +209,7 @@ const mockUseStoreState = ({ accounts = mockAccounts, editState = {} }: any = {}
     fireEvent.change(screen.getByLabelText("Planificación (opcional)"), {
       target: { value: "7" },
     });
-    fireEvent.submit(document.getElementById("expense-form")!);
+    fireEvent.submit(getMovementForm("expense-form"));
 
     expect(createMovementFromData.mock.calls[0][0]).toMatchObject({ planningId: "7" });
     expect(mockAdd).toHaveBeenCalledWith(createdMovement);
@@ -224,7 +230,7 @@ it("submits planningId and applies the selected planning context", () => {
   fireEvent.change(screen.getByLabelText(/Planificaci.*opcional/), {
     target: { value: "7" },
   });
-  fireEvent.submit(document.getElementById("expense-form")!);
+  fireEvent.submit(getMovementForm("expense-form"));
   expect(vi.mocked(createMovementFromData).mock.calls[0][0]).toMatchObject({
     planningId: "7",
   });
@@ -262,7 +268,7 @@ it("shows backend planning compatibility errors in the form", async () => {
       movementType={MOVEMENT_TYPES.EXPENSE}
     />,
   );
-  fireEvent.submit(document.getElementById("expense-form")!);
+  fireEvent.submit(getMovementForm("expense-form"));
   await waitFor(() => expect(screen.getByText("planning compatibility error")).toBeInTheDocument());
 });
 
@@ -352,9 +358,9 @@ describe("MovementForm", () => {
         />,
       );
 
-      const form = document.getElementById("income-form");
+      const form = getMovementForm("income-form");
 
-      fireEvent.submit(form!);
+      fireEvent.submit(form);
 
       expect(screen.getByText("El monto debe ser un número mayor a 0")).toBeInTheDocument();
       expect(mockAdd).not.toHaveBeenCalled();
@@ -384,9 +390,9 @@ describe("MovementForm", () => {
         target: { value: "500" },
       });
 
-      const form = document.getElementById("income-form");
+      const form = getMovementForm("income-form");
 
-      fireEvent.submit(form!);
+      fireEvent.submit(form);
 
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
@@ -421,9 +427,9 @@ describe("MovementForm", () => {
         />,
       );
 
-      const form = document.getElementById("income-form");
+      const form = getMovementForm("income-form");
 
-      fireEvent.submit(form!);
+      fireEvent.submit(form);
 
       expect(mockUpdate).toHaveBeenCalledWith(1, updatedMovement);
       await waitFor(() => expect(toast).toHaveBeenCalledWith("#income-updated"));
@@ -467,7 +473,7 @@ describe("MovementForm", () => {
       fireEvent.change(amount, { target: { value: "999" } });
       expect(amount).toHaveValue(999);
 
-      fireEvent.reset(document.getElementById("income-form")!);
+      fireEvent.reset(getMovementForm("income-form"));
       expect(amount).toHaveValue(150);
     });
   });
@@ -532,9 +538,9 @@ describe("MovementForm", () => {
         />,
       );
 
-      const form = document.getElementById("expense-form");
+      const form = getMovementForm("expense-form");
 
-      fireEvent.submit(form!);
+      fireEvent.submit(form);
 
       expect(createMovementFromData).toHaveBeenCalled();
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
@@ -569,9 +575,9 @@ describe("MovementForm", () => {
         />,
       );
 
-      const form = document.getElementById("expense-form");
+      const form = getMovementForm("expense-form");
 
-      fireEvent.submit(form!);
+      fireEvent.submit(form);
 
       expect(mockUpdate).toHaveBeenCalledWith(1, updatedMovement);
       await waitFor(() => expect(toast).toHaveBeenCalledWith("#expense-updated"));
@@ -642,9 +648,9 @@ describe("MovementForm", () => {
         />,
       );
 
-      const form = document.getElementById("transfer-form");
+      const form = getMovementForm("transfer-form");
 
-      fireEvent.submit(form!);
+      fireEvent.submit(form);
 
       expect(createMovementFromData).toHaveBeenCalled();
       expect(vi.mocked(createMovementFromData).mock.calls[0][0]).toMatchObject({
@@ -683,9 +689,9 @@ describe("MovementForm", () => {
         />,
       );
 
-      const form = document.getElementById("transfer-form");
+      const form = getMovementForm("transfer-form");
 
-      fireEvent.submit(form!);
+      fireEvent.submit(form);
 
       expect(mockUpdate).toHaveBeenCalledWith(1, updatedMovement);
       await waitFor(() => expect(toast).toHaveBeenCalledWith("#transfer-updated"));
@@ -713,9 +719,9 @@ describe("MovementForm", () => {
       />,
     );
 
-    const form = document.getElementById("transfer-form");
+    const form = getMovementForm("transfer-form");
 
-    fireEvent.submit(form!);
+    fireEvent.submit(form);
 
     await waitFor(() => expect(mockUpdateBalance).toHaveBeenCalledWith(1, 2));
   });
@@ -739,7 +745,7 @@ describe("MovementForm", () => {
       />,
     );
     fireEvent.change(screen.getByLabelText("Monto"), { target: { value: "100" } });
-    const form = document.getElementById("income-form")!;
+    const form = getMovementForm("income-form");
 
     fireEvent.submit(form);
     fireEvent.submit(form);
@@ -770,7 +776,7 @@ describe("MovementForm", () => {
         movementType={MOVEMENT_TYPES.INCOME}
       />,
     );
-    fireEvent.submit(document.getElementById("income-form")!);
+    fireEvent.submit(getMovementForm("income-form"));
     unmount();
     resolveAdd({ id: 99 } as Movement);
     await Promise.resolve();

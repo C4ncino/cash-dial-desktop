@@ -2,26 +2,27 @@ import { useEffect, useState } from "react";
 import { type ModalInstance, modal } from "webcoreui";
 import { Modal } from "webcoreui/react";
 
+import ActionButton from "@/components/General/ActionButton";
+import type { ActionButtonTone } from "@/components/General/actionButtonStyles";
+
 interface Props {
   buttonTitle: string;
   modalTitle: string;
   modalId: string;
   description: string;
   theme: "alert" | "info" | "success" | "warning" | undefined;
+  buttonTone?: ActionButtonTone;
+  buttonFullWidth?: boolean;
   buttonClassName?: string;
   onConfirm: () => void;
 }
 
-const CLASSES = {
-  default:
-    "border-zinc-400 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
-  alert:
-    "border-red-600 text-red-600 hover:bg-red-600 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-400",
-  info: "border-blue-600 text-blue-600 hover:bg-blue-600 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400",
-  success:
-    "border-green-600 text-green-600 hover:bg-green-600 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-400",
-  warning:
-    "border-yellow-600 text-yellow-600 hover:bg-yellow-600 dark:border-yellow-400 dark:text-yellow-400 dark:hover:bg-yellow-400",
+const CONFIRM_TONES: Record<NonNullable<Props["theme"]> | "default", ActionButtonTone> = {
+  default: "default",
+  alert: "danger",
+  info: "info",
+  success: "success",
+  warning: "warning",
 };
 
 const ConfirmModal = ({
@@ -29,6 +30,8 @@ const ConfirmModal = ({
   modalTitle,
   description,
   theme,
+  buttonTone,
+  buttonFullWidth = false,
   buttonClassName = "",
   onConfirm,
   modalId,
@@ -41,14 +44,15 @@ const ConfirmModal = ({
 
   return (
     <>
-      <button
+      <ActionButton
         data-testid="open-modal-button"
-        type="button"
         onClick={() => modalInstance?.open()}
-        className={`cursor-pointer ${buttonClassName}`}
+        tone={buttonTone ?? CONFIRM_TONES[theme || "default"]}
+        fullWidth={buttonFullWidth}
+        className={buttonClassName}
       >
         {buttonTitle}
-      </button>
+      </ActionButton>
 
       <Modal
         id={modalId}
@@ -61,24 +65,21 @@ const ConfirmModal = ({
       >
         <p className="mb-6 text-zinc-500 dark:text-zinc-400">{description}</p>
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={() => modalInstance?.close()}
-            className="focus-ring min-h-11 rounded-lg border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
-          >
+          <ActionButton onClick={() => modalInstance?.close()} fullWidth className="sm:w-auto">
             Cancelar
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             data-testid="confirm-button"
-            type="button"
             onClick={() => {
               onConfirm();
               modalInstance?.close();
             }}
-            className={`focus-ring min-h-11 rounded-lg border-2 px-4 py-2 hover:text-zinc-50 dark:hover:text-zinc-950 ${CLASSES[theme || "default"]} hover:cursor-pointer`}
+            tone={CONFIRM_TONES[theme || "default"]}
+            fullWidth
+            className="sm:w-auto"
           >
             {buttonTitle}
-          </button>
+          </ActionButton>
         </div>
       </Modal>
     </>

@@ -23,8 +23,8 @@ vi.mock("@/components/Forms/SelectCategories", () => ({
 }));
 
 vi.mock("@/components/Forms/SelectCurrency", () => ({
-  default: () => (
-    <select name="currency" data-testid="currency-select">
+  default: (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
+    <select name="currency" data-testid="currency-select" {...props}>
       <option value="1">USD</option>
     </select>
   ),
@@ -38,6 +38,12 @@ vi.mock("@/stores/editStore", () => ({
 const mockAdd = vi.fn();
 const mockUpdateName = vi.fn();
 const mockUpdateAmount = vi.fn();
+
+function getBudgetForm() {
+  const form = document.getElementById("budget-form");
+  if (!(form instanceof HTMLFormElement)) throw new Error("Budget form was not rendered");
+  return form;
+}
 
 // also mock the budgetStore module's getState as Form uses budgetStore.getState().add
 vi.mock("@/stores/budgetStore", () => ({
@@ -99,6 +105,24 @@ describe("BudgetForm", () => {
     expect(screen.getByTestId("category-select")).toBeInTheDocument();
     expect(screen.getByTestId("currency-select")).toBeInTheDocument();
     expect(screen.getByLabelText("Límite")).toBeInTheDocument();
+  });
+
+  it("renders amount and currency as one responsive joined control", () => {
+    render(<BudgetForm modalId={MODAL_ID.BUDGET.CREATE} />);
+    const control = screen.getByTestId("budget-amount-currency-control");
+    expect(control).toHaveClass(
+      "grid",
+      "grid-cols-[minmax(0,1fr)_6rem]",
+      "w-full",
+      "overflow-hidden",
+      "focus-within:ring-2",
+    );
+    expect(screen.getByLabelText("Límite")).toHaveClass("max-w-full", "h-10", "rounded-none");
+    expect(screen.getByLabelText("Límite").parentElement?.parentElement).toHaveClass(
+      "min-w-0",
+      "overflow-hidden",
+    );
+    expect(screen.getByTestId("currency-select")).toHaveClass("w-full", "h-10", "rounded-none");
   });
 
   it("should create budget when form submitted", async () => {
@@ -180,7 +204,7 @@ describe("BudgetForm", () => {
     fireEvent.change(screen.getByTestId("category-select"), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText(/L.*mite/i), { target: { value: "200" } });
     fireEvent.click(screen.getByLabelText(/Monthly/i));
-    const form = document.getElementById("budget-form")!;
+    const form = getBudgetForm();
 
     fireEvent.submit(form);
     fireEvent.submit(form);
@@ -205,7 +229,7 @@ describe("BudgetForm", () => {
     fireEvent.change(screen.getByTestId("category-select"), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText(/L.*mite/i), { target: { value: "200" } });
     fireEvent.click(screen.getByLabelText(/Monthly/i));
-    fireEvent.submit(document.getElementById("budget-form")!);
+    fireEvent.submit(getBudgetForm());
     unmount();
     resolveAdd();
     await Promise.resolve();

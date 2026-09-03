@@ -1,5 +1,7 @@
 ---
-import AddButton from "@/components/General/AddButton";
+import { Icon } from "astro-icon/components";
+
+import ActionButton from "@/components/General/ActionButton.astro";
 import SectionHeader from "@/components/General/SectionHeader.astro";
 
 import AccountModals from "./Modals.astro";
@@ -25,12 +27,14 @@ const {
     headingId="accounts-title"
     level={headingLevel}
   >
-    <AddButton
+    <ActionButton
       slot="actions"
       id="create-account-button"
+      tone="primary"
     >
+      <Icon name="iconoir:plus" class="size-5" aria-hidden="true" />
       Añadir cuenta
-    </AddButton>
+    </ActionButton>
   </SectionHeader>
 
   <AccountsList client:load />

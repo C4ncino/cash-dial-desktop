@@ -175,20 +175,37 @@ All important controls should have:
 - disabled behavior such as `disabled:cursor-not-allowed disabled:opacity-40` or `disabled:opacity-50`;
 - a visible text label or an accessible `aria-label` for icon-only buttons.
 
-Use these established variants:
+Use `ActionButton` for workflow actions such as create, edit, save, reset, confirm,
+activate/deactivate, delete, pay, and occurrence actions. Import the framework-specific
+component:
 
 ```tsx
-// Primary / save
-className="focus-ring min-h-11 rounded-lg border-2 border-green-600 bg-green-600 px-4 py-2 text-zinc-50 hover:border-green-500 hover:bg-green-500 dark:border-green-400 dark:bg-green-400 dark:text-zinc-950"
+// React
+import ActionButton from "@/components/General/ActionButton";
 
-// Secondary / cancel
-className="focus-ring min-h-11 rounded-lg border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
-
-// Quiet icon control
-className="focus-ring glass-control inline-flex size-10 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-700/60"
+<ActionButton tone="primary" type="submit">Guardar</ActionButton>
+<ActionButton tone="danger" fullWidth>Eliminar</ActionButton>
 ```
 
-Destructive actions use red borders/text and a red hover fill. Informational actions use blue. Reuse `FormActions` and `ConfirmModal` before recreating these patterns.
+```astro
+---
+import ActionButton from "@/components/General/ActionButton.astro";
+---
+
+<ActionButton tone="primary">Crear</ActionButton>
+```
+
+Both components use the same `default`, `primary`, `success`, `warning`, `danger`, and
+`info` tones. They are content-width by default; use `fullWidth` only for detail action
+rails or stacked mobile actions. Icons can be rendered alongside the label as children.
+`AddButton` remains the React convenience wrapper for a primary action with a plus icon.
+
+Keep specialized controls purpose-built: filters, pagination, disclosures, segmented
+controls, row-management icons, navigation, theme/menu controls, and the circular movement
+speed dial do not use `ActionButton`.
+
+Reuse `FormActions` and `ConfirmModal` before recreating workflow patterns. `ConfirmModal`
+uses the shared button tones for its opener and footer actions.
 
 Links embedded in prose or lists generally use `text-blue-600 dark:text-blue-400`, with `hover:underline` where the surrounding shape does not already communicate clickability.
 

@@ -17,7 +17,7 @@ const FormActions = ({
         </ActionButton>
       </li>
       <li>
-        <ActionButton type="submit" disabled={disabled} tone="success" className="w-full sm:w-auto">
+        <ActionButton type="submit" disabled={disabled} tone="primary" className="w-full sm:w-auto">
           {disabled ? "Guardando…" : submitLabel}
         </ActionButton>
       </li>

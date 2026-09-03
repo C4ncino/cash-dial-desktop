@@ -31,10 +31,12 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
 
     logger.info("Account created", newAccount);
 
-    return set((state) => ({
+    set((state) => ({
       accounts: [...state.accounts, newAccount],
       types: state.types,
     }));
+
+    return newAccount;
   },
   remove: async (id: number) => {
     await accountsCommands.remove(id);
@@ -42,6 +44,24 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
     return set((state) => ({
       accounts: state.accounts.filter((account) => account.id !== id),
       types: state.types,
+    }));
+  },
+  activate: async (id: number) => {
+    const updatedAccount = await accountsCommands.activate(id);
+    set((state) => ({
+      ...state,
+      accounts: state.accounts.map((account) =>
+        account.id === updatedAccount.id ? updatedAccount : account,
+      ),
+    }));
+  },
+  deactivate: async (id: number) => {
+    const updatedAccount = await accountsCommands.deactivate(id);
+    set((state) => ({
+      ...state,
+      accounts: state.accounts.map((account) =>
+        account.id === updatedAccount.id ? updatedAccount : account,
+      ),
     }));
   },
   getById: (id: number) => get().accounts.find((account) => account.id === id),

@@ -4,6 +4,7 @@ import AccountMovements from "@/components/Accounts/AccountMovements";
 import ActionButtons from "@/components/Accounts/ActionButtons";
 import DetailLayout from "@/layouts/DetailLayout.astro";
 import AccountModals from "@/components/Accounts/Modals.astro";
+import ActionButton from "@/components/General/ActionButton.astro";
 import DetailShell from "@/components/General/DetailShell.astro";
 ---
 
@@ -13,12 +14,10 @@ import DetailShell from "@/components/General/DetailShell.astro";
     <AccountMovements client:load />
     <menu slot="actions" class="flex flex-wrap gap-2 sm:flex-col">
       <li>
-        <button
+        <ActionButton
           id="edit-account-button"
-          type="button"
-          class="focus-ring edit-button min-h-10 rounded-lg border border-zinc-400 text-sm font-medium dark:border-zinc-600 w-full h-full px-4 py-2 cursor-pointer"
-          >Editar</button
-        >
+          fullWidth
+        >Editar</ActionButton>
       </li>
       <ActionButtons client:load />
     </menu>

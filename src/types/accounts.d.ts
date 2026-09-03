@@ -53,4 +53,6 @@ type AccountsStore = {
     payments: CreditCardPaymentRequest[],
     installmentIds: number[],
   ) => Promise<CreditCardPaymentResult>;
+  activate: (id: number) => Promise<void>;
+  deactivate: (id: number) => Promise<void>;
 };

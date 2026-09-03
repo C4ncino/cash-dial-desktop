@@ -22,6 +22,12 @@ vi.mock("@iconify/react", () => ({
   Icon: ({ icon }: { icon: string }) => <span data-testid="icon" data-icon={icon} />,
 }));
 
+function getPlanningForm() {
+  const form = document.getElementById(MODAL_ID.PLANNING.CREATE);
+  if (!(form instanceof HTMLFormElement)) throw new Error("Planning form was not rendered");
+  return form;
+}
+
 vi.mock("@/components/Forms/SelectCategories", () => ({
   default: ({ categoryId, onChange }: any) => (
     <fieldset>
@@ -292,7 +298,7 @@ describe("PlanningForm Component", () => {
       target: { value: "350" },
     });
 
-    const form = document.getElementById(MODAL_ID.PLANNING.CREATE);
+    const form = getPlanningForm();
 
     // Fill account select
     const accountSelect = screen.getByLabelText("Cuenta");
@@ -302,7 +308,7 @@ describe("PlanningForm Component", () => {
     const categorySelect = screen.getByLabelText("Categoría");
     fireEvent.change(categorySelect, { target: { value: "5" } });
 
-    fireEvent.submit(form!);
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(createSpy).toHaveBeenCalled();
@@ -322,7 +328,7 @@ describe("PlanningForm Component", () => {
     fireEvent.change(screen.getByLabelText("Monto Estimado"), { target: { value: "350" } });
     fireEvent.change(screen.getByLabelText("Cuenta"), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "5" } });
-    const form = document.getElementById(MODAL_ID.PLANNING.CREATE)!;
+    const form = getPlanningForm();
 
     fireEvent.submit(form);
     fireEvent.submit(form);
@@ -351,7 +357,7 @@ describe("PlanningForm Component", () => {
     fireEvent.change(screen.getByLabelText("Monto Estimado"), { target: { value: "350" } });
     fireEvent.change(screen.getByLabelText("Cuenta"), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText("Categoría"), { target: { value: "5" } });
-    fireEvent.submit(document.getElementById(MODAL_ID.PLANNING.CREATE)!);
+    fireEvent.submit(getPlanningForm());
     unmount();
     resolveCreate({} as Planning);
     await Promise.resolve();

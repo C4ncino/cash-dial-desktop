@@ -103,6 +103,31 @@ describe("accountsStore", () => {
     expect(accountsStore.getState().accounts[0].name).toBe("Updated");
   });
 
+  it.each([
+    ["activate", true, "activate_account"],
+    ["deactivate", false, "deactivate_account"],
+  ] as const)(
+    "%s replaces the returned account without removing it",
+    async (action, isActive, command) => {
+      const secondAccount = { ...account, id: 2, name: "Savings" };
+      accountsStore.setState({ accounts: [account, secondAccount], types: [] });
+      mockInvoke.mockResolvedValueOnce({ ...account, isActive });
+
+      await accountsStore.getState()[action](account.id);
+
+      expect(mockInvoke).toHaveBeenCalledWith(command, { id: account.id });
+      expect(accountsStore.getState().accounts).toEqual([{ ...account, isActive }, secondAccount]);
+    },
+  );
+
+  it("keeps accounts unchanged when a status change fails", async () => {
+    accountsStore.setState({ accounts: [account], types: [] });
+    mockInvoke.mockRejectedValueOnce(new Error("status failed"));
+
+    await expect(accountsStore.getState().deactivate(account.id)).rejects.toThrow("status failed");
+    expect(accountsStore.getState().accounts).toEqual([account]);
+  });
+
   it("updateBalance updates balance for single account and returns it", async () => {
     accountsStore.setState({
       accounts: [account],

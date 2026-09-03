@@ -339,6 +339,49 @@ fn remove_account_internal(connection: &mut SqliteConnection, id: i32) -> Result
     remove_account_service(connection, id).map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+pub fn activate_account(state: State<'_, Mutex<AppState>>, id: i32) -> Result<Account, String> {
+    set_account_active(state, id, true)
+}
+
+#[tauri::command]
+pub fn deactivate_account(state: State<'_, Mutex<AppState>>, id: i32) -> Result<Account, String> {
+    set_account_active(state, id, false)
+}
+
+fn set_account_active(
+    state: State<'_, Mutex<AppState>>,
+    id: i32,
+    active: bool,
+) -> Result<Account, String> {
+    let state = crate::utils::lock_app_state(&state)?;
+    let account_types = state.account_types.clone();
+    let connection = &mut establish_connection(&state.config.database_url);
+    set_account_active_internal(connection, &account_types, id, active)
+}
+
+pub(crate) fn set_account_active_internal(
+    connection: &mut SqliteConnection,
+    account_types: &[AccountType],
+    id: i32,
+    active: bool,
+) -> Result<Account, String> {
+    use crate::schema::accounts::dsl::{accounts, is_active};
+
+    let updated = diesel::update(accounts.find(id))
+        .set(is_active.eq(active))
+        .execute(connection)
+        .map_err(|error| error.to_string())?;
+    if updated == 0 {
+        return Err(crate::domain::accounts::AccountError::NotFound(id).to_string());
+    }
+
+    get_accounts_internal(connection, account_types)?
+        .into_iter()
+        .find(|account| account.id == id)
+        .ok_or_else(|| crate::domain::accounts::AccountError::NotFound(id).to_string())
+}
+
 fn remove_account_service(
     connection: &mut SqliteConnection,
     id: i32,
@@ -666,7 +709,7 @@ pub fn pay_credit_card_internal(
 
             use crate::models::movements::MovementInstallmentRow;
             use crate::schema::accounts::dsl::{
-                accounts, currency_id as acc_currency_id, id as acc_id,
+                accounts, currency_id as acc_currency_id, id as acc_id, is_active as acc_is_active,
             };
             use crate::schema::accounts_credit_info::dsl::{
                 account_id as info_acc_id, accounts_credit_info,
@@ -701,6 +744,17 @@ pub fn pay_credit_card_internal(
                         credit_account_id_val
                     )));
                 }
+            }
+
+            let target_is_active = accounts
+                .filter(acc_id.eq(credit_account_id_val))
+                .select(acc_is_active)
+                .first::<bool>(connection)?;
+            if !target_is_active {
+                return Err(CreditCardPaymentError::Validation(format!(
+                    "La cuenta con ID {} está inactiva",
+                    credit_account_id_val
+                )));
             }
 
             let mut unique_installment_ids = installment_ids.clone();
@@ -796,22 +850,24 @@ pub fn pay_credit_card_internal(
                     ));
                 }
 
-                let source_exists = accounts
+                let source_account = accounts
                     .filter(acc_id.eq(payment.from_account_id))
-                    .count()
-                    .get_result::<i64>(connection)?;
+                    .select((acc_currency_id, acc_is_active))
+                    .first::<(i32, bool)>(connection)
+                    .optional()?;
 
-                if source_exists == 0 {
+                let Some((source_currency_id, source_is_active)) = source_account else {
                     return Err(CreditCardPaymentError::Validation(format!(
                         "La cuenta de origen con ID {} no existe",
                         payment.from_account_id
                     )));
+                };
+                if !source_is_active {
+                    return Err(CreditCardPaymentError::Validation(format!(
+                        "La cuenta de origen con ID {} está inactiva",
+                        payment.from_account_id
+                    )));
                 }
-
-                let source_currency_id = accounts
-                    .filter(acc_id.eq(payment.from_account_id))
-                    .select(acc_currency_id)
-                    .first::<i32>(connection)?;
 
                 movement_inputs.push(crate::domain::movements::MovementInput::new(
                     crate::domain::movements::TRANSFER_ID,

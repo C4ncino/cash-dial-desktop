@@ -175,6 +175,9 @@ describe("Movement Commands", () => {
 
       expect(originBefore).toEqual(expect.any(Number));
       expect(destinationBefore).toEqual(expect.any(Number));
+      if (originBefore === undefined || destinationBefore === undefined) {
+        throw new Error("Expected seeded source and destination balances");
+      }
 
       const result = await invokeCommand<unknown>(MOVEMENT_FUNCTIONS.add, {
         typeId: 3,
@@ -200,10 +203,10 @@ describe("Movement Commands", () => {
 
       const accountsAfter = await invokeCommand<Account[]>(ACCOUNT_FUNCTIONS.get);
       expect(accountsAfter.find((account) => account.id === 1)?.balance).toBe(
-        originBefore! - 200.0,
+        originBefore - 200.0,
       );
       expect(accountsAfter.find((account) => account.id === destinationAccount.id)?.balance).toBe(
-        destinationBefore! + 180.0,
+        destinationBefore + 180.0,
       );
     });
 

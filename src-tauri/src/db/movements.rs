@@ -10,8 +10,8 @@ pub fn find(connection: &mut SqliteConnection, movement_id: i32) -> QueryResult<
 }
 
 pub fn list(connection: &mut SqliteConnection) -> QueryResult<Vec<MovementRow>> {
-    use crate::schema::movements::dsl::{movements, timestamp};
-    movements.order(timestamp.desc()).select(MovementRow::as_select()).load(connection)
+    use crate::schema::movements::dsl::{id, movements, timestamp};
+    movements.order((timestamp.desc(), id.desc())).select(MovementRow::as_select()).load(connection)
 }
 
 pub fn insert(

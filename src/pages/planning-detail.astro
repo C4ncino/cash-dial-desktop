@@ -6,6 +6,7 @@ import PlanningModals from "@/components/Plannings/Modals.astro";
 import MovementModals from "@/components/Movements/Modals.astro";
 import DetailLayout from "@/layouts/DetailLayout.astro";
 import DetailShell from "@/components/General/DetailShell.astro";
+import ActionButton from "@/components/General/ActionButton.astro";
 ---
 
 <DetailLayout title="Detalles de Planificación" description="">
@@ -18,11 +19,10 @@ import DetailShell from "@/components/General/DetailShell.astro";
       data-testid="planning-actions"
     >
       <li>
-        <button
+        <ActionButton
           id="edit-planning-button"
-          class="focus-ring edit-button min-h-10 rounded-lg border border-zinc-400 px-4 py-2 text-sm font-medium dark:border-zinc-600"
-          type="button">Editar</button
-        >
+          fullWidth
+        >Editar</ActionButton>
       </li>
       <PlanningActions client:load />
     </menu>

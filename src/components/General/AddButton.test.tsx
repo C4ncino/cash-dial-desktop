@@ -10,6 +10,7 @@ describe("AddButton", () => {
     const button = screen.getByRole("button", { name: "Añadir elemento" });
     expect(button).toHaveAttribute("id", "create-item-button");
     expect(button).toHaveAttribute("type", "button");
+    expect(button).toHaveClass("min-h-11", "border-2", "bg-green-600");
     expect(button.querySelector('[data-icon="iconoir:plus"]')).toBeInTheDocument();
   });
 });

@@ -61,7 +61,9 @@ describe("BudgetPeriods", () => {
     expect(movementList).toHaveTextContent("MovementList Mock");
 
     // movementIds should be reversed
-    expect(JSON.parse(movementList.getAttribute("data-ids")!)).toEqual([3, 2, 1]);
+    const movementIds = movementList.getAttribute("data-ids");
+    if (!movementIds) throw new Error("Movement IDs were not rendered");
+    expect(JSON.parse(movementIds)).toEqual([3, 2, 1]);
 
     // needCompact should be true
     expect(movementList.getAttribute("data-compact")).toBe("true");

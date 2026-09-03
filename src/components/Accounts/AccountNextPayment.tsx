@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 
 import CreditCardPaymentForm from "@/components/Accounts/CreditCardPaymentForm";
+import ActionButton from "@/components/General/ActionButton";
 import AmountText from "@/components/General/AmountText";
 import useDate from "@/hooks/useDate";
 import { accountsStore } from "@/stores/accountsStore";
@@ -155,14 +156,10 @@ const AccountNextPayment = ({ accountId }: Props) => {
             })}
           </ul>
           <menu className="flex justify-end border-t border-zinc-200 bg-zinc-100/60 p-3 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/60">
-            <button
-              type="button"
-              onClick={() => setShowPaymentForm(true)}
-              className="flex items-center gap-2 rounded border-2 border-green-600 bg-green-600 px-4 py-2 text-sm text-zinc-50 hover:cursor-pointer hover:border-green-500 hover:bg-green-500 dark:border-green-400 dark:bg-green-400 dark:text-zinc-950 dark:hover:border-green-500 dark:hover:bg-green-500"
-            >
+            <ActionButton onClick={() => setShowPaymentForm(true)} tone="primary">
               <Icon icon="iconoir:mastercard-card" className="text-lg" />
               Pagar Tarjeta
-            </button>
+            </ActionButton>
           </menu>
         </>
       )}

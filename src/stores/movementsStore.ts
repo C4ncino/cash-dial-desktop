@@ -26,6 +26,14 @@ export function buildByAccountIndex(movements: Movement[]): Record<number, numbe
   return byAccount;
 }
 
+export function compareMovements(left: Movement, right: Movement): number {
+  return right.timestamp - left.timestamp || right.id - left.id;
+}
+
+function orderMovements(movements: Movement[]): Movement[] {
+  return [...movements].sort(compareMovements);
+}
+
 async function attachInstallmentsIfNeeded(movement: Movement): Promise<Movement> {
   if (!movement.installments) return { ...movement };
 
@@ -56,7 +64,9 @@ export const movementsStore = createStore<
     logger.debug("Movements:", movements);
     logger.debug("Movement types:", types);
 
-    const finalMovements = await Promise.all(movements.map(attachInstallmentsIfNeeded));
+    const finalMovements = orderMovements(
+      await Promise.all(movements.map(attachInstallmentsIfNeeded)),
+    );
 
     const byId = finalMovements.reduce<Record<number, Movement>>((acc, movement) => {
       acc[movement.id] = movement;
@@ -89,13 +99,16 @@ export const movementsStore = createStore<
 
     set((state) => {
       const byId = { ...state.byId };
-      const allIds = [...state.allIds];
-
       for (const movement of refreshedMovements) {
         byId[movement.id] = movement;
-
-        if (!allIds.includes(movement.id)) allIds.unshift(movement.id);
       }
+
+      const candidateIds = [...state.allIds, ...refreshedMovements.map(({ id }) => id)];
+      const allIds = orderMovements(
+        Array.from(new Set(candidateIds))
+          .map((id) => byId[id])
+          .filter(Boolean),
+      ).map(({ id }) => id);
 
       const byAccount = buildByAccountIndex(allIds.map((id) => byId[id]));
 
@@ -127,16 +140,10 @@ export const movementsStore = createStore<
 
     set((state) => {
       const byId = { ...state.byId, [newMovement.id]: newMovement };
-      const allIds = [newMovement.id, ...state.allIds];
-
-      const byAccount = { ...state.byAccount };
-      const accId = newMovement.accountId;
-      byAccount[accId] = [newMovement.id, ...(byAccount[accId] || [])];
-
-      if (newMovement.toAccountId) {
-        const toAccId = newMovement.toAccountId;
-        byAccount[toAccId] = [newMovement.id, ...(byAccount[toAccId] || [])];
-      }
+      const allIds = orderMovements(
+        Array.from(new Set([...state.allIds, newMovement.id])).map((id) => byId[id]),
+      ).map(({ id }) => id);
+      const byAccount = buildByAccountIndex(allIds.map((id) => byId[id]));
 
       return {
         byId,
@@ -186,12 +193,14 @@ export const movementsStore = createStore<
 
     return set((state) => {
       const byId = { ...state.byId, [id]: updatedMovement };
-      const byAccount = buildByAccountIndex(
-        state.allIds.map((mId) => (mId === id ? updatedMovement : byId[mId])).filter(Boolean),
+      const allIds = orderMovements(state.allIds.map((movementId) => byId[movementId])).map(
+        ({ id: movementId }) => movementId,
       );
+      const byAccount = buildByAccountIndex(allIds.map((movementId) => byId[movementId]));
 
       return {
         byId,
+        allIds,
         byAccount,
       };
     });
@@ -304,15 +313,17 @@ export function groupMovementsByDate(ids: number[], byId: Record<number, Movemen
     date.setHours(0, 0, 0, 0);
     const dayTimestamp = date.getTime();
 
-    if (!groupsMap.has(dayTimestamp)) {
-      groupsMap.set(dayTimestamp, []);
+    let group = groupsMap.get(dayTimestamp);
+    if (!group) {
+      group = [];
+      groupsMap.set(dayTimestamp, group);
       orderedDays.push(dayTimestamp);
     }
-    groupsMap.get(dayTimestamp)!.push(id);
+    group.push(id);
   }
 
-  return orderedDays.map((dayTimestamp) => ({
-    dayTimestamp,
-    ids: groupsMap.get(dayTimestamp)!,
-  }));
+  return orderedDays.flatMap((dayTimestamp) => {
+    const ids = groupsMap.get(dayTimestamp);
+    return ids ? [{ dayTimestamp, ids }] : [];
+  });
 }

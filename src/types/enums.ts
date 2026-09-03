@@ -9,6 +9,8 @@ export enum ACCOUNT_FUNCTIONS {
   remove = "remove_account",
   get = "get_accounts",
   update = "update_account",
+  activate = "activate_account",
+  deactivate = "deactivate_account",
   getBalance = "get_account_balance",
   getNextPayment = "get_credit_cards_next_payment",
   payCreditCard = "pay_credit_card",
@@ -95,6 +97,7 @@ export const MODAL_ID = {
     CREATE: "create-account-dialog",
     EDIT: "edit-account-dialog",
     DELETE: "delete-account-dialog",
+    ACTIVATE: "activate-account-dialog",
     DEACTIVATE: "deactivate-account-dialog",
   },
   MOVEMENT: {

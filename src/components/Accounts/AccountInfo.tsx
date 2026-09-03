@@ -5,6 +5,7 @@ import { useStore } from "zustand";
 import AccountNextPayment from "@/components/Accounts/AccountNextPayment";
 import AmountText from "@/components/General/AmountText";
 import EntityIcon from "@/components/General/EntityIcon";
+import StatusBadge from "@/components/General/StatusBadge";
 import { formatNumber } from "@/lib/formatters";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
@@ -28,7 +29,12 @@ const AccountInfo = () => {
       <header className="mb-4 flex flex-row items-center gap-3">
         <EntityIcon size="lg" color={account.type.color} icon={account.type.icon} />
         <hgroup className="flex flex-col">
-          <h1>{account.name}</h1>
+          <div className="flex flex-row items-center gap-2">
+            <h1>{account.name}</h1>
+            <StatusBadge tone={account.isActive ? "success" : "warning"} className="w-fit">
+              {account.isActive ? "Activa" : "Inactiva"}
+            </StatusBadge>
+          </div>
           <AmountText
             amount={account.balance}
             currency={currency}

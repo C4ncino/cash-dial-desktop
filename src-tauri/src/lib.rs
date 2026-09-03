@@ -151,6 +151,8 @@ pub fn run() {
             functions::accounts::get_account_types,
             functions::accounts::get_accounts,
             functions::accounts::update_account,
+            functions::accounts::activate_account,
+            functions::accounts::deactivate_account,
             functions::accounts::remove_account,
             functions::accounts::get_account_balance,
             functions::currencies::get_currencies,

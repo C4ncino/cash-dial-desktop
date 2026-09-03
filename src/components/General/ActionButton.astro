@@ -1,0 +1,29 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+import {
+  actionButtonClasses,
+  type ActionButtonTone,
+} from "@/components/General/actionButtonStyles";
+
+interface Props extends HTMLAttributes<"button"> {
+  tone?: ActionButtonTone;
+  fullWidth?: boolean;
+}
+
+const {
+  tone = "default",
+  fullWidth = false,
+  class: className,
+  type = "button",
+  ...attributes
+} = Astro.props;
+---
+
+<button
+  type={type}
+  class={actionButtonClasses({ tone, fullWidth, className: className ?? undefined })}
+  {...attributes}
+>
+  <slot />
+</button>

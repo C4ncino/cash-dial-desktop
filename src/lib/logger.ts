@@ -25,7 +25,7 @@ export const logger = {
     if (shouldLog("warn")) console.warn(...args);
     try {
       await systemCommands.logFrontendError("warn", String(args[0] || ""));
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   },
@@ -35,7 +35,7 @@ export const logger = {
       const message = String(args[0] || "");
       const stack = args[1] && args[1].stack ? String(args[1].stack) : undefined;
       await systemCommands.logFrontendError("error", message, stack);
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   },

@@ -128,13 +128,18 @@ const PlanningForm = ({ modalId, formId = modalId }: Props) => {
       return;
     }
 
+    if (selectedAccountId === undefined || categoryId === undefined) {
+      setErrors(["Selecciona una cuenta y una categorÃ­a."]);
+      return;
+    }
+
     if (!begin()) return;
 
     try {
       const payload = createPlanningRequest({
         typeId,
-        accountId: selectedAccountId!,
-        categoryId: categoryId!,
+        accountId: selectedAccountId,
+        categoryId,
         currencyId: formCurrencyId,
         name,
         amount: numAmount,

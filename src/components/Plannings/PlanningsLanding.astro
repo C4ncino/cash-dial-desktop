@@ -1,5 +1,7 @@
 ---
-import AddButton from "@/components/General/AddButton";
+import { Icon } from "astro-icon/components";
+
+import ActionButton from "@/components/General/ActionButton.astro";
 import PlanningList from "@/components/Plannings/PlanningList";
 import SectionHeader from "@/components/General/SectionHeader.astro";
 ---
@@ -10,12 +12,14 @@ import SectionHeader from "@/components/General/SectionHeader.astro";
     description="Anticipa tus ingresos y gastos recurrentes."
     headingId="all-plannings-title"
   >
-    <AddButton
+    <ActionButton
       slot="actions"
       id="create-planning-button"
+      tone="primary"
     >
+      <Icon name="iconoir:plus" class="size-5" aria-hidden="true" />
       Nueva planificación
-    </AddButton>
+    </ActionButton>
   </SectionHeader>
 
   <PlanningList showCreateButton={false} client:load />

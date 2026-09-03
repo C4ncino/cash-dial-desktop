@@ -3,6 +3,7 @@ import DetailLayout from "@/layouts/DetailLayout.astro";
 import BudgetInfo from "@/components/Budgets/BudgetInfo";
 import BudgetPeriods from "@/components/Budgets/BudgetPeriods";
 import BudgetModals from "@/components/Budgets/Modals.astro";
+import ActionButton from "@/components/General/ActionButton.astro";
 
 import BudgetActions from "@/components/Budgets/BudgetActions";
 import DetailShell from "@/components/General/DetailShell.astro";
@@ -14,12 +15,10 @@ import DetailShell from "@/components/General/DetailShell.astro";
     <BudgetPeriods client:load />
     <menu slot="actions" class="flex flex-wrap gap-2 sm:flex-col">
       <li>
-        <button
+        <ActionButton
           id="edit-budget-button"
-          type="button"
-          class="focus-ring edit-button min-h-10 rounded-lg border border-zinc-400 px-4 py-2 text-sm font-medium dark:border-zinc-600"
-          >Editar</button
-        >
+          fullWidth
+        >Editar</ActionButton>
       </li>
       <BudgetActions client:load />
     </menu>

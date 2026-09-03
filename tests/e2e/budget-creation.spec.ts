@@ -25,6 +25,48 @@ describe("Tauri - Budget creation", () => {
     await element.sendKeys(text);
   }
 
+  async function joinedControlGeometry() {
+    return driver.executeScript<{
+      fitsViewport: boolean;
+      amountBeforeCurrency: boolean;
+      matchingHeights: boolean;
+      control: Record<string, number>;
+      amount: Record<string, number>;
+      currency: Record<string, number>;
+      viewportWidth: number;
+    }>(`
+      const control = document.querySelector('[data-testid="budget-amount-currency-control"]');
+      const amount = document.getElementById('amountLimit');
+      const currency = document.querySelector('#budget-form select[name="currency"]');
+      if (!control || !amount || !currency) return null;
+      const controlRect = control.getBoundingClientRect();
+      const amountRect = amount.getBoundingClientRect();
+      const currencyRect = currency.getBoundingClientRect();
+      return {
+        fitsViewport: controlRect.right <= document.documentElement.clientWidth + 1,
+        amountBeforeCurrency: amountRect.width > 0 && currencyRect.width > 0
+          && amountRect.right <= currencyRect.left + 1,
+        matchingHeights: Math.abs(amountRect.height - currencyRect.height) <= 2,
+        control: { left: controlRect.left, right: controlRect.right, width: controlRect.width },
+        amount: { left: amountRect.left, right: amountRect.right, width: amountRect.width, height: amountRect.height },
+        currency: { left: currencyRect.left, right: currencyRect.right, width: currencyRect.width, height: currencyRect.height },
+        viewportWidth: document.documentElement.clientWidth,
+      };
+    `);
+  }
+
+  async function expectJoinedControlFitsViewport() {
+    const geometry = await joinedControlGeometry();
+    if (!geometry.fitsViewport) {
+      throw new Error(`Joined control exceeds viewport: ${JSON.stringify(geometry)}`);
+    }
+    expect(geometry).toMatchObject({
+      fitsViewport: true,
+      amountBeforeCurrency: true,
+      matchingHeights: true,
+    });
+  }
+
   it("creates a monthly budget", async () => {
     // Wait for application UI to be ready
     // Open create budget form
@@ -33,6 +75,13 @@ describe("Tauri - Budget creation", () => {
 
     // Wait for form to load
     await findVisible(By.id("budget-form"));
+
+    await driver.manage().window().setRect({ width: 360, height: 740 });
+    await expectJoinedControlFitsViewport();
+    await clickWhenReady(By.css("[data-theme-toggle]"));
+    await expectJoinedControlFitsViewport();
+    await driver.manage().window().setRect({ width: 1280, height: 1024 });
+    await expectJoinedControlFitsViewport();
 
     // Fill Name
     const nameInput = await driver.findElement(By.css('#budget-form input[name="name"]'));

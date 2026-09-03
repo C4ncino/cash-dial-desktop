@@ -121,4 +121,10 @@ describe("AccountInfo", () => {
 
     expect(screen.queryByTestId("next-payment")).not.toBeInTheDocument();
   });
+
+  it("exposes the account status", () => {
+    (useStore as any).mockImplementation(() => ({ ...mockAccount, isActive: false }));
+    render(<AccountInfo />);
+    expect(screen.getByText("Inactiva")).toBeInTheDocument();
+  });
 });

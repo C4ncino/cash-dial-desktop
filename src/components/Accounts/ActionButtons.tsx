@@ -1,5 +1,7 @@
+import { toast } from "webcoreui";
+import { useStore } from "zustand";
+
 import ConfirmModal from "@/components/Forms/ConfirmModal";
-import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
 import { MODAL_ID } from "@/types/enums";
 
@@ -8,27 +10,43 @@ const ActionButtons = () => {
     typeof window !== "undefined"
       ? Number(new URLSearchParams(window.location.search).get("id"))
       : null;
+  const account = useStore(accountsStore, (state) => state.accounts.find((item) => item.id === id));
+  if (id === null) return null;
+
+  const isActive = account?.isActive ?? true;
 
   return (
     <>
       <li>
         <ConfirmModal
-          onConfirm={() => {
-            logger.debug("Deactivate account id:", id);
+          onConfirm={async () => {
+            if (isActive) {
+              await accountsStore.getState().deactivate(id);
+              toast("#account-deactivated");
+            } else {
+              await accountsStore.getState().activate(id);
+              toast("#account-activated");
+            }
           }}
-          buttonTitle="Desactivar"
-          modalId={MODAL_ID.ACCOUNT.DEACTIVATE}
-          modalTitle="Confirmar desactivación"
-          description="¿Estás seguro de que deseas desactivar esta cuenta? Ya no se podrá registrar movimientos en esta cuenta, pero los movimientos existentes no se eliminaran"
-          theme="warning"
-          buttonClassName="focus-ring min-h-10 rounded-lg border border-amber-600 text-sm font-medium text-amber-600 dark:border-amber-400 dark:text-amber-400 px-4 py-2 cursor-pointer"
+          buttonTitle={isActive ? "Desactivar" : "Activar"}
+          modalId={isActive ? MODAL_ID.ACCOUNT.DEACTIVATE : MODAL_ID.ACCOUNT.ACTIVATE}
+          modalTitle={isActive ? "Confirmar desactivación" : "Confirmar activación"}
+          description={
+            isActive
+              ? "¿Estás seguro de que deseas desactivar esta cuenta? Ya no se podrán registrar movimientos nuevos, pero su historial permanecerá disponible."
+              : "¿Estás seguro de que deseas activar esta cuenta? Podrá volver a usarse en movimientos y planificaciones."
+          }
+          theme={isActive ? "warning" : "success"}
+          buttonTone={isActive ? "warning" : "success"}
+          buttonFullWidth
         />
       </li>
 
       <li>
         <ConfirmModal
           onConfirm={async () => {
-            accountsStore.getState().remove(Number(id));
+            await accountsStore.getState().remove(id);
+            toast("#account-deleted");
             window.history.back();
           }}
           buttonTitle="Eliminar"
@@ -36,7 +54,8 @@ const ActionButtons = () => {
           modalTitle="Confirmar eliminación"
           description="¿Estás seguro de que deseas eliminar esta cuenta? Esto eliminara todos los movimientos relacionados"
           theme="alert"
-          buttonClassName="focus-ring min-h-10 rounded-lg border border-red-600 text-sm font-medium text-red-600 dark:border-red-400 dark:text-red-400 w-full h-full px-4 py-2 cursor-pointer"
+          buttonTone="danger"
+          buttonFullWidth
         />
       </li>
     </>

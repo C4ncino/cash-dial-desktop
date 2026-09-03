@@ -126,6 +126,75 @@ pub mod integration {
             .id
     }
 
+    #[test]
+    fn new_movements_reject_inactive_source_and_destination_accounts() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        use crate::schema::accounts::dsl::{accounts, is_active};
+
+        diesel::update(accounts.find(1)).set(is_active.eq(false)).execute(connection).unwrap();
+        let source_error = add_movement_internal(
+            connection,
+            1,
+            1,
+            None,
+            1,
+            1,
+            10.0,
+            10.0,
+            None,
+            1_800_000_000_000,
+            None,
+            None,
+        )
+        .err()
+        .expect("inactive source should fail");
+        assert!(source_error.contains("inactiva"));
+
+        diesel::update(accounts.find(1)).set(is_active.eq(true)).execute(connection).unwrap();
+        diesel::update(accounts.find(3)).set(is_active.eq(false)).execute(connection).unwrap();
+        let destination_error = add_movement_internal(
+            connection,
+            3,
+            1,
+            Some(3),
+            88,
+            1,
+            10.0,
+            10.0,
+            None,
+            1_800_000_000_000,
+            None,
+            None,
+        )
+        .err()
+        .expect("inactive destination should fail");
+        assert!(destination_error.contains("inactiva"));
+    }
+
+    #[test]
+    fn movement_list_orders_equal_timestamps_by_descending_id() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let timestamp = 1_900_000_000_000;
+        let first = add_movement_internal(
+            connection, 1, 1, None, 1, 1, 10.0, 10.0, None, timestamp, None, None,
+        )
+        .unwrap();
+        let second = add_movement_internal(
+            connection, 1, 1, None, 1, 1, 20.0, 20.0, None, timestamp, None, None,
+        )
+        .unwrap();
+
+        let ids = get_movements_internal(connection)
+            .unwrap()
+            .into_iter()
+            .filter(|movement| movement.id == first.id || movement.id == second.id)
+            .map(|movement| movement.id)
+            .collect::<Vec<_>>();
+        assert_eq!(ids, vec![second.id, first.id]);
+    }
+
     fn insert_account_with_currency(
         connection: &mut SqliteConnection,
         account_name: &str,

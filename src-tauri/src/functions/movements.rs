@@ -244,11 +244,9 @@ pub(crate) fn create_movement_in_transaction(
             }
         }
 
-        ensure_account_exists(connection, input.account_id())
-            .map_err(|_| MovementError::AccountNotFound(input.account_id()))?;
+        ensure_account_active(connection, input.account_id())?;
         if let Some(to_account_id) = input.to_account_id() {
-            ensure_account_exists(connection, to_account_id)
-                .map_err(|_| MovementError::AccountNotFound(to_account_id))?;
+            ensure_account_active(connection, to_account_id)?;
         }
 
         let row = crate::db::movements::insert(connection, input)?;
@@ -606,6 +604,26 @@ fn apply_balance_effect(
 
 fn ensure_account_exists(connection: &mut SqliteConnection, id: i32) -> QueryResult<()> {
     crate::db::accounts::ensure_exists(connection, id)
+}
+
+fn ensure_account_active(
+    connection: &mut SqliteConnection,
+    account_id_value: i32,
+) -> Result<(), MovementError> {
+    use crate::schema::accounts::dsl::{accounts, is_active};
+
+    let active =
+        accounts.find(account_id_value).select(is_active).first::<bool>(connection).map_err(
+            |error| match error {
+                diesel::result::Error::NotFound => MovementError::AccountNotFound(account_id_value),
+                other => MovementError::Database(other),
+            },
+        )?;
+    if active {
+        Ok(())
+    } else {
+        Err(MovementError::AccountInactive(account_id_value))
+    }
 }
 
 pub(crate) fn add_to_account_balance(

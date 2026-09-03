@@ -299,8 +299,9 @@ describe("Tauri - Planning commands", () => {
     );
     const pendingOccurrence = occurrences.find((occurrence) => occurrence.statusId === 1);
     expect(pendingOccurrence).toBeDefined();
+    if (!pendingOccurrence) throw new Error("Pending occurrence was not found");
     const canceled = await invokeCommand<unknown>(PLANNING_FUNCTIONS.cancelOccurrence, {
-      occurrenceId: pendingOccurrence!.id,
+      occurrenceId: pendingOccurrence.id,
     });
     expectOccurrence(canceled);
     await invokeCommand(PLANNING_FUNCTIONS.delete, { id: cancellationPlanning.id });

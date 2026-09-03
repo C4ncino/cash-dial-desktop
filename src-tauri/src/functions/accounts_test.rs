@@ -273,6 +273,33 @@ pub mod integration {
     }
 
     #[test]
+    fn account_status_transitions_persist_and_missing_ids_fail() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+
+        let deactivated =
+            set_account_active_internal(connection, &state.account_types, 1, false).unwrap();
+        assert!(!deactivated.is_active);
+        assert!(
+            !get_accounts_internal(connection, &state.account_types)
+                .unwrap()
+                .into_iter()
+                .find(|account| account.id == 1)
+                .unwrap()
+                .is_active
+        );
+
+        let activated =
+            set_account_active_internal(connection, &state.account_types, 1, true).unwrap();
+        assert!(activated.is_active);
+
+        let error = set_account_active_internal(connection, &state.account_types, 999_999, false)
+            .err()
+            .expect("missing account should fail");
+        assert!(error.contains("no existe"));
+    }
+
+    #[test]
     fn add_cash_account() {
         let state = setup();
         let connection = &mut establish_connection(&state.config.database_url);
@@ -717,6 +744,48 @@ pub mod integration {
         );
         assert!(res5.is_err());
         assert!(res5.unwrap_err().contains("cuenta de origen con ID 9999 no existe"));
+    }
+
+    #[test]
+    fn test_pay_credit_card_rejects_inactive_target_and_sources() {
+        let state = setup();
+        let connection = &mut establish_connection(&state.config.database_url);
+        let source =
+            add_account_internal(connection, &state.account_types, "Source", 500.0, 2, 1, None)
+                .unwrap();
+        let card = add_account_internal(
+            connection,
+            &state.account_types,
+            "Card",
+            1000.0,
+            3,
+            1,
+            Some(AccountCreditInfo { credit_limit: 2000.0, cutoff_day: 15, days_to_pay: 20 }),
+        )
+        .unwrap();
+        let installment_ids = create_pending_installments(connection, card.id, 100.0, 100.0);
+        let payment = CreditCardPaymentRequest {
+            from_account_id: source.id,
+            original_amount: 100.0,
+            account_amount: 100.0,
+        };
+
+        set_account_active_internal(connection, &state.account_types, card.id, false).unwrap();
+        let target_error = pay_credit_card_internal(
+            connection,
+            card.id,
+            vec![payment.clone()],
+            installment_ids.clone(),
+        )
+        .unwrap_err();
+        assert!(target_error.contains("inactiva"));
+
+        set_account_active_internal(connection, &state.account_types, card.id, true).unwrap();
+        set_account_active_internal(connection, &state.account_types, source.id, false).unwrap();
+        let source_error =
+            pay_credit_card_internal(connection, card.id, vec![payment], installment_ids)
+                .unwrap_err();
+        assert!(source_error.contains("inactiva"));
     }
 
     #[test]

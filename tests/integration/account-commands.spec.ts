@@ -116,6 +116,22 @@ describe("Tauri - Account creation", () => {
     expect(result).toEqual(expect.any(Number));
   });
 
+  it("deactivates and reactivates an account without removing it", async () => {
+    const deactivated = await invokeCommand<Account>(ACCOUNT_FUNCTIONS.deactivate, { id: 1 });
+    expect(deactivated.id).toBe(1);
+    expect(deactivated.isActive).toBe(false);
+
+    const listed = await invokeCommand<Account[]>(ACCOUNT_FUNCTIONS.get);
+    expect(listed.find((account) => account.id === 1)?.isActive).toBe(false);
+
+    const activated = await invokeCommand<Account>(ACCOUNT_FUNCTIONS.activate, { id: 1 });
+    expect(activated.isActive).toBe(true);
+
+    await expect(invokeCommand(ACCOUNT_FUNCTIONS.deactivate, { id: 999_999 })).rejects.toThrow(
+      /no existe/,
+    );
+  });
+
   it("remove_account returns deleted rows count", async () => {
     const result = await invokeCommand<unknown>(ACCOUNT_FUNCTIONS.remove, { id: 4 });
 

@@ -16,6 +16,8 @@ export const accountsCommands = {
   add: (account: AccountPayload) => invokeCommand<Account>(ACCOUNT_FUNCTIONS.add, account),
   update: (id: number, account: AccountPayload) =>
     invokeCommand<Account>(ACCOUNT_FUNCTIONS.update, { id, ...account }),
+  activate: (id: number) => invokeCommand<Account>(ACCOUNT_FUNCTIONS.activate, { id }),
+  deactivate: (id: number) => invokeCommand<Account>(ACCOUNT_FUNCTIONS.deactivate, { id }),
   remove: (id: number) => invokeCommand<void>(ACCOUNT_FUNCTIONS.remove, { id }),
   getBalance: (id: number) => invokeCommand<number>(ACCOUNT_FUNCTIONS.getBalance, { id }),
   getNextPayment: (accountId: number) =>

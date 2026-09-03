@@ -28,6 +28,12 @@ vi.mock("@iconify/react", () => ({
   Icon: ({ icon }: { icon: string }) => <span data-testid="icon" data-icon={icon} />,
 }));
 
+function getPaymentForm() {
+  const form = screen.getByText("Pagar tarjeta").closest("form");
+  if (!(form instanceof HTMLFormElement)) throw new Error("Payment form was not rendered");
+  return form;
+}
+
 const mockCurrency: Currency = {
   id: 1,
   code: "USD",
@@ -205,7 +211,7 @@ describe("CreditCardPaymentForm", () => {
     expect(screen.getByRole("button", { name: "Pagar" })).toBeDisabled();
 
     fireEvent.change(accounts[1], { target: { value: "10" } });
-    fireEvent.submit(screen.getByText("Pagar tarjeta").closest("form")!);
+    fireEvent.submit(getPaymentForm());
     expect(
       await screen.findByText("No puedes seleccionar la misma cuenta dos veces"),
     ).toBeInTheDocument();
@@ -227,9 +233,9 @@ describe("CreditCardPaymentForm", () => {
     fireEvent.change(amountInput, { target: { value: "150" } });
 
     // Try submitting without selecting account
-    const form = screen.getByText("Pagar tarjeta").closest("form");
+    const form = getPaymentForm();
     expect(form).toBeInTheDocument();
-    fireEvent.submit(form!);
+    fireEvent.submit(form);
 
     expect(
       await screen.findByText("Selecciona una cuenta de origen para cada fila"),
@@ -261,8 +267,8 @@ describe("CreditCardPaymentForm", () => {
     fireEvent.change(accountSelects[1], { target: { value: "10" } });
     fireEvent.change(amountInputs[1], { target: { value: "50" } });
 
-    const form = screen.getByText("Pagar tarjeta").closest("form");
-    fireEvent.submit(form!);
+    const form = getPaymentForm();
+    fireEvent.submit(form);
 
     expect(
       await screen.findByText("No puedes seleccionar la misma cuenta dos veces"),
@@ -299,8 +305,8 @@ describe("CreditCardPaymentForm", () => {
     fireEvent.change(accountSelects[1], { target: { value: "11" } });
     fireEvent.change(amountInputs[1], { target: { value: "50" } });
 
-    const form = screen.getByText("Pagar tarjeta").closest("form");
-    fireEvent.submit(form!);
+    const form = getPaymentForm();
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(payCreditCardMock).toHaveBeenCalledWith(
@@ -341,7 +347,7 @@ describe("CreditCardPaymentForm", () => {
     );
     fireEvent.change(screen.getByLabelText("Cuenta origen"), { target: { value: "10" } });
     fireEvent.change(screen.getByLabelText("Monto"), { target: { value: "10" } });
-    fireEvent.submit(screen.getByText("Pagar tarjeta").closest("form")!);
+    fireEvent.submit(getPaymentForm());
 
     await waitFor(() =>
       expect(payCreditCardMock).toHaveBeenCalledWith(
@@ -372,8 +378,8 @@ describe("CreditCardPaymentForm", () => {
     fireEvent.change(accountSelect, { target: { value: "10" } });
     fireEvent.change(amountInput, { target: { value: "150" } });
 
-    const form = screen.getByText("Pagar tarjeta").closest("form");
-    fireEvent.submit(form!);
+    const form = getPaymentForm();
+    fireEvent.submit(form);
 
     expect(await screen.findByText("Error: Database error")).toBeInTheDocument();
     expect(onSuccessMock).not.toHaveBeenCalled();
@@ -396,7 +402,7 @@ describe("CreditCardPaymentForm", () => {
     );
     fireEvent.change(screen.getByLabelText("Cuenta origen"), { target: { value: "10" } });
     fireEvent.change(screen.getByLabelText("Monto"), { target: { value: "150" } });
-    const form = screen.getByText("Pagar tarjeta").closest("form")!;
+    const form = getPaymentForm();
 
     fireEvent.submit(form);
     fireEvent.submit(form);

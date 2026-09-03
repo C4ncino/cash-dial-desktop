@@ -1,19 +1,24 @@
 import AmountText from "@/components/General/AmountText";
 import EntityIcon from "@/components/General/EntityIcon";
 import InteractiveCard from "@/components/General/InteractiveCard";
+import StatusBadge from "@/components/General/StatusBadge";
 import { selectCurrencyById, useCurrencies } from "@/hooks/useStores";
 
 export default function AccountCard(account: Account) {
   const currency = useCurrencies(selectCurrencyById(account.currencyId));
 
   return (
-    <InteractiveCard className="min-h-32 cursor-pointer" href={`/account?id=${account.id}`}>
+    <InteractiveCard
+      className={`min-h-32 cursor-pointer ${account.isActive ? "" : "opacity-70 grayscale-35"}`}
+      href={`/account?id=${account.id}`}
+    >
       <hgroup className="mb-3 flex min-w-0 flex-row gap-3">
         <EntityIcon size="sm" color={account.type.color} icon={account.type.icon} />
 
         <h3 className="min-w-0 flex-1 text-left text-sm font-medium uppercase text-zinc-700 line-clamp-2 dark:text-zinc-300">
           {account.name}
         </h3>
+        {!account.isActive && <StatusBadge tone="warning">Inactiva</StatusBadge>}
       </hgroup>
 
       <AmountText

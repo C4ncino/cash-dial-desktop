@@ -19,12 +19,14 @@ describe("ConfirmModal", () => {
   const mockModalInstance = {
     open: vi.fn(),
     close: vi.fn(),
+    replaceWith: vi.fn(),
+    remove: vi.fn(),
   };
 
   beforeEach(() => {
     logger.debug("ConfirmModal test beforeEach: clearing mocks");
     vi.clearAllMocks();
-    (modal as any).mockReturnValue(mockModalInstance);
+    vi.mocked(modal).mockReturnValue(mockModalInstance);
   });
 
   it("should render the confirmation contract", async () => {
@@ -101,5 +103,18 @@ describe("ConfirmModal", () => {
     const button = screen.getByTestId("open-modal-button");
 
     expect(button).toHaveClass("custom-class");
+  });
+
+  it("uses shared semantic styles for the opener and modal actions", () => {
+    render(<ConfirmModal {...defaultProps} buttonTone="info" buttonFullWidth />);
+
+    expect(screen.getByTestId("open-modal-button")).toHaveClass(
+      "min-h-11",
+      "border-2",
+      "border-blue-600",
+      "w-full",
+    );
+    expect(screen.getByTestId("confirm-button")).toHaveClass("min-h-11", "border-red-600");
+    expect(screen.getByRole("button", { name: "Cancelar" })).toHaveClass("border-zinc-400");
   });
 });

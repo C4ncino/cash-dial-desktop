@@ -4,6 +4,7 @@ import { toast } from "webcoreui";
 import { useStore } from "zustand";
 
 import ConfirmModal from "@/components/Forms/ConfirmModal";
+import ActionButton from "@/components/General/ActionButton";
 import { formatOccurrenceDate } from "@/components/Plannings/PlanningCard";
 import PlanningStatusBadge from "@/components/Plannings/PlanningStatusBadge";
 import { formatNumber } from "@/lib/formatters";
@@ -125,14 +126,13 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
           </div>
           {currentOccurrence.statusId === PLANNING_STATUS.PENDING && (
             <div className="flex flex-wrap gap-3 mt-4">
-              <button
-                type="button"
+              <ActionButton
                 data-testid="complete-occurrence-button"
                 onClick={handleComplete}
-                className="rounded border border-emerald-600 px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50/60 dark:border-emerald-400 dark:text-emerald-400 dark:hover:bg-emerald-950/60"
+                tone="success"
               >
                 Completar con movimiento
-              </button>
+              </ActionButton>
               <ConfirmModal
                 onConfirm={handleCancel}
                 buttonTitle="Cancelar ocurrencia"
@@ -140,7 +140,7 @@ const PlanningOccurrences = ({ planningId: propPlanningId }: Props) => {
                 modalTitle="Confirmar cancelación de ocurrencia"
                 description="¿Estás seguro de que deseas cancelar esta ocurrencia?"
                 theme="alert"
-                buttonClassName="rounded border border-red-600 px-3 py-2 text-sm text-red-600 hover:bg-red-50/60 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-950/60"
+                buttonTone="danger"
               />
             </div>
           )}

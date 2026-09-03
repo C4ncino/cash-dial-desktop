@@ -154,6 +154,7 @@ describe("Movement E2E", () => {
       10000,
     );
 
+    await waitForRenderedMovementCard(sueldoCardLocator);
     const bodyText = await driver.findElement(By.css("body")).getText();
     expect(bodyText).toContain("Sueldo");
     expect(bodyText).toMatch(/150[.,]00/);

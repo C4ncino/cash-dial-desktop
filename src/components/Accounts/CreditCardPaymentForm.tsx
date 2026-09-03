@@ -4,6 +4,7 @@ import { Input } from "webcoreui/react";
 
 import FormErrors from "@/components/Forms/FormErrors";
 import SelectAccounts from "@/components/Forms/SelectAccounts";
+import ActionButton from "@/components/General/ActionButton";
 import AmountText from "@/components/General/AmountText";
 import { formatAmount } from "@/lib/formatters";
 import {
@@ -207,23 +208,14 @@ const CreditCardPaymentForm = ({
 
       <menu className="flex justify-end gap-3">
         <li>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={submitting}
-            className="rounded border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-50"
-          >
+          <ActionButton onClick={onCancel} disabled={submitting}>
             Cancelar
-          </button>
+          </ActionButton>
         </li>
         <li>
-          <button
-            type="submit"
-            disabled={submitting || !isExactlyCovered}
-            className="rounded border-2 border-green-600 bg-green-600 px-4 py-2 text-zinc-50 hover:cursor-pointer hover:border-green-500 hover:bg-green-500 dark:border-green-400 dark:bg-green-400 dark:text-zinc-950 dark:hover:border-green-500 dark:hover:bg-green-500 disabled:opacity-50"
-          >
+          <ActionButton type="submit" disabled={submitting || !isExactlyCovered} tone="primary">
             {submitting ? "Pagando..." : "Pagar"}
-          </button>
+          </ActionButton>
         </li>
       </menu>
     </form>

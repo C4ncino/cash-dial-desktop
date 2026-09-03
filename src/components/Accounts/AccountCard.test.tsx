@@ -53,4 +53,11 @@ describe("AccountCard", () => {
     expect(screen.getByText(/0/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
   });
+
+  it("marks inactive accounts visibly", () => {
+    render(<AccountCard {...mockAccount} isActive={false} />);
+
+    expect(screen.getByText("Inactiva")).toBeInTheDocument();
+    expect(screen.getByRole("link")).toHaveClass("opacity-70");
+  });
 });

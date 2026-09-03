@@ -29,6 +29,21 @@ struct SeriesRow {
     expense: Option<f64>,
 }
 #[derive(QueryableByName)]
+struct BalanceMovementRow {
+    #[diesel(sql_type = Integer)]
+    type_id: i32,
+    #[diesel(sql_type = Double)]
+    original_amount: f64,
+    #[diesel(sql_type = Double)]
+    account_amount: f64,
+    #[diesel(sql_type = BigInt)]
+    timestamp: i64,
+    #[diesel(sql_type = Integer)]
+    source_currency_id: i32,
+    #[diesel(sql_type = Nullable<Integer>)]
+    destination_currency_id: Option<i32>,
+}
+#[derive(QueryableByName)]
 struct CategoryAmountRow {
     #[diesel(sql_type = Integer)]
     category_id: i32,
@@ -196,9 +211,63 @@ pub fn timeseries_grouped(
     Ok(result)
 }
 
-/// Returns the cumulative balance for every bucket in the selected range.
-/// The opening balance includes all earlier income and expenses in the
-/// selected currency; transfers are intentionally excluded.
+fn balance_effect_in_currency(row: &BalanceMovementRow, currency: i32) -> f64 {
+    match row.type_id {
+        1 if row.source_currency_id == currency => row.account_amount,
+        2 if row.source_currency_id == currency => -row.account_amount,
+        3 if row.source_currency_id == currency
+            && row.destination_currency_id == Some(currency) =>
+        {
+            0.0
+        }
+        3 => {
+            let source =
+                if row.source_currency_id == currency { -row.original_amount } else { 0.0 };
+            let destination = if row.destination_currency_id == Some(currency) {
+                row.account_amount
+            } else {
+                0.0
+            };
+            source + destination
+        }
+        _ => 0.0,
+    }
+}
+
+fn balance_bucket_start(timestamp: i64, granularity: &str) -> StatisticsResult<i64> {
+    let date = Local
+        .timestamp_millis_opt(timestamp)
+        .single()
+        .or_else(|| Local.timestamp_millis_opt(timestamp).earliest())
+        .ok_or(DateError::Timestamp(timestamp))?
+        .date_naive();
+    let bucket_date = match granularity {
+        "day" => date,
+        "week" => date - Duration::days(date.weekday().num_days_from_monday() as i64),
+        "month" => crate::domain::date::date(date.year(), date.month(), 1)?,
+        "year" => crate::domain::date::date(date.year(), 1, 1)?,
+        _ => return Err(StatisticsError::InvalidGranularity(granularity.to_string())),
+    };
+    Ok(crate::domain::date::local_date_to_start_ms(bucket_date)?)
+}
+
+fn balance_movements_from(
+    c: &mut SqliteConnection,
+    start: i64,
+) -> StatisticsResult<Vec<BalanceMovementRow>> {
+    Ok(sql_query(
+        "SELECT m.type_id, m.original_amount, m.account_amount, m.timestamp, source.currency_id AS source_currency_id, destination.currency_id AS destination_currency_id \
+         FROM movements m \
+         JOIN accounts source ON source.id = m.account_id \
+         LEFT JOIN accounts destination ON destination.id = m.to_account_id \
+         WHERE m.timestamp >= ?",
+    )
+    .bind::<BigInt, _>(start)
+    .load::<BalanceMovementRow>(c)?)
+}
+
+/// Reconstructs the opening value from today's persisted account balances by
+/// reversing every later effect, then reapplies in-period effects per bucket.
 pub fn balance_trend(
     c: &mut SqliteConnection,
     start: i64,
@@ -207,14 +276,31 @@ pub fn balance_trend(
     granularity: &str,
     origin: i64,
 ) -> StatisticsResult<Vec<BalanceTrendPoint>> {
-    let opening: AmountRow = sql_query("SELECT COALESCE(SUM(CASE WHEN type_id=1 THEN original_amount WHEN type_id=2 THEN -original_amount ELSE 0 END),0) AS amount FROM movements WHERE currency_id=? AND timestamp<?")
-        .bind::<Integer,_>(currency)
-        .bind::<BigInt,_>(start)
-        .get_result(c)?;
+    let current: AmountRow =
+        sql_query("SELECT COALESCE(SUM(balance), 0) AS amount FROM accounts WHERE currency_id = ?")
+            .bind::<Integer, _>(currency)
+            .get_result(c)?;
+    let movements = balance_movements_from(c, start)?;
+    let future_effect =
+        movements.iter().map(|row| balance_effect_in_currency(row, currency)).sum::<f64>();
+    let opening = current.amount.unwrap_or(0.0) - future_effect;
 
     let series = timeseries_grouped(c, start, end, currency, granularity, origin)?;
-    let points = series.iter().map(|point| (point.bucket_start_ms, point.net)).collect::<Vec<_>>();
-    Ok(crate::domain::statistics::cumulative_balances(opening.amount.unwrap_or(0.0), &points)
+    let mut effects_by_bucket = HashMap::<i64, f64>::new();
+    for row in movements.iter().filter(|row| row.timestamp < end) {
+        let bucket = balance_bucket_start(row.timestamp, granularity)?;
+        *effects_by_bucket.entry(bucket).or_default() += balance_effect_in_currency(row, currency);
+    }
+    let points = series
+        .iter()
+        .map(|point| {
+            (
+                point.bucket_start_ms,
+                effects_by_bucket.get(&point.bucket_start_ms).copied().unwrap_or(0.0),
+            )
+        })
+        .collect::<Vec<_>>();
+    Ok(crate::domain::statistics::cumulative_balances(opening, &points)
         .into_iter()
         .map(|(bucket_start_ms, balance)| BalanceTrendPoint { bucket_start_ms, balance })
         .collect())
@@ -508,36 +594,42 @@ mod tests {
     fn balance_trend_is_cumulative_and_includes_opening_balance() {
         let state = crate::tests::setup();
         let mut c = crate::db::connect::establish_connection(&state.config.database_url);
+        sql_query("INSERT OR IGNORE INTO currencies (id,symbol,code) VALUES (4,'€','EUR')")
+            .execute(&mut c)
+            .unwrap();
         let start =
             Local.with_ymd_and_hms(2027, 7, 1, 0, 0, 0).single().unwrap().timestamp_millis();
         let end = Local.with_ymd_and_hms(2027, 7, 4, 0, 0, 0).single().unwrap().timestamp_millis();
         let day_one = start + 60 * 60 * 1000;
         let day_two = start + 86_400_000 + 60 * 60 * 1000;
         let day_three = start + 2 * 86_400_000 + 60 * 60 * 1000;
+        let future = end + 60 * 60 * 1000;
 
-        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (910,1,1,1,1,500.0,500.0,?,'opening')")
+        // Account 90 is inactive intentionally: historical balances include it.
+        // The persisted balances include every movement below, including the
+        // future-dated one, exactly as the application balance writes do.
+        sql_query("INSERT INTO accounts (id,type_id,currency_id,name,balance,is_active) VALUES (90,1,4,'EUR source',1180.0,0), (91,1,4,'EUR destination',255.0,1)")
+            .execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (910,1,90,1,4,200.0,200.0,?,'before period')")
             .bind::<BigInt, _>(start - 1).execute(&mut c).unwrap();
-        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (911,1,1,1,1,100.0,100.0,?,'income')")
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (911,1,90,1,4,110.0,100.0,?,'income')")
             .bind::<BigInt, _>(day_one).execute(&mut c).unwrap();
-        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (912,2,1,1,1,30.0,30.0,?,'expense')")
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (912,2,90,1,4,35.0,30.0,?,'expense')")
             .bind::<BigInt, _>(day_two).execute(&mut c).unwrap();
-        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (914,2,1,1,1,2000.0,2000.0,?,'same day expense')")
-            .bind::<BigInt, _>(day_two + 1).execute(&mut c).unwrap();
-        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (913,3,1,88,1,999.0,999.0,?,'transfer')")
+        sql_query("INSERT INTO movements (id,type_id,account_id,to_account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (913,3,90,91,88,4,50.0,50.0,?,'same currency transfer')")
             .bind::<BigInt, _>(day_three).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,to_account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (914,3,90,1,88,4,40.0,800.0,?,'outgoing conversion')")
+            .bind::<BigInt, _>(day_three + 1).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,to_account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (915,3,1,91,88,1,10.0,180.0,?,'incoming conversion')")
+            .bind::<BigInt, _>(day_three + 2).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (916,1,91,1,4,25.0,25.0,?,'future income')")
+            .bind::<BigInt, _>(future).execute(&mut c).unwrap();
 
-        let trend = balance_trend(&mut c, start, end, 1, "day", 0).unwrap();
+        let trend = balance_trend(&mut c, start, end, 4, "day", 0).unwrap();
         assert_eq!(trend.len(), 3);
-        let opening: AmountRow = sql_query("SELECT COALESCE(SUM(CASE WHEN type_id=1 THEN original_amount WHEN type_id=2 THEN -original_amount ELSE 0 END),0) AS amount FROM movements WHERE currency_id=1 AND timestamp<?")
-            .bind::<BigInt, _>(start).get_result(&mut c).unwrap();
-        assert!(
-            (trend.last().unwrap().balance - (opening.amount.unwrap() - 1930.0)).abs() < 0.0001
-        );
-        assert!(trend.last().unwrap().balance < 0.0, "expenses can produce a negative balance");
-        assert!(
-            trend[0].balance != trend[1].balance,
-            "the income and expense buckets should affect the trend"
-        );
+        assert_eq!(trend[0].balance, 1300.0);
+        assert_eq!(trend[1].balance, 1270.0);
+        assert_eq!(trend[2].balance, 1410.0);
     }
 
     #[test]

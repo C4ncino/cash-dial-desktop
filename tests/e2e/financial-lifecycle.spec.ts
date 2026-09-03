@@ -48,7 +48,8 @@ describe("Financial lifecycle E2E", () => {
   it("persists an account edit after an application reload", async () => {
     const account = (await invokeCommand<Account[]>(ACCOUNT_FUNCTIONS.get)).find(
       (item) => item.id === 1,
-    )!;
+    );
+    if (!account) throw new Error("Seeded account 1 was not found");
     await invokeCommand(ACCOUNT_FUNCTIONS.update, {
       id: account.id,
       name: "Reloaded Wallet",
@@ -272,7 +273,8 @@ describe("Financial lifecycle E2E", () => {
   });
 
   it("deactivates and reactivates a planning without losing its actionable state", async () => {
-    const planning = (await invokeCommand<Planning[]>(PLANNING_FUNCTIONS.getAll))[0]!;
+    const planning = (await invokeCommand<Planning[]>(PLANNING_FUNCTIONS.getAll))[0];
+    if (!planning) throw new Error("No seeded planning was found");
     const deactivated = await invokeCommand<Planning>(PLANNING_FUNCTIONS.deactivate, {
       id: planning.id,
     });

@@ -25,6 +25,12 @@ vi.mock("@/components/Forms/SelectCurrencies", () => ({
 const mockAdd = vi.fn();
 const mockUpdate = vi.fn();
 
+function getAccountForm() {
+  const form = document.getElementById("account-form");
+  if (!(form instanceof HTMLFormElement)) throw new Error("Account form was not rendered");
+  return form;
+}
+
 vi.mock("@/stores/accountsStore", () => ({
   accountsStore: {
     getState: () => ({
@@ -133,9 +139,9 @@ describe("AccountForm", () => {
 
     render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
 
-    const form = document.getElementById("account-form");
+    const form = getAccountForm();
 
-    fireEvent.submit(form!);
+    fireEvent.submit(form);
 
     expect(screen.getByText("Name is required")).toBeInTheDocument();
 
@@ -164,9 +170,9 @@ describe("AccountForm", () => {
 
     fireEvent.click(screen.getByLabelText(/Cash/i));
 
-    const form = document.getElementById("account-form");
+    const form = getAccountForm();
 
-    fireEvent.submit(form!);
+    fireEvent.submit(form);
 
     expect(createAccountFromData).toHaveBeenCalled();
     expect(mockAdd).toHaveBeenCalledWith(createdAccount);
@@ -198,9 +204,9 @@ describe("AccountForm", () => {
 
     render(<AccountForm modalId={MODAL_ID.ACCOUNT.EDIT} />);
 
-    const form = document.getElementById("account-form");
+    const form = getAccountForm();
 
-    fireEvent.submit(form!);
+    fireEvent.submit(form);
 
     expect(mockUpdate).toHaveBeenCalledWith(1, updatedAccount);
 
@@ -234,7 +240,7 @@ describe("AccountForm", () => {
       target: { value: "2000" },
     });
     fireEvent.click(screen.getByLabelText(/Cash/i));
-    fireEvent.submit(document.getElementById("account-form")!);
+    fireEvent.submit(getAccountForm());
 
     const submittedData = vi.mocked(validate).mock.calls[0][0] as Record<
       string,
@@ -256,7 +262,7 @@ describe("AccountForm", () => {
     render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
     fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Checking" } });
     fireEvent.click(screen.getByLabelText(/Cash/i));
-    const form = document.getElementById("account-form")!;
+    const form = getAccountForm();
 
     fireEvent.submit(form);
     fireEvent.submit(form);
@@ -276,7 +282,7 @@ describe("AccountForm", () => {
   it("clears validation errors on reset", () => {
     vi.mocked(validate).mockReturnValue({ valid: false, errors: ["Invalid account"] });
     render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
-    fireEvent.submit(document.getElementById("account-form")!);
+    fireEvent.submit(getAccountForm());
     expect(screen.getByText("Invalid account")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Restaurar" }));
     expect(screen.queryByText("Invalid account")).not.toBeInTheDocument();
@@ -289,7 +295,7 @@ describe("AccountForm", () => {
     vi.mocked(createAccountFromData).mockReturnValue({ name: "Checking" } as Account);
     const { unmount } = render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
     fireEvent.click(screen.getByLabelText(/Cash/i));
-    fireEvent.submit(document.getElementById("account-form")!);
+    fireEvent.submit(getAccountForm());
     unmount();
     resolveAdd();
     await Promise.resolve();

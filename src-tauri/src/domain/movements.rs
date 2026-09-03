@@ -237,6 +237,7 @@ pub enum MovementError {
     UnknownType(i32),
     InvalidAccount(i32),
     AccountNotFound(i32),
+    AccountInactive(i32),
     TransferDestinationRequired,
     SameTransferAccount,
     UnexpectedTransferDestination,
@@ -270,6 +271,7 @@ impl fmt::Display for MovementError {
             Self::UnknownType(_) => write!(formatter, "El tipo de movimiento no existe"),
             Self::InvalidAccount(_) => write!(formatter, "La cuenta es requerida"),
             Self::AccountNotFound(_) => write!(formatter, "La cuenta seleccionada no existe"),
+            Self::AccountInactive(id) => write!(formatter, "La cuenta {id} está inactiva"),
             Self::TransferDestinationRequired => write!(formatter, "La cuenta destino es requerida"),
             Self::SameTransferAccount => write!(formatter, "La cuenta destino debe ser diferente"),
             Self::UnexpectedTransferDestination => {

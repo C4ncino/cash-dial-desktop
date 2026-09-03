@@ -8,6 +8,7 @@ import FormErrors from "@/components/Forms/FormErrors";
 import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCategories from "@/components/Forms/SelectCategories";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
+import ActionButton from "@/components/General/ActionButton";
 import useSubmissionGuard from "@/hooks/useSubmissionGuard";
 import { createBudgetFromData, validateBudgetForm } from "@/lib/forms/budget";
 import { logger } from "@/lib/logger";
@@ -150,7 +151,7 @@ const BudgetForm = ({ modalId }: Props) => {
   return (
     <>
       <form
-        className="mx-auto w-full max-w-lg space-y-4"
+        className="mx-auto w-[calc(100vw-4rem)] max-w-lg space-y-4"
         id="budget-form"
         onSubmit={onSubmit}
         onReset={() => {
@@ -173,16 +174,22 @@ const BudgetForm = ({ modalId }: Props) => {
               <label htmlFor="amountLimit" className="text-zinc-700 dark:text-zinc-300">
                 Límite
               </label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  type="number"
-                  name="amountLimit"
-                  id="amountLimit"
-                  required
-                  value={"0.00"}
-                  step={0.01}
-                />
-                <SelectCurrency />
+              <div
+                data-testid="budget-amount-currency-control"
+                className="mt-1 grid w-full grid-cols-[minmax(0,1fr)_6rem] overflow-hidden rounded border border-zinc-400 focus-within:ring-2 focus-within:ring-blue-500 dark:border-zinc-600"
+              >
+                <div className="min-w-0 overflow-hidden border-r border-zinc-400 dark:border-zinc-600">
+                  <Input
+                    type="number"
+                    name="amountLimit"
+                    id="amountLimit"
+                    required
+                    value={"0.00"}
+                    step={0.01}
+                    className="glass-control h-10 min-w-0 max-w-full rounded-none border-0 px-3 py-2 focus:outline-none focus:ring-0"
+                  />
+                </div>
+                <SelectCurrency className="glass-control h-10 w-full rounded-none border-0 px-2 py-2 text-zinc-950 focus:outline-none focus:ring-0 dark:text-zinc-100" />
               </div>
             </fieldset>
 
@@ -199,16 +206,26 @@ const BudgetForm = ({ modalId }: Props) => {
             <label htmlFor="amountLimit" className="text-zinc-700 dark:text-zinc-300">
               Límite actual
             </label>
-            <div className="flex mt-1">
-              <Input
-                type="number"
-                name="amountLimit"
-                id="amountLimit"
-                required
-                value={String(budget.periods[budget.periods.length - 1].amountLimit)}
-                step={0.01}
+            <div
+              data-testid="budget-amount-currency-control"
+              className="mt-1 grid w-full grid-cols-[minmax(0,1fr)_6rem] overflow-hidden rounded border border-zinc-400 focus-within:ring-2 focus-within:ring-blue-500 dark:border-zinc-600"
+            >
+              <div className="min-w-0 overflow-hidden border-r border-zinc-400 dark:border-zinc-600">
+                <Input
+                  type="number"
+                  name="amountLimit"
+                  id="amountLimit"
+                  required
+                  value={String(budget.periods[budget.periods.length - 1].amountLimit)}
+                  step={0.01}
+                  className="glass-control h-10 min-w-0 max-w-full rounded-none border-0 px-3 py-2 focus:outline-none focus:ring-0"
+                />
+              </div>
+              <SelectCurrency
+                currencyId={budget.budget.currencyId}
+                disabled
+                className="glass-control h-10 w-full rounded-none border-0 px-2 py-2 text-zinc-600 opacity-100 focus:outline-none focus:ring-0 disabled:cursor-not-allowed dark:text-zinc-300"
               />
-              <SelectCurrency currencyId={budget.budget.currencyId} disabled />
             </div>
           </fieldset>
         )}
@@ -263,26 +280,19 @@ const BudgetForm = ({ modalId }: Props) => {
           />
 
           <menu className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
+            <ActionButton
               disabled={submitting}
               onClick={() => {
                 updateModalInstance?.close();
                 setShowUpdateType(false);
                 setPendingAmount(undefined);
               }}
-              className="rounded border-2 border-zinc-400 px-4 py-2 text-zinc-700 hover:cursor-pointer hover:bg-zinc-200 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
             >
               Cancelar
-            </button>
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleConfirmUpdateAmount}
-              className="rounded border-2 border-blue-600 px-4 py-2 text-blue-600 hover:cursor-pointer hover:bg-blue-600 hover:text-zinc-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-zinc-950"
-            >
+            </ActionButton>
+            <ActionButton disabled={submitting} onClick={handleConfirmUpdateAmount} tone="info">
               Aplicar
-            </button>
+            </ActionButton>
           </menu>
         </Modal>
       )}

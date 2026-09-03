@@ -77,7 +77,9 @@ describe("Statistics commands", () => {
 
   it("honors option flags and every supported granularity", async () => {
     const currencies = await invokeCommand<Currency[]>("get_currencies");
-    const currencyId = currencies[0]!.id;
+    const currency = currencies[0];
+    if (!currency) throw new Error("No seeded currency was found");
+    const currencyId = currency.id;
     const startMs = new Date(2025, 0, 1).getTime();
     const endMs = new Date(2027, 0, 1).getTime();
 

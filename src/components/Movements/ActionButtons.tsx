@@ -2,6 +2,7 @@ import { toast } from "webcoreui";
 import { useStore } from "zustand";
 
 import ConfirmModal from "@/components/Forms/ConfirmModal";
+import ActionButton from "@/components/General/ActionButton";
 import { accountsStore } from "@/stores/accountsStore";
 import { budgetStore } from "@/stores/budgetStore";
 import { editStore } from "@/stores/editStore";
@@ -101,13 +102,9 @@ const ActionButtons = () => {
   return (
     <menu className="flex flex-wrap gap-2 sm:flex-col">
       <li>
-        <button
-          type="button"
-          className="focus-ring edit-button min-h-10 rounded-lg border border-zinc-400 px-4 py-2 text-sm font-medium text-zinc-950 dark:border-zinc-600 dark:text-zinc-100"
-          onClick={handleEditClick}
-        >
+        <ActionButton id="edit-movement-button" fullWidth onClick={handleEditClick}>
           Editar
-        </button>
+        </ActionButton>
       </li>
 
       <li>
@@ -118,7 +115,8 @@ const ActionButtons = () => {
           modalTitle={deleteConfig.title}
           description={deleteConfig.description}
           theme="alert"
-          buttonClassName="focus-ring min-h-10 rounded-lg border border-red-600 px-4 py-2 text-sm font-medium text-red-600 dark:border-red-400 dark:text-red-400"
+          buttonTone="danger"
+          buttonFullWidth
         />
       </li>
     </menu>

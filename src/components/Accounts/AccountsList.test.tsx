@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
@@ -120,5 +120,71 @@ describe("AccountsList", () => {
     expect(screen.getByText("Updated Checking")).toBeInTheDocument();
     expect(screen.queryByTestId("account-card-2")).not.toBeInTheDocument();
     expect(screen.getByTestId("account-card-3")).toBeInTheDocument();
+  });
+
+  it("filters by type and status", () => {
+    const accounts = [{ ...mockAccounts[0], isActive: false }, ...mockAccounts.slice(1)];
+    (useStore as any).mockImplementation((_store: any, selector: any) => selector({ accounts }));
+    render(<AccountsList />);
+
+    fireEvent.change(screen.getByLabelText("Tipo"), { target: { value: "2" } });
+    expect(screen.getByText("Savings Account")).toBeInTheDocument();
+    expect(screen.queryByText("Checking Account")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Tipo"), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "inactive" } });
+    expect(screen.getByText("Checking Account")).toBeInTheDocument();
+    expect(screen.queryByText("Savings Account")).not.toBeInTheDocument();
+  });
+
+  it("searches names case-insensitively, resets type, and preserves status", () => {
+    const accounts = [{ ...mockAccounts[0], isActive: false }, ...mockAccounts.slice(1)];
+    (useStore as any).mockImplementation((_store: any, selector: any) => selector({ accounts }));
+    render(<AccountsList />);
+
+    fireEvent.change(screen.getByLabelText("Tipo"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "inactive" } });
+    fireEvent.change(screen.getByLabelText("Buscar por nombre"), {
+      target: { value: "  CHECKING  " },
+    });
+
+    expect(screen.getByLabelText("Tipo")).toHaveValue("0");
+    expect(screen.getByLabelText("Estado")).toHaveValue("inactive");
+    expect(screen.getByText("Checking Account")).toBeInTheDocument();
+  });
+
+  it("paginates filtered accounts eight at a time and resets after a filter change", () => {
+    const accounts = Array.from({ length: 10 }, (_, index) => ({
+      ...mockAccounts[0],
+      id: index + 1,
+      name: `Account ${index + 1}`,
+    }));
+    (useStore as any).mockImplementation((_store: any, selector: any) => selector({ accounts }));
+    render(<AccountsList />);
+
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+    expect(screen.getByText("Account 8")).toBeInTheDocument();
+    expect(screen.queryByText("Account 9")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Página siguiente" }));
+    expect(screen.getByText("Account 9")).toBeInTheDocument();
+    expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Buscar por nombre"), {
+      target: { value: "Account" },
+    });
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+    expect(screen.getByText("Account 1")).toBeInTheDocument();
+  });
+
+  it("shows a filtered empty state and hides pagination for one page", () => {
+    (useStore as any).mockImplementation((_store: any, selector: any) =>
+      selector({ accounts: mockAccounts }),
+    );
+    render(<AccountsList />);
+    fireEvent.change(screen.getByLabelText("Buscar por nombre"), {
+      target: { value: "missing" },
+    });
+    expect(screen.getByText("No hay cuentas que coincidan con estos filtros.")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Paginación de cuentas" })).toBeNull();
   });
 });

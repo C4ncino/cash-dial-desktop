@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "webcoreui";
+import { useStore } from "zustand";
 
 import ActionButtons from "@/components/Accounts/ActionButtons";
 import { logger } from "@/lib/logger";
@@ -25,10 +27,30 @@ describe("ActionButtons", () => {
     logger.debug("ActionButtons test beforeEach: clearing mocks and setting search params");
     vi.clearAllMocks();
     setSearchParams("?id=1");
+    vi.mocked(useStore).mockReturnValue(undefined);
   });
 
+  it.each([
+    [true, "deactivate", MODAL_ID.ACCOUNT.DEACTIVATE, "#account-deactivated"],
+    [false, "activate", MODAL_ID.ACCOUNT.ACTIVATE, "#account-activated"],
+  ] as const)(
+    "changes the account status and shows feedback",
+    async (isActive, action, modalId, toastId) => {
+      vi.mocked(useStore).mockImplementation((_store: any, selector: any) =>
+        selector({ accounts: [{ id: mockAccountId, isActive }] }),
+      );
+      const actionSpy = vi.spyOn(accountsStore.getState(), action).mockResolvedValue(undefined);
+      render(<ActionButtons />);
+
+      fireEvent.click(screen.getByTestId(`confirm-modal-${modalId}`));
+
+      await waitFor(() => expect(actionSpy).toHaveBeenCalledWith(mockAccountId));
+      expect(toast).toHaveBeenCalledWith(toastId);
+    },
+  );
+
   it("should call accountsStore.remove when delete is confirmed", async () => {
-    const removeSpy = vi.spyOn(accountsStore.getState(), "remove");
+    const removeSpy = vi.spyOn(accountsStore.getState(), "remove").mockResolvedValue(undefined);
 
     window.history.back = vi.fn();
 
@@ -38,10 +60,10 @@ describe("ActionButtons", () => {
 
     fireEvent.click(deleteBtn);
 
-    expect(removeSpy).toHaveBeenCalledWith(mockAccountId);
+    await waitFor(() => expect(removeSpy).toHaveBeenCalledWith(mockAccountId));
   });
 
-  it("should navigate back after account deletion", () => {
+  it("should navigate back after account deletion", async () => {
     const backSpy = vi.spyOn(window.history, "back");
 
     vi.spyOn(accountsStore.getState(), "remove").mockResolvedValue(undefined);
@@ -52,6 +74,6 @@ describe("ActionButtons", () => {
 
     fireEvent.click(deleteBtn);
 
-    expect(backSpy).toHaveBeenCalled();
+    await waitFor(() => expect(backSpy).toHaveBeenCalled());
   });
 });

@@ -19,6 +19,7 @@ vi.unmock("@/stores/movementsStore");
 import { invoke } from "@tauri-apps/api/core";
 
 import {
+  compareMovements,
   createMovementFromData,
   groupMovementsByDate,
   movementsStore,
@@ -167,6 +168,50 @@ describe("movementsStore", () => {
     const state = movementsStore.getState();
     expect(state.byAccount[1]).toEqual([12]);
     expect(state.byAccount[3]).toEqual([12]);
+  });
+
+  it("inserts a previous-dated movement in chronological order", async () => {
+    const newest = { ...movement, id: 20, timestamp: 300, installments: undefined };
+    const oldest = { ...movement, id: 10, timestamp: 100, installments: undefined };
+    movementsStore.setState({
+      byId: { 20: newest },
+      allIds: [20],
+      byAccount: { 1: [20] },
+      types: [],
+    });
+    mockInvoke.mockResolvedValueOnce(oldest);
+
+    await movementsStore.getState().add(oldest);
+
+    expect(movementsStore.getState().allIds).toEqual([20, 10]);
+    expect(movementsStore.getState().byAccount[1]).toEqual([20, 10]);
+  });
+
+  it("moves an edited timestamp in global and per-account indexes", async () => {
+    const first = { ...movement, id: 1, timestamp: 300, installments: undefined };
+    const second = { ...movement, id: 2, timestamp: 200, installments: undefined };
+    movementsStore.setState({
+      byId: { 1: first, 2: second },
+      allIds: [1, 2],
+      byAccount: { 1: [1, 2] },
+      types: [],
+    });
+    const updated = { ...first, timestamp: 100 };
+    mockInvoke.mockResolvedValueOnce(updated);
+
+    await movementsStore.getState().update(1, updated);
+
+    expect(movementsStore.getState().allIds).toEqual([2, 1]);
+    expect(movementsStore.getState().byAccount[1]).toEqual([2, 1]);
+  });
+
+  it("uses descending IDs to break equal timestamp ties", () => {
+    const movements = [
+      { ...movement, id: 1, timestamp: 100 },
+      { ...movement, id: 3, timestamp: 100 },
+      { ...movement, id: 2, timestamp: 100 },
+    ];
+    expect(movements.sort(compareMovements).map(({ id }) => id)).toEqual([3, 2, 1]);
   });
 
   it("does not attach planning data to transfers", () => {

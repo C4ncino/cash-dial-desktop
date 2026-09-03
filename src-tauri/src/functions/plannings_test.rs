@@ -36,6 +36,55 @@ fn test_validation_rejects_non_finite_amounts() {
 }
 
 #[test]
+fn test_create_and_update_validation_reject_inactive_accounts() {
+    let state = setup();
+    let mut conn = establish_connection(&state.config.database_url);
+    use crate::schema::accounts::dsl::{accounts, is_active};
+    let start_date =
+        local_naive_date_to_start_of_day_ms(NaiveDate::from_ymd_opt(2026, 6, 10).unwrap());
+    let req = CreatePlanningRequest {
+        type_id: MOVEMENT_EXPENSE_ID,
+        account_id: 1,
+        category_id: 1,
+        currency_id: 1,
+        name: "Inactive account".to_string(),
+        amount: 10.0,
+        recurring_type_id: RECURRING_TYPE_DAILY,
+        interval_step: 1,
+        start_date,
+        end_date: None,
+        week_days: None,
+        month_days: None,
+        year_days: None,
+    };
+
+    let planning = create_planning_internal(&mut conn, &state, req.clone()).unwrap();
+    diesel::update(accounts.find(1)).set(is_active.eq(false)).execute(&mut conn).unwrap();
+
+    let errors = validate_planning_request(&state, &mut conn, &req).unwrap_err();
+    assert!(errors.iter().any(|error| error.contains("inactiva")));
+    assert!(create_planning_internal(&mut conn, &state, req).unwrap_err().contains("inactiva"));
+    let update = UpdatePlanningRequest {
+        type_id: MOVEMENT_EXPENSE_ID,
+        account_id: 1,
+        category_id: 1,
+        currency_id: 1,
+        name: "Inactive account update".to_string(),
+        amount: 12.0,
+        recurring_type_id: RECURRING_TYPE_DAILY,
+        interval_step: 1,
+        start_date,
+        end_date: None,
+        week_days: None,
+        month_days: None,
+        year_days: None,
+    };
+    assert!(update_planning_internal(&mut conn, &state, planning.id, update)
+        .unwrap_err()
+        .contains("inactiva"));
+}
+
+#[test]
 fn test_create_daily_planning_generates_initial_occurrence() {
     let state = setup();
     let mut conn = establish_connection(&state.config.database_url);

@@ -1146,13 +1146,16 @@ fn validate_planning_request(
     // Account validation
     let account_row_opt = accounts::table
         .find(req.account_id)
-        .select((accounts::id, accounts::type_id))
-        .first::<(i32, i32)>(connection)
+        .select((accounts::id, accounts::type_id, accounts::is_active))
+        .first::<(i32, i32, bool)>(connection)
         .optional()
         .unwrap_or(None);
 
     match account_row_opt {
-        Some((_, acc_type_id)) => {
+        Some((_, acc_type_id, is_active)) => {
+            if !is_active {
+                errors.push("La cuenta seleccionada está inactiva".to_string());
+            }
             if acc_type_id == ACCOUNT_TYPE_CREDIT_CARD_ID && req.type_id != MOVEMENT_EXPENSE_ID {
                 errors.push(
                     "Las tarjetas de crédito solo permiten planificaciones de tipo gasto"
