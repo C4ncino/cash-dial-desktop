@@ -1,0 +1,46 @@
+---
+import AccountInfo from "@/components/Accounts/AccountInfo";
+import AccountMovements from "@/components/Accounts/AccountMovements";
+import ActionButtons from "@/components/Accounts/ActionButtons";
+import DetailLayout from "@/layouts/DetailLayout.astro";
+import AccountModals from "@/components/Accounts/Modals.astro";
+import ActionButton from "@/components/General/ActionButton.astro";
+import DetailShell from "@/components/General/DetailShell.astro";
+---
+
+<DetailLayout title="Detalles de Cuenta" description="">
+  <DetailShell>
+    <AccountInfo client:load />
+    <AccountMovements client:load />
+    <menu slot="actions" class="flex flex-wrap gap-2 sm:flex-col">
+      <li>
+        <ActionButton
+          id="edit-account-button"
+          fullWidth
+        >Editar</ActionButton>
+      </li>
+      <ActionButtons client:load />
+    </menu>
+  </DetailShell>
+</DetailLayout>
+
+<AccountModals />
+
+<script>
+  import { EDIT_TYPES } from "@/types/enums";
+  import { editStore } from "@/stores/editStore";
+
+  document.addEventListener("astro:page-load", () => {
+    const btn = document.getElementById("edit-account-button");
+
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      const id = new URLSearchParams(window.location.search).get("id");
+
+      if (!id) throw new Error("Account ID not found");
+
+      editStore.getState().setId(Number(id), EDIT_TYPES.ACCOUNT);
+    });
+  });
+</script>

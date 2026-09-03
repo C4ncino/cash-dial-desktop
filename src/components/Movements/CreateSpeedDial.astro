@@ -1,0 +1,156 @@
+---
+import { Icon } from "astro-icon/components";
+import { MODAL_ID } from "@/types/enums";
+
+const MODAL_TRIGGERS = [
+  {
+    modal_id: MODAL_ID.MOVEMENT.TRANSFER.CREATE,
+    icon: "iconoir:data-transfer-up",
+    color: "bg-lime-600 dark:bg-lime-400",
+    tooltip: "Crear Transferencia",
+    iconClassName: "rotate-90",
+  },
+  {
+    modal_id: MODAL_ID.MOVEMENT.INCOME.CREATE,
+    icon: "iconoir:receive-dollars",
+    color: "bg-blue-600 dark:bg-blue-400",
+    tooltip: "Crear Ingreso",
+  },
+  {
+    modal_id: MODAL_ID.MOVEMENT.EXPENSE.CREATE,
+    icon: "iconoir:send-dollars",
+    color: "bg-amber-600 dark:bg-amber-400",
+    tooltip: "Crear Gasto",
+  },
+];
+---
+
+<div class="speed-dial fixed z-50">
+  <ul
+    id="speed-dial-menu"
+    class="speed-dial-menu space-y-2 mb-2 pointer-events-none opacity-0 transition-all duration-300 ease-out"
+  >
+    {
+      MODAL_TRIGGERS.map((trigger) => (
+        <li>
+          <button
+            id={trigger.modal_id + "-button"}
+            type="button"
+            class={`p-2 rounded-full ${trigger.color} cursor-pointer shadow-lg hover:brightness-110 active:scale-95 transition-all`}
+            data-position="left"
+            data-tooltip={trigger.tooltip}
+          >
+            <Icon
+              name={trigger.icon}
+              class={`text-2xl text-white rounded-full ${trigger.iconClassName || ""}`}
+            />
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+
+  <button
+    id="speed-dial-toggle"
+    type="button"
+    aria-label="Abrir acciones de movimiento"
+    aria-controls="speed-dial-menu"
+    aria-expanded="false"
+    class="cursor-pointer rounded-full border-2 border-transparent bg-green-600 p-1 shadow-xl transition-all duration-300 hover:bg-green-500 active:scale-95 dark:bg-green-400 dark:hover:bg-green-500"
+  >
+    <Icon
+      name="iconoir:plus"
+      class="speed-dial-icon text-3xl text-white transition-transform duration-300"
+    />
+  </button>
+</div>
+
+<style>
+  /* Initial state of the menu */
+  .speed-dial-menu {
+    transform: translateY(16px);
+  }
+
+  .speed-dial {
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  /* When the container is open */
+  .speed-dial.is-open .speed-dial-menu {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .speed-dial.is-open #speed-dial-toggle {
+    background-color: transparent;
+    border-color: var(--color-red-600);
+  }
+
+  .speed-dial.is-open .speed-dial-icon {
+    transform: rotate(135deg);
+    color: var(--color-red-600);
+  }
+
+  :global(.dark) .speed-dial.is-open #speed-dial-toggle {
+    border-color: var(--color-red-400);
+  }
+
+  :global(.dark) .speed-dial.is-open .speed-dial-icon {
+    color: var(--color-red-400);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .speed-dial *,
+    .speed-dial-menu {
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<script>
+  function setupSpeedDial() {
+    const container = document.querySelector(".speed-dial");
+    const toggleBtn = document.getElementById("speed-dial-toggle");
+
+    if (
+      !container ||
+      !(toggleBtn instanceof HTMLButtonElement) ||
+      toggleBtn.dataset.bound === "true"
+    )
+      return;
+    toggleBtn.dataset.bound = "true";
+
+    const setOpen = (open: boolean) => {
+      container.classList.toggle("is-open", open);
+      toggleBtn.setAttribute("aria-expanded", String(open));
+      toggleBtn.setAttribute(
+        "aria-label",
+        open ? "Cerrar acciones de movimiento" : "Abrir acciones de movimiento",
+      );
+    };
+
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setOpen(!container.classList.contains("is-open"));
+    });
+
+    // Close when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!container.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && container.classList.contains("is-open")) {
+        setOpen(false);
+        toggleBtn.focus();
+      }
+    });
+  }
+
+  // Handle both standard loads and Astro view transitions
+  document.addEventListener("astro:page-load", setupSpeedDial);
+</script>

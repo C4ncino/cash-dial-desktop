@@ -1,0 +1,65 @@
+---
+import { Icon } from "astro-icon/components";
+import Navbar from "./Navbar.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+---
+
+<header id="mobile-app-header" class="glass-elevated sticky top-0 z-40 border-x-0 border-t-0 px-4 py-3 md:hidden">
+  <div class="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+    <a href="/" class="focus-ring rounded-lg font-serif text-lg italic">CashDial</a>
+    <div class="flex items-center gap-2">
+      <ThemeToggle />
+      <button
+        type="button"
+        id="mobile-menu-toggle"
+        class="focus-ring glass-control inline-flex size-10 items-center justify-center rounded-lg"
+        aria-label="Abrir navegación"
+        aria-controls="mobile-navigation"
+        aria-expanded="false"
+      >
+        <Icon name="iconoir:menu" class="size-5" data-menu-open-icon />
+        <Icon name="iconoir:xmark" class="hidden size-5" data-menu-close-icon />
+      </button>
+    </div>
+  </div>
+  <div id="mobile-navigation" class="mx-auto hidden w-full max-w-5xl pt-3">
+    <Navbar variant="mobile" />
+  </div>
+</header>
+
+<script>
+  function bindMobileMenu() {
+    const toggle = document.getElementById("mobile-menu-toggle");
+    const navigation = document.getElementById("mobile-navigation");
+    const mobileHeader = document.getElementById("mobile-app-header");
+    if (!(toggle instanceof HTMLButtonElement) || !navigation || !mobileHeader || toggle.dataset.bound === "true") return;
+
+    toggle.dataset.bound = "true";
+    const openIcon = toggle.querySelector("[data-menu-open-icon]");
+    const closeIcon = toggle.querySelector("[data-menu-close-icon]");
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Cerrar navegación" : "Abrir navegación");
+      navigation.classList.toggle("hidden", !open);
+      openIcon?.classList.toggle("hidden", open);
+      closeIcon?.classList.toggle("hidden", !open);
+    };
+
+    toggle.addEventListener("click", () => setOpen(toggle.getAttribute("aria-expanded") !== "true"));
+    navigation.addEventListener("click", (event) => {
+      if ((event.target as Element).closest("a")) setOpen(false);
+    });
+    document.addEventListener("click", (event) => {
+      if (toggle.getAttribute("aria-expanded") === "true" && !mobileHeader.contains(event.target as Node)) setOpen(false);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  }
+
+  document.addEventListener("astro:page-load", bindMobileMenu);
+  bindMobileMenu();
+</script>

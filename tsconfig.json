@@ -5,9 +5,19 @@
     "**/*"
   ],
   "exclude": [
-    "dist"
+    "dist",
+    "src-tauri/target"
   ],
   "compilerOptions": {
-    "baseUrl": "./src"
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@test/*": [
+        "./tests/*"
+      ]
+    }
   }
 }

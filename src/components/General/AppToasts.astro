@@ -1,0 +1,38 @@
+---
+import { Toast } from "webcoreui/astro";
+
+const definitions = [
+  ["account-created", "success", "¡Cuenta creada!"],
+  ["account-updated", "info", "¡Cuenta actualizada!"],
+  ["account-deleted", "alert", "¡Cuenta eliminada!"],
+  ["account-activated", "success", "¡Cuenta activada!"],
+  ["account-deactivated", "info", "¡Cuenta desactivada!"],
+  ["budget-created", "success", "¡Presupuesto creado!"],
+  ["budget-name-updated", "info", "¡Nombre de presupuesto actualizado!"],
+  ["budget-amount-updated", "info", "¡Límite de presupuesto actualizado!"],
+  ["budget-deleted", "alert", "¡Presupuesto eliminado!"],
+  ["income-created", "success", "¡Ingreso creado!"],
+  ["income-updated", "info", "¡Ingreso actualizado!"],
+  ["income-deleted", "alert", "¡Ingreso eliminado!"],
+  ["expense-created", "success", "¡Gasto creado!"],
+  ["expense-updated", "info", "¡Gasto actualizado!"],
+  ["expense-deleted", "alert", "¡Gasto eliminado!"],
+  ["transfer-created", "success", "¡Transferencia creada!"],
+  ["transfer-updated", "info", "¡Transferencia actualizada!"],
+  ["transfer-deleted", "alert", "¡Transferencia eliminada!"],
+  ["planning-created", "success", "¡Planificación creada!"],
+  ["planning-updated", "info", "¡Planificación actualizada!"],
+  ["planning-deleted", "alert", "¡Planificación eliminada!"],
+  ["planning-activated", "success", "¡Planificación activada!"],
+  ["planning-deactivated", "info", "¡Planificación desactivada!"],
+  ["occurrence-canceled", "alert", "¡Ocurrencia cancelada!"],
+] as const;
+---
+
+{
+  definitions.map(([id, theme, message]) => (
+    <Toast id={id} className="app-toast" theme={theme}>
+      {message}
+    </Toast>
+  ))
+}

@@ -1,0 +1,43 @@
+---
+import { Icon } from "astro-icon/components";
+
+import ActionButton from "@/components/General/ActionButton.astro";
+import SectionHeader from "@/components/General/SectionHeader.astro";
+
+import AccountModals from "./Modals.astro";
+import AccountsList from "./AccountsList";
+
+interface Props {
+  title?: string;
+  description?: string;
+  headingLevel?: "h1" | "h2";
+}
+
+const {
+  title = "Cuentas",
+  description = "Consulta tus saldos y abre el detalle de cada cuenta.",
+  headingLevel = "h2",
+} = Astro.props;
+---
+
+<section class="space-y-4 my-12" aria-labelledby="accounts-title">
+  <SectionHeader
+    title={title}
+    description={description}
+    headingId="accounts-title"
+    level={headingLevel}
+  >
+    <ActionButton
+      slot="actions"
+      id="create-account-button"
+      tone="primary"
+    >
+      <Icon name="iconoir:plus" class="size-5" aria-hidden="true" />
+      Añadir cuenta
+    </ActionButton>
+  </SectionHeader>
+
+  <AccountsList client:load />
+</section>
+
+<AccountModals />

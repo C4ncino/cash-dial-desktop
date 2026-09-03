@@ -1,0 +1,6 @@
+migrations/
+*.sqlite
+seeds/
+*.sql
+test-logs/
+*_test.rs

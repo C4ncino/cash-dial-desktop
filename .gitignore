@@ -22,3 +22,19 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+*.sqlite
+
+# test coverage and reports
+coverage/
+.nyc_output/
+
+# playwright test outputs
+test-results/
+playwright-report/
+blob-report/
+playwright/.auth/
+
+# vitest cache
+.vitest/
+*logs/

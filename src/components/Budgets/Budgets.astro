@@ -1,0 +1,43 @@
+---
+import { Icon } from "astro-icon/components";
+
+import ActionButton from "@/components/General/ActionButton.astro";
+import SectionHeader from "@/components/General/SectionHeader.astro";
+
+import BudgetModals from "./Modals.astro";
+import BudgetsList from "./BudgetsList";
+
+interface Props {
+  title?: string;
+  description?: string;
+  headingLevel?: "h1" | "h2";
+}
+
+const {
+  title = "Presupuestos",
+  description = "Compara tus gastos actuales con los límites que definiste.",
+  headingLevel = "h2",
+} = Astro.props;
+---
+
+<section class="space-y-4 my-12" aria-labelledby="budgets-title">
+  <SectionHeader
+    title={title}
+    description={description}
+    headingId="budgets-title"
+    level={headingLevel}
+  >
+    <ActionButton
+      slot="actions"
+      id="create-budget-button"
+      tone="primary"
+    >
+      <Icon name="iconoir:plus" class="size-5" aria-hidden="true" />
+      Añadir presupuesto
+    </ActionButton>
+  </SectionHeader>
+
+  <BudgetsList client:load />
+</section>
+
+<BudgetModals />

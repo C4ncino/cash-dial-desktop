@@ -1,2 +1,99 @@
 @import "tailwindcss";
-@import 'tailwind-animations';
+@import "tailwind-animations";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-gray-webui: oklch(0.2645 0 0);
+  --color-gray-webui-text: oklch(0.8452 0 0);
+}
+
+@layer base {
+  html {
+    min-width: 100%;
+    min-height: 100%;
+    color-scheme: light;
+    background: var(--color-zinc-50);
+  }
+
+  html.dark {
+    color-scheme: dark;
+    background: var(--color-zinc-950);
+  }
+
+  body {
+    min-width: 100%;
+    min-height: 100dvh;
+    margin: 0;
+    @apply bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-100;
+  }
+
+  ::selection {
+    @apply bg-blue-200 text-zinc-950 dark:bg-blue-800 dark:text-zinc-100;
+  }
+
+  input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]),
+  select,
+  textarea {
+    @apply border-zinc-300 bg-zinc-50/60 text-zinc-950 backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-100;
+  }
+
+  option {
+    @apply bg-zinc-100 text-zinc-950 dark:bg-zinc-800 dark:text-zinc-100;
+  }
+}
+
+@layer components {
+  .glass-surface {
+    @apply border border-zinc-200 bg-zinc-100/60 shadow-md backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/60 dark:shadow-none;
+  }
+
+  .glass-elevated {
+    @apply border border-zinc-200 bg-zinc-100/60 shadow-md backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-800/60 dark:shadow-none;
+  }
+
+  .glass-control {
+    @apply border border-zinc-300 bg-zinc-50/60 backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/60;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-zinc-600 dark:focus-visible:ring-offset-zinc-950;
+  }
+
+  .app-toast {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .app-toast[data-show="true"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+.gradient-bg {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-image:
+    radial-gradient(at 20% 20%, rgba(0, 229, 255, 0.35) 0px, transparent 45%),
+    radial-gradient(at 80% 40%, rgba(137, 33, 235, 0.35) 0px, transparent 50%),
+    radial-gradient(at 40% 80%, rgba(17, 14, 16, 0.35) 0px, transparent 60%),
+    radial-gradient(at 90% 10%, rgba(0, 255, 128, 0.35) 0px, transparent 40%);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+[data-tooltip]::before,
+[data-tooltip]::after {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.breadcrumb-category>li {
+  flex-shrink: 0;
+}

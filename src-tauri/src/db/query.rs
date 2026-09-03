@@ -1,0 +1,126 @@
+use diesel::prelude::*;
+
+use crate::models::{
+    accounts::{AccountType, AccountTypeRow, AccountTypeTranslationRow},
+    budgets::{BudgetPeriodType, BudgetPeriodTypeRow, BudgetPeriodTypeTranslationRow},
+    categories::{Category, CategoryRow, CategoryTranslationRow},
+    currencies::{Currency, CurrencyRow, CurrencyTranslationRow},
+    movements::{MovementType, MovementTypeRow, MovementTypeTranslationRow},
+};
+
+#[cfg(test)]
+#[path = "./query_test.rs"]
+mod query_test;
+
+pub fn get_account_types(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<AccountType>, String> {
+    use crate::schema::{
+        account_types::dsl::account_types,
+        account_types_translations::dsl::account_types_translations,
+        account_types_translations::lang as table_lang,
+    };
+
+    let accounts_types_results: Vec<AccountType> = account_types
+        .inner_join(account_types_translations)
+        .filter(table_lang.eq(lang))
+        .select((AccountTypeRow::as_select(), AccountTypeTranslationRow::as_select()))
+        .load::<(AccountTypeRow, AccountTypeTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| AccountType::from((item, translation)))
+        .collect();
+
+    Ok(accounts_types_results)
+}
+
+pub fn get_currencies(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<Currency>, String> {
+    use crate::schema::{
+        currencies::dsl::currencies, currencies_translations::dsl::currencies_translations,
+        currencies_translations::lang as table_lang,
+    };
+
+    let currencies_results: Vec<Currency> = currencies
+        .inner_join(currencies_translations)
+        .filter(table_lang.eq(lang))
+        .select((CurrencyRow::as_select(), CurrencyTranslationRow::as_select()))
+        .load::<(CurrencyRow, CurrencyTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| Currency::from((item, translation)))
+        .collect();
+
+    Ok(currencies_results)
+}
+
+pub fn get_categories(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<Category>, String> {
+    use crate::schema::{
+        categories::dsl::categories, categories_translations::dsl::categories_translations,
+        categories_translations::lang as table_lang,
+    };
+
+    let categories_results: Vec<Category> = categories
+        .inner_join(categories_translations)
+        .filter(table_lang.eq(lang))
+        .select((CategoryRow::as_select(), CategoryTranslationRow::as_select()))
+        .load::<(CategoryRow, CategoryTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| Category::from((item, translation)))
+        .collect();
+
+    Ok(categories_results)
+}
+
+pub fn get_movement_types(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<MovementType>, String> {
+    use crate::schema::{
+        movement_types::dsl::movement_types,
+        movement_types_translations::dsl::movement_types_translations,
+        movement_types_translations::lang as table_lang,
+    };
+
+    let movement_types_results: Vec<MovementType> = movement_types
+        .inner_join(movement_types_translations)
+        .filter(table_lang.eq(lang))
+        .select((MovementTypeRow::as_select(), MovementTypeTranslationRow::as_select()))
+        .load::<(MovementTypeRow, MovementTypeTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| MovementType::from((item, translation)))
+        .collect();
+
+    Ok(movement_types_results)
+}
+
+pub fn get_budget_period_types(
+    connection: &mut SqliteConnection,
+    lang: String,
+) -> Result<Vec<BudgetPeriodType>, String> {
+    use crate::schema::{
+        budget_period_types::dsl::budget_period_types,
+        budget_period_types_translations::dsl::budget_period_types_translations,
+        budget_period_types_translations::lang as table_lang,
+    };
+
+    let budget_period_types_results: Vec<BudgetPeriodType> = budget_period_types
+        .inner_join(budget_period_types_translations)
+        .filter(table_lang.eq(lang))
+        .select((BudgetPeriodTypeRow::as_select(), BudgetPeriodTypeTranslationRow::as_select()))
+        .load::<(BudgetPeriodTypeRow, BudgetPeriodTypeTranslationRow)>(connection)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(item, translation)| BudgetPeriodType::from((item, translation)))
+        .collect();
+
+    Ok(budget_period_types_results)
+}

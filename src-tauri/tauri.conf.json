@@ -1,20 +1,20 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "cash-dial-desktop",
-  "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "version": "1.0.0",
+  "identifier": "cancino.dev",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:4321/",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
   },
   "app": {
     "windows": [
       {
         "title": "Cash Dial",
-        "width": 800,
-        "height": 600,
+        "width": 1280,
+        "height": 1024,
         "resizable": true,
         "fullscreen": false
       }
@@ -32,6 +32,14 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "both"
+      }
+    }
   }
 }

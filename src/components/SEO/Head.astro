@@ -1,4 +1,6 @@
 ---
+import { ClientRouter } from "astro:transitions";
+
 interface Props {
   title: string;
   description: string;
@@ -21,7 +23,7 @@ const { title, description, image = "/images/dioxmin_logo.png" } = Astro.props;
 <meta name="keywords" content="" />
 
 <link rel="sitemap" href="/sitemap-index.xml" />
-<meta name="theme-color" content="COLOR" />
+<meta id="theme-color" name="theme-color" content="#fafafa" />
 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
 <meta name="twitter:title" content={title} />
@@ -38,3 +40,22 @@ const { title, description, image = "/images/dioxmin_logo.png" } = Astro.props;
 <meta property="og:site_name" content="SITENAME" />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="es" />
+
+<ClientRouter />
+
+<script is:inline>
+  (() => {
+    const key = "cash-dial-theme";
+    let saved = null;
+    try {
+      saved = localStorage.getItem(key);
+    } catch {}
+    const dark = saved === "dark" ||
+      (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const theme = dark ? "dark" : "light";
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#09090b" : "#fafafa");
+  })();
+</script>

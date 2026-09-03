@@ -1,0 +1,27 @@
+---
+import BalanceTrend from "@/components/Statistics/BalanceTrend";
+import CategoriesList from "@/components/Statistics/CategoriesList";
+import ObligationsList from "@/components/Statistics/ObligationsList";
+import OverviewCard from "@/components/Statistics/OverviewCard";
+import SecondaryMetrics from "@/components/Statistics/SecondaryMetrics";
+import StatisticsForm from "@/components/Statistics/StatisticsForm";
+import TrendsChart from "@/components/Statistics/TrendsChart";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Estadísticas" description="">
+    <section class="grid gap-4">
+        <header class="mb-2">
+            <h1 class="text-3xl font-bold">Estadísticas</h1>
+            <p class="mt-1 text-zinc-700 dark:text-zinc-300">Analiza el comportamiento de tus finanzas por periodo.</p>
+        </header>
+        <StatisticsForm client:load />
+
+        <OverviewCard client:load />
+        <TrendsChart client:load />
+        <CategoriesList client:load />
+        <BalanceTrend client:load />
+        <SecondaryMetrics client:load />
+        <ObligationsList client:load />
+    </section>
+</BaseLayout>

@@ -1,0 +1,56 @@
+---
+import MovementInfo from "@/components/Movements/MovementInfo";
+import ActionButtons from "@/components/Movements/ActionButtons";
+import DetailLayout from "@/layouts/DetailLayout.astro";
+import MovementModals from "@/components/Movements/Modals.astro";
+import DetailShell from "@/components/General/DetailShell.astro";
+---
+
+<DetailLayout title="Detalles del Movimiento" description="">
+  <DetailShell>
+    <MovementInfo client:load />
+    <ActionButtons slot="actions" client:load />
+  </DetailShell>
+</DetailLayout>
+
+<MovementModals />
+
+<script>
+    import { EDIT_TYPES, MOVEMENT_TYPES } from "@/types/enums";
+    import { editStore } from "@/stores/editStore";
+    import { movementsStore } from "@/stores/movementsStore";
+
+    document.addEventListener("astro:page-load", () => {
+        const btn = document.getElementById("edit-movement-button");
+
+        if (!btn) return;
+
+        btn.addEventListener("click", () => {
+            const id = new URLSearchParams(window.location.search).get("id");
+
+            if (!id) throw new Error("Movement ID not found");
+
+            const movementId = Number(id);
+            const movement = movementsStore.getState().getById(movementId);
+
+            if (!movement) {
+                console.error("Movement not found for editing", movementId);
+                return;
+            }
+
+            let editType: EDIT_TYPES;
+
+            if (movement.typeId === MOVEMENT_TYPES.INCOME) {
+                editType = EDIT_TYPES.INCOME;
+            } else if (movement.typeId === MOVEMENT_TYPES.EXPENSE) {
+                editType = EDIT_TYPES.EXPENSE;
+            } else if (movement.typeId === MOVEMENT_TYPES.TRANSFER) {
+                editType = EDIT_TYPES.TRANSFER;
+            } else {
+                return;
+            }
+
+            editStore.getState().setId(movementId, editType);
+        });
+    });
+</script>

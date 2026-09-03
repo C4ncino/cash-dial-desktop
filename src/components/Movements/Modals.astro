@@ -1,0 +1,95 @@
+---
+import AppModal from "@/components/General/AppModal.astro";
+
+import MovementForm from "./MovementForm";
+import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
+---
+
+<AppModal id={MODAL_ID.MOVEMENT.INCOME.CREATE} title="Crear Ingreso">
+    <MovementForm
+        client:load
+        modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
+        movementType={MOVEMENT_TYPES.INCOME}
+    />
+</AppModal>
+
+<AppModal id={MODAL_ID.MOVEMENT.INCOME.EDIT} title="Editar Ingreso">
+    <MovementForm
+        client:load
+        modalId={MODAL_ID.MOVEMENT.INCOME.EDIT}
+        movementType={MOVEMENT_TYPES.INCOME}
+    />
+</AppModal>
+
+<AppModal id={MODAL_ID.MOVEMENT.EXPENSE.CREATE} title="Crear Gasto">
+    <MovementForm
+        client:load
+        modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+        movementType={MOVEMENT_TYPES.EXPENSE}
+    />
+</AppModal>
+
+<AppModal id={MODAL_ID.MOVEMENT.EXPENSE.EDIT} title="Editar Gasto">
+    <MovementForm
+        client:load
+        modalId={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
+        movementType={MOVEMENT_TYPES.EXPENSE}
+    />
+</AppModal>
+
+<AppModal id={MODAL_ID.MOVEMENT.TRANSFER.CREATE} title="Crear Transferencia">
+    <MovementForm
+        client:load
+        modalId={MODAL_ID.MOVEMENT.TRANSFER.CREATE}
+        movementType={MOVEMENT_TYPES.TRANSFER}
+    />
+</AppModal>
+
+<AppModal id={MODAL_ID.MOVEMENT.TRANSFER.EDIT} title="Editar Transferencia">
+    <MovementForm
+        client:load
+        modalId={MODAL_ID.MOVEMENT.TRANSFER.EDIT}
+        movementType={MOVEMENT_TYPES.TRANSFER}
+    />
+</AppModal>
+
+<script>
+    import { editStore } from "@/stores/editStore";
+    import { MODAL_ID } from "@/types/enums";
+    import { modal } from "webcoreui";
+
+    document.addEventListener("astro:page-load", () => {
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.INCOME.CREATE}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.INCOME.CREATE}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.EXPENSE.CREATE}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.TRANSFER.CREATE}`,
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.INCOME.EDIT}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.INCOME.EDIT}`,
+            onClose: () => editStore.getState().clear(),
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.EXPENSE.EDIT}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.EXPENSE.EDIT}`,
+            onClose: () => editStore.getState().clear(),
+        });
+
+        modal({
+            trigger: `#${MODAL_ID.MOVEMENT.TRANSFER.EDIT}-button`,
+            modal: `#${MODAL_ID.MOVEMENT.TRANSFER.EDIT}`,
+            onClose: () => editStore.getState().clear(),
+        });
+    });
+</script>

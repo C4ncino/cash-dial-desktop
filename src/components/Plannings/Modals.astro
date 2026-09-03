@@ -1,0 +1,41 @@
+---
+import AppModal from "@/components/General/AppModal.astro";
+
+import PlanningForm from "./PlanningForm";
+import { MODAL_ID } from "@/types/enums";
+---
+
+<AppModal id={MODAL_ID.PLANNING.CREATE} title="Crear Planificación">
+  <PlanningForm
+    client:load
+    modalId={MODAL_ID.PLANNING.CREATE}
+    formId="create-planning-form"
+  />
+</AppModal>
+
+<AppModal id={MODAL_ID.PLANNING.EDIT} title="Editar Planificación">
+  <PlanningForm
+    client:load
+    modalId={MODAL_ID.PLANNING.EDIT}
+    formId="edit-planning-form"
+  />
+</AppModal>
+
+<script>
+  import { editStore } from "@/stores/editStore";
+  import { MODAL_ID } from "@/types/enums";
+  import { modal } from "webcoreui";
+
+  document.addEventListener("astro:page-load", () => {
+    modal({
+      trigger: "#create-planning-button",
+      modal: `#${MODAL_ID.PLANNING.CREATE}`,
+    });
+
+    modal({
+      trigger: "#edit-planning-button",
+      modal: `#${MODAL_ID.PLANNING.EDIT}`,
+      onClose: () => editStore.getState().clear(),
+    });
+  });
+</script>

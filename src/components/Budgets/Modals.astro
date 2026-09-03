@@ -1,0 +1,37 @@
+---
+import AppModal from "@/components/General/AppModal.astro";
+
+import Form from "./Form";
+import { MODAL_ID } from "@/types/enums";
+---
+
+<AppModal id={MODAL_ID.BUDGET.CREATE} title="Crear Presupuesto">
+  <Form client:load modalId={MODAL_ID.BUDGET.CREATE} />
+</AppModal>
+
+<AppModal
+  id={MODAL_ID.BUDGET.EDIT}
+  title="Editar Presupuesto"
+  className="overflow-y-visible! overscroll-auto!"
+>
+  <Form client:load modalId={MODAL_ID.BUDGET.EDIT} />
+</AppModal>
+
+<script>
+  import { editStore } from "@/stores/editStore";
+  import { MODAL_ID } from "@/types/enums";
+  import { modal } from "webcoreui";
+
+  document.addEventListener("astro:page-load", () => {
+    modal({
+      trigger: "#create-budget-button",
+      modal: `#${MODAL_ID.BUDGET.CREATE}`,
+    });
+
+    modal({
+      trigger: "#edit-budget-button",
+      modal: `#${MODAL_ID.BUDGET.EDIT}`,
+      onClose: () => editStore.getState().clear(),
+    });
+  });
+</script>

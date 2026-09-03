@@ -1,17 +1,36 @@
 ---
-import BaseLayout from "layouts/BaseLayout.astro";
+import Accounts from "@/components/Accounts/Accounts.astro";
+import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
+import MovementModals from "@/components/Movements/Modals.astro";
+import MovementsLanding from "@/components/Movements/MovementsLanding";
+import UrgentOccurrences from "@/components/Plannings/UrgentOccurrences";
+import Budgets from "@/components/Budgets/Budgets.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { logger } from "@/lib/logger";
+
+const TEST_MODE = process.env.VITE_TEST_MODE;
+
+logger.debug(TEST_MODE);
 ---
 
 <BaseLayout title="Home" description="">
-  <main class="flex flex-col flex-1 justify-center bg-red-500/50">
-    <h1>Hola</h1>
+  <div class="pb-24">
+    <header>
+      <h1 class="text-3xl font-bold">Resumen</h1>
+      <p class="mt-1 text-zinc-700 dark:text-zinc-300">
+        Una vista rápida de tus finanzas.
+      </p>
+    </header>
+    <Accounts />
+    <MovementsLanding client:load />
+    <UrgentOccurrences limit={4} client:load />
+    <Budgets />
+  </div>
 
-    <form class="row" id="greet-form">
-      <input id="greet-input" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p id="greet-msg"></p>
-  </main>
+  <CreateSpeedDial />
+  <MovementModals />
 </BaseLayout>
 
-<script src="lib/test"></script>
+<style></style>
+
+{TEST_MODE && <script src="../lib/test.ts" />}

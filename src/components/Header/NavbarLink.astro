@@ -2,18 +2,24 @@
 export interface Props {
   href: string;
   isSelected?: boolean;
+  variant?: "desktop" | "mobile";
 }
 
-const { href, isSelected } = Astro.props;
+const { href, isSelected, variant = "desktop" } = Astro.props;
 
-const selected = isSelected ? "text-blue-500 border-blue-500" : "";
+const selected = isSelected
+  ? "border-blue-600 bg-blue-50/60 text-blue-600 dark:border-blue-400 dark:bg-blue-950/60 dark:text-blue-400"
+  : "border-transparent text-zinc-700 hover:bg-zinc-100/60 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100";
 ---
 
 <li>
   <a
-    tabindex="1"
-    class={`font-semibold flex items-center gap-1 w-40
-    hover:text-red-500 focus:text-red-500 ${selected}`}
+    aria-current={isSelected ? "page" : undefined}
+    class:list={[
+      "focus-ring flex min-h-11 w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm font-semibold transition-colors",
+      variant === "mobile" && "text-base",
+      selected,
+    ]}
     href={href}
   >
     <slot />

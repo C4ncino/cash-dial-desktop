@@ -1,0 +1,33 @@
+---
+import AppModal from "@/components/General/AppModal.astro";
+
+import Form from "./Form";
+import { MODAL_ID } from "@/types/enums";
+---
+
+<AppModal id={MODAL_ID.ACCOUNT.CREATE} title="Crear Cuenta">
+    <Form client:visible modalId={MODAL_ID.ACCOUNT.CREATE} />
+</AppModal>
+
+<AppModal id={MODAL_ID.ACCOUNT.EDIT} title="Editar Cuenta">
+    <Form client:visible modalId={MODAL_ID.ACCOUNT.EDIT} />
+</AppModal>
+
+<script>
+    import { editStore } from "@/stores/editStore";
+    import { MODAL_ID } from "@/types/enums";
+    import { modal } from "webcoreui";
+
+    document.addEventListener("astro:page-load", () => {
+        modal({
+            trigger: "#create-account-button",
+            modal: `#${MODAL_ID.ACCOUNT.CREATE}`,
+        });
+
+        modal({
+            trigger: "#edit-account-button",
+            modal: `#${MODAL_ID.ACCOUNT.EDIT}`,
+            onClose: () => editStore.getState().clear(),
+        });
+    });
+</script>

@@ -1,0 +1,21 @@
+---
+import Budgets from "@/components/Budgets/Budgets.astro";
+import PlanningModals from "@/components/Plannings/Modals.astro";
+import PlanningsLanding from "@/components/Plannings/PlanningsLanding.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Planificación" description="">
+  <section class="space-y-10">
+    <header>
+      <h1 class="text-3xl font-bold">Presupuestos y planificaciones</h1>
+      <p class="mt-1 text-zinc-700 dark:text-zinc-300">
+        Organiza límites y movimientos recurrentes.
+      </p>
+    </header>
+    <Budgets />
+    <PlanningsLanding />
+  </section>
+
+  <PlanningModals />
+</BaseLayout>
