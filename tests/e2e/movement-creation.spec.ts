@@ -111,6 +111,21 @@ describe("Movement E2E", () => {
     );
   }
 
+  it("opens the labeled creation menu on every dial page and prefills account context", async () => {
+    await findVisible(By.id("create-movement-menu-button"));
+    await navigateTo("/movements", By.id("create-movement-menu-button"));
+    await navigateTo("/", By.id("create-movement-menu-button"));
+    await navigateTo("/account?id=1", By.id("create-movement-menu-button"));
+
+    await clickWhenReady(By.id("create-movement-menu-button"));
+    await clickWhenReady(By.id("labeled-create-movement-2-button"));
+    await findVisible(By.id("expense-form"));
+
+    expect(
+      await driver.findElement(By.css('#expense-form select[name="accountId"]')).getAttribute("value"),
+    ).toBe("1");
+  });
+
   it("creates an income movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();

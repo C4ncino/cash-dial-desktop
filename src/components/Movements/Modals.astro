@@ -55,8 +55,20 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 <script>
     import { editStore } from "@/stores/editStore";
+    import {
+        MOVEMENT_CREATE_REQUEST,
+        movementCreateModalId,
+        type MovementCreateRequestDetail,
+    } from "@/lib/movementCreation";
     import { MODAL_ID } from "@/types/enums";
     import { modal } from "webcoreui";
+
+    const handleCreateRequest = (event: Event) => {
+        const modalId = movementCreateModalId(
+            (event as CustomEvent<MovementCreateRequestDetail>).detail.typeId,
+        );
+        if (modalId) modal(`#${modalId}`)?.open();
+    };
 
     document.addEventListener("astro:page-load", () => {
         modal({
@@ -91,5 +103,12 @@ import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
             modal: `#${MODAL_ID.MOVEMENT.TRANSFER.EDIT}`,
             onClose: () => editStore.getState().clear(),
         });
+
+        window.removeEventListener(MOVEMENT_CREATE_REQUEST, handleCreateRequest);
+        window.addEventListener(MOVEMENT_CREATE_REQUEST, handleCreateRequest);
+    });
+
+    document.addEventListener("astro:before-swap", () => {
+        window.removeEventListener(MOVEMENT_CREATE_REQUEST, handleCreateRequest);
     });
 </script>

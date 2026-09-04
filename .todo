@@ -14,9 +14,9 @@ Features:
     ☐ i8n verify the state of i8n in all repo and make a strategy to add at least english and Spanish
     ☐ Display both source/original and account/card amounts for converted credit-card payments
     ✔ Update stats to have a input for the week, month or year, for example when month is selected additional to the arrows to go month by month I can select a month and year to go directly to that month, same for week and year and when year is selected only yeah and that will affect the start and end date @done(26-09-04 12:15)
-    ☐ Add another speed dial button for movements creation but with all the text, like "Añadir Movimiento" --> "Añadir Ingreso", "Añadir Gasto", "Añadir Transferencia"
-        ☐ Add it to the accounts page to be able to create a movement from there
-        ☐ Check how plannings are pre-filling the movement and see if you can send the account to pre-fill that data when selected from the account single view page
+    ✔ Add another speed dial button for movements creation but with all the text, like "Añadir Movimiento" --> "Añadir Ingreso", "Añadir Gasto", "Añadir Transferencia" @done(26-09-04 12:35)
+        ✔ Add it to the accounts page to be able to create a movement from there @done(26-09-04 12:35)
+        ✔ Check how plannings are pre-filling the movement and see if you can send the account to pre-fill that data when selected from the account single view page @done(26-09-04 12:35)
 Fix:
     ✔ Only debit and cash for stats of balance @done(26-09-03 23:17)
     ✔ Change Balance in Credit to be debt Balance in input, convert it to available balance when sent to the backend, and display debt (creditLimit - balance) on account cards and account detail views @done(26-09-03 23:28)

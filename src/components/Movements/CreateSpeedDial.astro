@@ -1,6 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
-import { MODAL_ID } from "@/types/enums";
+import { MODAL_ID, MOVEMENT_TYPES } from "@/types/enums";
 
 const MODAL_TRIGGERS = [
   {
@@ -8,6 +8,7 @@ const MODAL_TRIGGERS = [
     icon: "iconoir:data-transfer-up",
     color: "bg-lime-600 dark:bg-lime-400",
     tooltip: "Crear Transferencia",
+    typeId: MOVEMENT_TYPES.TRANSFER,
     iconClassName: "rotate-90",
   },
   {
@@ -15,12 +16,14 @@ const MODAL_TRIGGERS = [
     icon: "iconoir:receive-dollars",
     color: "bg-blue-600 dark:bg-blue-400",
     tooltip: "Crear Ingreso",
+    typeId: MOVEMENT_TYPES.INCOME,
   },
   {
     modal_id: MODAL_ID.MOVEMENT.EXPENSE.CREATE,
     icon: "iconoir:send-dollars",
     color: "bg-amber-600 dark:bg-amber-400",
     tooltip: "Crear Gasto",
+    typeId: MOVEMENT_TYPES.EXPENSE,
   },
 ];
 ---
@@ -39,6 +42,7 @@ const MODAL_TRIGGERS = [
             class={`p-2 rounded-full ${trigger.color} cursor-pointer shadow-lg hover:brightness-110 active:scale-95 transition-all`}
             data-position="left"
             data-tooltip={trigger.tooltip}
+            data-movement-type={trigger.typeId}
           >
             <Icon
               name={trigger.icon}
@@ -110,6 +114,8 @@ const MODAL_TRIGGERS = [
 </style>
 
 <script>
+  import { requestMovementCreation } from "@/lib/movementCreation";
+
   function setupSpeedDial() {
     const container = document.querySelector(".speed-dial");
     const toggleBtn = document.getElementById("speed-dial-toggle");
@@ -134,6 +140,15 @@ const MODAL_TRIGGERS = [
     toggleBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       setOpen(!container.classList.contains("is-open"));
+    });
+
+    container.querySelectorAll<HTMLButtonElement>("[data-movement-type]").forEach((button) => {
+      if (button.dataset.createBound === "true") return;
+      button.dataset.createBound = "true";
+      button.addEventListener("click", () => {
+        requestMovementCreation({ typeId: Number(button.dataset.movementType) });
+        setOpen(false);
+      });
     });
 
     // Close when clicking outside

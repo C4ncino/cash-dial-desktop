@@ -7,6 +7,7 @@ import AccountModals from "@/components/Accounts/Modals.astro";
 import ActionButton from "@/components/General/ActionButton.astro";
 import DetailShell from "@/components/General/DetailShell.astro";
 import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
+import CreateMovementMenu from "@/components/Movements/CreateMovementMenu";
 import MovementModals from "@/components/Movements/Modals.astro";
 ---
 
@@ -15,6 +16,9 @@ import MovementModals from "@/components/Movements/Modals.astro";
     <AccountInfo client:load />
     <AccountMovements client:load />
     <menu slot="actions" class="flex flex-wrap gap-2 sm:flex-col">
+      <li>
+        <CreateMovementMenu client:load accountContext fullWidth />
+      </li>
       <li>
         <ActionButton
           id="edit-account-button"

@@ -6,6 +6,7 @@ import { useStore } from "zustand";
 import MovementForm from "@/components/Movements/MovementForm";
 import { createMovementFromData, validateMovement } from "@/lib/forms/movement";
 import { logger } from "@/lib/logger";
+import { MOVEMENT_CREATE_REQUEST } from "@/lib/movementCreation";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { editStore } from "@/stores/editStore";
@@ -47,6 +48,7 @@ vi.mock("@/components/Forms/SelectAccounts", () => ({
     <fieldset>
       <label htmlFor={name}>{label}</label>
       <select
+        key={accountId}
         name={name}
         id={name}
         data-testid={`select-${name}`}
@@ -255,6 +257,57 @@ it("populates the amount when completing a planning occurrence", async () => {
 
   await waitFor(() => expect(screen.getByLabelText("Monto")).toHaveValue(1200));
   expect(screen.getByLabelText("Monto")).toHaveAttribute("value", "1200");
+});
+
+it("prefills and clears the account from matching creation requests", async () => {
+  mockUseStoreState();
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
+
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.EXPENSE, accountId: 2 },
+    }),
+  );
+  await waitFor(() => expect(screen.getByTestId("select-accountId")).toHaveValue("2"));
+
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.EXPENSE },
+    }),
+  );
+  await waitFor(() => expect(screen.getByTestId("select-accountId")).toHaveValue(""));
+});
+
+it("ignores account prefill requests for another movement type or an edit form", () => {
+  mockUseStoreState({ editState: { id: 1, type: EDIT_TYPES.EXPENSE } });
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
+
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.INCOME, accountId: 2 },
+    }),
+  );
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.EXPENSE, accountId: 2 },
+    }),
+  );
+
+  expect(screen.getByTestId("select-accountId")).toHaveValue("1");
 });
 
 it("shows backend planning compatibility errors in the form", async () => {

@@ -30,7 +30,10 @@ describe("Statistics user flow", () => {
 
     const directPeriod = await driver.findElement(By.id("statisticsPeriodStart"));
     await driver.executeScript(
-      "arguments[0].value = '2024'; arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
+      `const input = arguments[0];
+       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+       setter.call(input, "2024");
+       input.dispatchEvent(new Event("input", { bubbles: true }));`,
       directPeriod,
     );
     await driver.wait(
