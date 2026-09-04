@@ -1,4 +1,7 @@
 import { Icon } from "@iconify/react";
+import { twMerge } from "tailwind-merge";
+
+import { isTransferIcon } from "@/lib/icons";
 
 interface Props {
   label?: string;
@@ -15,7 +18,10 @@ export default function EntityLabel({ label, icon, color, fallback = "—", clas
         <Icon
           icon={icon.startsWith("iconoir:") ? icon : `iconoir:${icon}`}
           style={color ? { color } : undefined}
-          className="size-4 shrink-0 text-zinc-400"
+          className={twMerge(
+            "size-4 shrink-0 text-zinc-400",
+            isTransferIcon(icon) && "rotate-90",
+          )}
           aria-hidden="true"
         />
       )}

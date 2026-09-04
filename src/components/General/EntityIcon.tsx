@@ -2,6 +2,8 @@ import { Icon } from "@iconify/react";
 import type { HTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
 
+import { isTransferIcon } from "@/lib/icons";
+
 type Props = Omit<HTMLAttributes<HTMLSpanElement>, "color"> & {
   icon: string;
   color: string;
@@ -45,7 +47,7 @@ export default function EntityIcon({
     >
       <Icon
         icon={icon.startsWith("iconoir:") ? icon : `iconoir:${icon}`}
-        className="size-full text-white"
+        className={twMerge("size-full text-white", isTransferIcon(icon) && "rotate-90")}
       />
     </span>
   );

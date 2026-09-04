@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 
 import ActionButton from "@/components/General/ActionButton";
+import { isTransferIcon } from "@/lib/icons";
 import { requestMovementCreation } from "@/lib/movementCreation";
 import { accountsStore } from "@/stores/accountsStore";
 import { ACCOUNT_TYPES, MOVEMENT_TYPES } from "@/types/enums";
@@ -126,7 +127,11 @@ export default function CreateMovementMenu({ accountContext = false, fullWidth =
                   setOpen(false);
                 }}
               >
-                <Icon icon={action.icon} className="size-5" aria-hidden="true" />
+                <Icon
+                  icon={action.icon}
+                  className={`size-5 ${isTransferIcon(action.icon) ? "rotate-90" : ""}`}
+                  aria-hidden="true"
+                />
                 {action.label}
               </ActionButton>
             );

@@ -6,6 +6,12 @@ import CreateMovementMenu from "@/components/Movements/CreateMovementMenu";
 import { MOVEMENT_CREATE_REQUEST } from "@/lib/movementCreation";
 import { ACCOUNT_TYPES, MOVEMENT_TYPES } from "@/types/enums";
 
+vi.mock("@iconify/react", () => ({
+  Icon: ({ icon, className }: React.ComponentProps<"span"> & { icon: string }) => (
+    <span data-icon={icon} className={className} />
+  ),
+}));
+
 const cashAccount: Account = {
   id: 1,
   name: "Wallet",
@@ -64,6 +70,7 @@ describe("CreateMovementMenu", () => {
       "border-lime-600",
       "text-lime-600",
     );
+    expect(screen.getAllByRole("menuitem")[2].querySelector(".rotate-90")).toBeInTheDocument();
   });
 
   it("closes on Escape and restores focus to the trigger", () => {
