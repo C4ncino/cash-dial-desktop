@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -13,6 +13,8 @@ const response = {
 
 describe("statisticsStore", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 13));
     statisticsStore.setState({
       selectedCurrencyId: null,
       period: "month",
@@ -26,6 +28,8 @@ describe("statisticsStore", () => {
     });
     vi.clearAllMocks();
   });
+
+  afterEach(() => vi.useRealTimers());
 
   it("requires a selected currency", async () => {
     await expect(statisticsStore.getState().fetchStatistics()).resolves.toBeNull();
@@ -147,5 +151,31 @@ describe("statisticsStore", () => {
     resolveRequest(response);
     await request;
     expect(statisticsStore.getState().response).toBeNull();
+  });
+
+  it("selects a normalized historical period and fetches its half-open range", () => {
+    statisticsStore.setState({ selectedCurrencyId: 1 });
+    mockInvoke.mockResolvedValue(response);
+
+    statisticsStore.getState().setPeriodStart(new Date(2025, 2, 19, 15).getTime());
+
+    expect(statisticsStore.getState()).toMatchObject({
+      periodStartMs: new Date(2025, 2, 1).getTime(),
+      periodEndMs: new Date(2025, 3, 1).getTime(),
+      response: null,
+      error: null,
+    });
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "get_statistics",
+      expect.objectContaining({
+        startMs: new Date(2025, 2, 1).getTime(),
+        endMs: new Date(2025, 3, 1).getTime(),
+      }),
+    );
+  });
+
+  it("clamps direct future selection to the current period", () => {
+    statisticsStore.getState().setPeriodStart(new Date(2027, 0, 1).getTime());
+    expect(statisticsStore.getState().periodStartMs).toBe(new Date(2026, 7, 1).getTime());
   });
 });

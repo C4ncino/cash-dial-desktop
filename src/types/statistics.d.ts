@@ -99,6 +99,7 @@ type StatisticsStore = {
 type StatisticsActions = {
   setSelectedCurrencyId: (currencyId: number | null) => void;
   setPeriod: (period: import("@/lib/statisticsQuery").StatisticsPeriod) => void;
+  setPeriodStart: (periodStartMs: number) => void;
   previousPeriod: () => void;
   nextPeriod: () => void;
   setGranularity: (granularity: StatisticsGranularity) => void;
