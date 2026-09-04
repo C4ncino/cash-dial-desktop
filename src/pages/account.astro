@@ -6,6 +6,8 @@ import DetailLayout from "@/layouts/DetailLayout.astro";
 import AccountModals from "@/components/Accounts/Modals.astro";
 import ActionButton from "@/components/General/ActionButton.astro";
 import DetailShell from "@/components/General/DetailShell.astro";
+import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
+import MovementModals from "@/components/Movements/Modals.astro";
 ---
 
 <DetailLayout title="Detalles de Cuenta" description="">
@@ -24,7 +26,9 @@ import DetailShell from "@/components/General/DetailShell.astro";
   </DetailShell>
 </DetailLayout>
 
+<CreateSpeedDial />
 <AccountModals />
+<MovementModals />
 
 <script>
   import { EDIT_TYPES } from "@/types/enums";

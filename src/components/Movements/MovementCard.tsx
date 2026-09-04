@@ -44,7 +44,7 @@ export default function MovementCard({ movement, showTime, variant = "default" }
   return (
     <a
       href={`/movement?id=${movement.id}`}
-      className={`focus-ring flex w-full min-w-0 cursor-pointer items-center justify-between gap-3 rounded-lg border-t border-zinc-200 transition-colors hover:bg-zinc-100/60 dark:border-zinc-800 dark:hover:bg-zinc-800/60 ${compact ? "p-3" : "px-4 py-3"}`}
+      className={`focus-ring flex w-full min-w-0 cursor-pointer items-center justify-between gap-3 border-t border-zinc-200 transition-colors hover:bg-zinc-100/60 dark:border-zinc-800 dark:hover:bg-zinc-800/60 ${compact ? "p-3" : "px-4 py-3"}`}
     >
       <div className={`flex min-w-0 items-center ${compact ? "gap-2" : "gap-4"}`}>
         <EntityIcon icon={category.icon} color={category.color} size={compact ? "sm" : "lg"} />
