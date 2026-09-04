@@ -14,6 +14,7 @@ import colors from "tailwindcss/colors";
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
 import useTheme from "@/hooks/useTheme";
+import { formatStatMoney } from "@/lib/formatters";
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
 
@@ -77,13 +78,13 @@ const BalanceTrend = ({ points: pointsProp, symbol: symbolProp }: BalanceTrendPr
                   },
                   ticks: {
                     color: isDark ? colors.zinc[400] : colors.zinc[500],
-                    callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
+                    callback: (value) => formatStatMoney(Number(value), symbol),
                   },
                 },
               },
               plugins: {
                 tooltip: {
-                  callbacks: { label: (item) => `${symbol}${Number(item.raw).toFixed(2)}` },
+                  callbacks: { label: (item) => formatStatMoney(Number(item.raw), symbol) },
                 },
                 legend: {
                   display: false,

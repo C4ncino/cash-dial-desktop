@@ -72,7 +72,7 @@ const metrics: StatisticsSecondaryMetrics = {
 describe("statistics components", () => {
   it("renders overview values and savings rate", () => {
     render(<OverviewCard overview={overview} symbol="$" />);
-    expect(screen.getByText("$1000.00")).toBeInTheDocument();
+    expect(screen.getByText("$1,000.00")).toBeInTheDocument();
     expect(screen.getByText("60.00%")).toBeInTheDocument();
   });
 

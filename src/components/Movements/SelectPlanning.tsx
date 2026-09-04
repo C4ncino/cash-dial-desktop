@@ -1,6 +1,7 @@
 import { useStore } from "zustand";
 
 import { formatOccurrenceDate } from "@/components/Plannings/PlanningCard";
+import { formatNumber } from "@/lib/formatters";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { planningsStore } from "@/stores/planningsStore";
@@ -55,7 +56,7 @@ const SelectPlanning = ({ typeId, planningId, onChange }: Props) => {
           return (
             <option key={planning.id} value={planning.id} className="bg-zinc-100 dark:bg-zinc-800">
               {planning.name} · {currency?.symbol ?? "$"}
-              {planning.amount.toFixed(2)} · {account?.name ?? "Cuenta"} ·{" "}
+              {formatNumber(planning.amount)} · {account?.name ?? "Cuenta"} ·{" "}
               {occurrence ? formatOccurrenceDate(occurrence.expectedDate) : ""}
             </option>
           );

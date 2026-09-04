@@ -1,6 +1,7 @@
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import useDate from "@/hooks/useDate";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
+import { formatStatMoney } from "@/lib/formatters";
 
 type SecondaryMetricsProps = {
   metrics?: StatisticsSecondaryMetrics;
@@ -31,19 +32,16 @@ const SecondaryMetrics = ({
       <dl className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         <div>
           <dt className="text-sm opacity-70">Gasto promedio</dt>
-          <dd>{metrics.avgExpense === null ? "—" : `${symbol}${metrics.avgExpense.toFixed(2)}`}</dd>
+          <dd>{metrics.avgExpense === null ? "—" : formatStatMoney(metrics.avgExpense, symbol)}</dd>
         </div>
         <div>
           <dt className="text-sm opacity-70">Gasto diario</dt>
-          <dd>
-            {symbol}
-            {metrics.avgDailySpending.toFixed(2)}
-          </dd>
+          <dd>{formatStatMoney(metrics.avgDailySpending, symbol)}</dd>
         </div>
         <div>
           <dt className="text-sm opacity-70">Gasto más grande</dt>
           <dd>
-            {metrics.largestExpense ? `${symbol}${metrics.largestExpense.amount.toFixed(2)}` : "—"}
+            {metrics.largestExpense ? formatStatMoney(metrics.largestExpense.amount, symbol) : "—"}
           </dd>
         </div>
         <div>

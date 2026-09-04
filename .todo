@@ -20,5 +20,4 @@ Fix:
     ✔ Budget form has an overflow in the view @done(26-09-03 23:46)
     ✔ Check why the next payments in stats have -0.00 @done(26-09-03 23:53)
     ✔ When a transfer is created from an account with a different currency than the destination account, the single view is not showing the currency conversion correctly it shows the same amount in amount and in the original amount @done(26-09-04 00:00)
-    ✔ Check how to clear the updateStore after an form is closed @done(26-09-04 00:11)
-    ☐ Make every amount text in the stats page have a formatting, like the one in the other amount texts in the app, and check if other amount texts are not using the formatting
+    ✔ Make every amount text in the stats page have a formatting, like the one in the other amount texts in the app, and check if other amount texts are not using the formatting @done(26-09-04 00:56)
