@@ -65,16 +65,16 @@ const AccountForm = ({ modalId }: Props) => {
       return;
     }
 
-    const account = createAccountFromData(data, type);
+    const accountData = createAccountFromData(data, type);
 
-    console.debug("Is Editing mode:", editState.type === EDIT_TYPES.ACCOUNT);
+    console.debug("Is Editing mode:", Boolean(account));
 
     if (!begin()) return;
 
     try {
-      const isEditing = Boolean(editState.id && editState.type === EDIT_TYPES.ACCOUNT);
-      if (isEditing) await accountsStore.getState().update(editState.id as number, account);
-      else await accountsStore.getState().add(account);
+      const isEditing = Boolean(account);
+      if (account) await accountsStore.getState().update(account.id, accountData);
+      else await accountsStore.getState().add(accountData);
 
       if (!isMounted()) return;
       toast(isEditing ? "#account-updated" : "#account-created");
@@ -111,7 +111,7 @@ const AccountForm = ({ modalId }: Props) => {
         />
 
         <label htmlFor="balance" className="text-zinc-700 dark:text-zinc-300">
-          {typeId === ACCOUNT_TYPES.CREDIT ? "Saldo usado" : "Saldo"}
+          {typeId === ACCOUNT_TYPES.CREDIT ? "Saldo utilizado" : "Saldo"}
         </label>
         <div className="flex">
           <Input

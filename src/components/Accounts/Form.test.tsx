@@ -133,7 +133,7 @@ describe("AccountForm", () => {
 
     fireEvent.click(screen.getByLabelText(/Credit/i));
 
-    expect(screen.getByLabelText("Saldo de deuda")).toHaveValue(0);
+    expect(screen.getByLabelText("Saldo utilizado")).toHaveValue(0);
     expect(screen.getByLabelText("Límite de Crédito")).toBeInTheDocument();
 
     expect(screen.getByLabelText("Día de Corte")).toBeInTheDocument();
@@ -193,6 +193,26 @@ describe("AccountForm", () => {
     });
   });
 
+  it("creates from the create modal even when edit state is stale", async () => {
+    mockUseStoreState({
+      editState: {
+        id: 1,
+        type: EDIT_TYPES.ACCOUNT,
+      },
+    });
+    vi.mocked(validate).mockReturnValue({ valid: true, errors: [] });
+    const createdAccount = { id: 0, name: "Fresh Account" } as Account;
+    vi.mocked(createAccountFromData).mockReturnValue(createdAccount);
+
+    render(<AccountForm modalId={MODAL_ID.ACCOUNT.CREATE} />);
+    fireEvent.click(screen.getByLabelText(/Cash/i));
+    fireEvent.submit(getAccountForm());
+
+    await waitFor(() => expect(mockAdd).toHaveBeenCalledWith(createdAccount));
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(toast).toHaveBeenCalledWith("#account-created");
+  });
+
   it("should update account when editing", async () => {
     mockUseStoreState({
       editState: {
@@ -250,8 +270,8 @@ describe("AccountForm", () => {
 
     render(<AccountForm modalId={MODAL_ID.ACCOUNT.EDIT} />);
 
-    expect(screen.getByLabelText("Saldo de deuda")).toHaveValue(3800);
-    expect(screen.getByLabelText("Saldo de deuda")).toHaveAttribute("min", "0");
+    expect(screen.getByLabelText("Saldo utilizado")).toHaveValue(3800);
+    expect(screen.getByLabelText("Saldo utilizado")).toHaveAttribute("min", "0");
   });
 
   it("should clear credit-only fields from the submitted payload when switching to cash", () => {

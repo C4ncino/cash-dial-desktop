@@ -400,6 +400,30 @@ describe("MovementForm", () => {
       expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.INCOME.CREATE}`);
     });
 
+    it("creates from the create modal even when edit state is stale", async () => {
+      mockUseStoreState({ editState: { id: 1, type: EDIT_TYPES.INCOME } });
+      vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
+      const createdMovement = {
+        accountId: 1,
+        categoryId: 1,
+        originalAmount: 50,
+        accountAmount: 50,
+      } as Movement;
+      vi.mocked(createMovementFromData).mockReturnValue(createdMovement);
+
+      render(
+        <MovementForm
+          modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
+          movementType={MOVEMENT_TYPES.INCOME}
+        />,
+      );
+      fireEvent.submit(getMovementForm("income-form"));
+
+      await waitFor(() => expect(mockAdd).toHaveBeenCalledWith(createdMovement));
+      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(toast).toHaveBeenCalledWith("#income-created");
+    });
+
     it("should update income when editing", async () => {
       mockUseStoreState({
         editState: {

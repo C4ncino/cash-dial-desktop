@@ -201,9 +201,9 @@ const MovementForm = ({ modalId, movementType }: Props) => {
     if (!begin()) return;
 
     try {
-      const isEditing = Boolean(editState.id && editState.type === config.editType);
-      if (editState.id && editState.type === config.editType) {
-        await movementsStore.getState().update(editState.id, movementData);
+      const isEditing = Boolean(movement);
+      if (movement) {
+        await movementsStore.getState().update(movement.id, movementData);
         await budgetStore.getState().refreshAffected(movementData.categoryId);
       } else {
         const createdMovement = await movementsStore.getState().add(movementData);
@@ -220,7 +220,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
           );
         }
 
-        await budgetStore.getState().refreshAffected(movementData.categoryId, movement?.categoryId);
+        await budgetStore.getState().refreshAffected(movementData.categoryId);
       }
 
       await accountsStore
