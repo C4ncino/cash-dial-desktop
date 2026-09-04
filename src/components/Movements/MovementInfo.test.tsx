@@ -136,6 +136,24 @@ describe("MovementInfo", () => {
     expect(screen.getByText("Dest Account")).toBeInTheDocument();
   });
 
+  it("maps cross-currency transfer amounts from the source currency to the destination", () => {
+    setupStoresMock({
+      ...mockMovement,
+      typeId: 3,
+      toAccountId: 3,
+      originalAmount: 10,
+      accountAmount: 0.5,
+    });
+
+    render(<MovementInfo />);
+
+    expect(screen.getAllByRole("heading", { name: "Información de divisa" })).toHaveLength(1);
+    expect(screen.getByText("Peso Mexicano (MXN)")).toBeInTheDocument();
+    expect(screen.getByText("1 MXN = 0.0500 USD")).toBeInTheDocument();
+    expect(screen.getByText("Monto original").parentElement).toHaveTextContent(/10[.,]00/);
+    expect(screen.getByText("Monto convertido").parentElement).toHaveTextContent(/0[.,]50/);
+  });
+
   it("should conditionally render optional sections like description and currency details", () => {
     // 1. Without description
     setupStoresMock({
