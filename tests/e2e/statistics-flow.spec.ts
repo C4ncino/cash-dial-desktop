@@ -25,6 +25,7 @@ describe("Statistics user flow", () => {
 
     const body = await driver.findElement(By.css("body")).getText();
     expect(body).not.toMatch(/NaN|Infinity/);
+    expect(body).not.toMatch(/-0[.,]00/);
     expect(await driver.findElement(By.id("statisticsPeriod")).getAttribute("value")).toBe("year");
 
     const previous = await driver.findElement(By.css('button[aria-label="Previous period"]'));

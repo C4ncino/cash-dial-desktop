@@ -27,11 +27,14 @@ type ObligationRangeBarProps = {
   symbol: string;
 };
 
-const formatMoney = (value: number, symbol: string) =>
-  `${symbol}${value.toLocaleString(undefined, {
+const formatMoney = (value: number, symbol: string) => {
+  const displayValue = Math.abs(value) < 0.005 ? 0 : value;
+
+  return `${symbol}${displayValue.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+};
 
 const ObligationMetricCard = ({ label, value, symbol, period }: MetricCardProps) => {
   const formattedValue = formatMoney(value, symbol);

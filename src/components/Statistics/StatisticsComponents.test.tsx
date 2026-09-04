@@ -292,4 +292,21 @@ describe("statistics components", () => {
     expect(screen.queryByText(/NaN|Infinity/)).not.toBeInTheDocument();
     expect(screen.queryByText("Otras obligaciones")).not.toBeInTheDocument();
   });
+
+  it("formats signed zero and sub-cent negative residues as positive zero", () => {
+    render(
+      <ObligationsList
+        obligations={{
+          totals: { next7Days: -0, next30Days: -0.004, next90Days: 0 },
+          items: [],
+        }}
+        symbol="$"
+      />,
+    );
+
+    expect(screen.getByTestId("obligation-metric-7")).toHaveTextContent("$0.00");
+    expect(screen.getByTestId("obligation-metric-30")).toHaveTextContent("$0.00");
+    expect(screen.getByTestId("obligation-metric-90")).toHaveTextContent("$0.00");
+    expect(screen.queryByText(/-0\.00/)).not.toBeInTheDocument();
+  });
 });
