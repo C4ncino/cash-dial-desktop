@@ -13,7 +13,12 @@ Tests:
 Features:
     ☐ i8n verify the state of i8n in all repo and make a strategy to add at least english and Spanish
     ☐ Display both source/original and account/card amounts for converted credit-card payments
-    ☐ Check dev an testing data for credit cards to reflect the actual due dates
-    ☐ Front end refractor
-    ☐ Align styles with whit blurry effect
-    ☐ format all code with biome
+    ☐ Update stats to have a input for the start date and end date to filter the stats and always use 00:00:00 for start date and 23:59:59 for end date
+Fix:
+    ☐ Only debit and cash for stats of balance
+    ☐ Change Balance in Credit to be debt Balance in input, convert it to available balance when sent to the backend, and display debt (creditLimit - balance) on account cards and account detail views
+    ☐ Budget form has an overflow in the view
+    ☐ Check why the next payments in stats have -0.00
+    ☐ When a transfer is created from an account with a different currency than the destination account, the single view is not showing the currency conversion correctly it shows the same amount in amount and in the original amount
+    ☐ Check how to clear the updateStore after an form is closed
+    ☐ Make every amount text in the stats page have a formatting, like the one in the other amount texts in the app, and check if other amount texts are not using the formatting
