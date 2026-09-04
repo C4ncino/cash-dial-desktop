@@ -14,6 +14,7 @@ import { useStore } from "zustand";
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
 import useTheme from "@/hooks/useTheme";
+import { formatStatMoney } from "@/lib/formatters";
 import { PERIOD_GRANULARITIES, type StatisticsPeriod } from "@/lib/statisticsQuery";
 import { statisticsStore } from "@/stores/statisticsStore";
 
@@ -109,7 +110,7 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
                   },
                   ticks: {
                     color: isDark ? colors.zinc[400] : colors.zinc[500],
-                    callback: (value) => `${symbol}${Number(value).toFixed(2)}`,
+                    callback: (value) => formatStatMoney(Number(value), symbol),
                   },
                 },
               },
@@ -119,7 +120,7 @@ const TrendsChart = ({ points: pointsProp, symbol: symbolProp }: TrendsChartProp
                 },
                 tooltip: {
                   callbacks: {
-                    label: (item) => `${symbol}${Number(item.raw).toFixed(2)}`,
+                    label: (item) => formatStatMoney(Number(item.raw), symbol),
                   },
                 },
               },

@@ -6,7 +6,9 @@ import SelectCategories from "@/components/Forms/SelectCategories";
 import { categoryStore } from "@/stores/categoryStore";
 
 vi.mock("@iconify/react", () => ({
-  Icon: ({ icon }: { icon: string }) => <span data-testid="icon" data-icon={icon} />,
+  Icon: ({ icon, className }: React.ComponentProps<"span"> & { icon: string }) => (
+    <span data-testid="icon" data-icon={icon} className={className} />
+  ),
 }));
 
 vi.mock("webcoreui/react", () => ({
@@ -51,6 +53,7 @@ const mockUseStoreState = ({ categories = mockCategories } = {}) => {
 describe("SelectCategories", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetById.mockImplementation((id: number) => mockCategories[id - 1]);
     mockUseStoreState();
   });
 
@@ -187,5 +190,26 @@ describe("SelectCategories", () => {
     rerender(<SelectCategories categoryId={3} rootCategoryId={1} onChange={mockOnChange} />);
 
     expect(screen.getByText("Seleccionar Categoría")).toBeInTheDocument();
+  });
+  it("should rotate the selected transfer category icon", () => {
+    mockGetById.mockImplementation((id: number) =>
+      id === 3
+        ? {
+            id: 3,
+            key: "transfer",
+            fatherId: null,
+            name: "Transfer",
+            icon: "data-transfer-up",
+            color: "#2563eb",
+          }
+        : mockCategories[id - 1],
+    );
+
+    render(<SelectCategories categoryId={3} />);
+
+    const transferIcon = screen
+      .getAllByTestId("icon")
+      .find((icon) => icon.getAttribute("data-icon") === "iconoir:data-transfer-up");
+    expect(transferIcon).toHaveClass("rotate-90");
   });
 });

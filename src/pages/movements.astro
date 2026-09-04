@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
+import CreateMovementMenu from "@/components/Movements/CreateMovementMenu";
 import GlobalMovements from "@/components/Movements/GlobalMovements";
 import MovementModals from "@/components/Movements/Modals.astro";
 ---
@@ -10,9 +11,10 @@ import MovementModals from "@/components/Movements/Modals.astro";
   description="Historial de todos los movimientos de cuentas"
 >
   <div class="mx-auto max-w-3xl">
-    <h1 class="mb-6 text-3xl font-bold text-zinc-950 dark:text-zinc-100">
-      Movimientos
-    </h1>
+    <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <h1 class="text-3xl font-bold text-zinc-950 dark:text-zinc-100">Movimientos</h1>
+      <CreateMovementMenu client:load />
+    </header>
     <GlobalMovements client:load />
   </div>
 

@@ -6,6 +6,7 @@ import { Pie } from "react-chartjs-2";
 import CategoryName from "@/components/General/CategoryName";
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
+import { formatStatMoney } from "@/lib/formatters";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -198,7 +199,7 @@ const CategoriesList = ({
                 plugins: {
                   tooltip: {
                     callbacks: {
-                      label: (item) => `${item.label}: ${symbol}${Number(item.raw).toFixed(2)}`,
+                      label: (item) => `${item.label}: ${formatStatMoney(Number(item.raw), symbol)}`,
                     },
                   },
                   legend: {
@@ -231,10 +232,7 @@ const CategoriesList = ({
                     {canExpand && <small className="ml-2 opacity-60">Detalles</small>}
                   </span>
                   <span className="grid grid-cols-[minmax(5.5rem,auto)_3.5rem] items-baseline gap-2 text-right tabular-nums">
-                    <strong>
-                      {symbol}
-                      {category.amount.toFixed(2)}
-                    </strong>
+                    <strong>{formatStatMoney(category.amount, symbol)}</strong>
                     <small className="opacity-70">{category.percentOfTotal.toFixed(1)}%</small>
                   </span>
                 </>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Breadcrumb } from "webcoreui/react";
 import { useStore } from "zustand";
 
+import { isTransferIcon } from "@/lib/icons";
 import { categoryStore, getCategoriesTree, isCategoryInSubtree } from "@/stores/categoryStore";
 
 import CategoryItem from "./CategoryItem";
@@ -135,7 +136,7 @@ const SelectCategories = ({ categoryId, rootCategoryId, onChange }: Props) => {
             <Icon
               icon={`iconoir:${selectedCategory.icon}`}
               style={{ color: selectedCategory.color }}
-              className="w-5 h-5"
+              className={`w-5 h-5 ${isTransferIcon(selectedCategory.icon) ? "rotate-90" : ""}`}
             />
 
             <Breadcrumb

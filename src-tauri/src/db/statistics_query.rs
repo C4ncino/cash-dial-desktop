@@ -40,8 +40,12 @@ struct BalanceMovementRow {
     timestamp: i64,
     #[diesel(sql_type = Integer)]
     source_currency_id: i32,
+    #[diesel(sql_type = Integer)]
+    source_account_type_id: i32,
     #[diesel(sql_type = Nullable<Integer>)]
     destination_currency_id: Option<i32>,
+    #[diesel(sql_type = Nullable<Integer>)]
+    destination_account_type_id: Option<i32>,
 }
 #[derive(QueryableByName)]
 struct CategoryAmountRow {
@@ -212,18 +216,29 @@ pub fn timeseries_grouped(
 }
 
 fn balance_effect_in_currency(row: &BalanceMovementRow, currency: i32) -> f64 {
+    let source_is_balance_account = matches!(
+        row.source_account_type_id,
+        crate::domain::accounts::CASH_ACCOUNT_ID | crate::domain::accounts::DEBIT_ACCOUNT_ID
+    );
+    let destination_is_balance_account = row.destination_account_type_id.is_some_and(|type_id| {
+        matches!(
+            type_id,
+            crate::domain::accounts::CASH_ACCOUNT_ID | crate::domain::accounts::DEBIT_ACCOUNT_ID
+        )
+    });
+
     match row.type_id {
-        1 if row.source_currency_id == currency => row.account_amount,
-        2 if row.source_currency_id == currency => -row.account_amount,
-        3 if row.source_currency_id == currency
-            && row.destination_currency_id == Some(currency) =>
-        {
-            0.0
-        }
+        1 if source_is_balance_account && row.source_currency_id == currency => row.account_amount,
+        2 if source_is_balance_account && row.source_currency_id == currency => -row.account_amount,
         3 => {
-            let source =
-                if row.source_currency_id == currency { -row.original_amount } else { 0.0 };
-            let destination = if row.destination_currency_id == Some(currency) {
+            let source = if source_is_balance_account && row.source_currency_id == currency {
+                -row.original_amount
+            } else {
+                0.0
+            };
+            let destination = if destination_is_balance_account
+                && row.destination_currency_id == Some(currency)
+            {
                 row.account_amount
             } else {
                 0.0
@@ -256,7 +271,7 @@ fn balance_movements_from(
     start: i64,
 ) -> StatisticsResult<Vec<BalanceMovementRow>> {
     Ok(sql_query(
-        "SELECT m.type_id, m.original_amount, m.account_amount, m.timestamp, source.currency_id AS source_currency_id, destination.currency_id AS destination_currency_id \
+        "SELECT m.type_id, m.original_amount, m.account_amount, m.timestamp, source.currency_id AS source_currency_id, source.type_id AS source_account_type_id, destination.currency_id AS destination_currency_id, destination.type_id AS destination_account_type_id \
          FROM movements m \
          JOIN accounts source ON source.id = m.account_id \
          LEFT JOIN accounts destination ON destination.id = m.to_account_id \
@@ -276,10 +291,13 @@ pub fn balance_trend(
     granularity: &str,
     origin: i64,
 ) -> StatisticsResult<Vec<BalanceTrendPoint>> {
-    let current: AmountRow =
-        sql_query("SELECT COALESCE(SUM(balance), 0) AS amount FROM accounts WHERE currency_id = ?")
-            .bind::<Integer, _>(currency)
-            .get_result(c)?;
+    let current: AmountRow = sql_query(
+        "SELECT COALESCE(SUM(balance), 0) AS amount FROM accounts WHERE currency_id = ? AND type_id IN (?, ?)",
+    )
+    .bind::<Integer, _>(currency)
+    .bind::<Integer, _>(crate::domain::accounts::CASH_ACCOUNT_ID)
+    .bind::<Integer, _>(crate::domain::accounts::DEBIT_ACCOUNT_ID)
+    .get_result(c)?;
     let movements = balance_movements_from(c, start)?;
     let future_effect =
         movements.iter().map(|row| balance_effect_in_currency(row, currency)).sum::<f64>();
@@ -630,6 +648,50 @@ mod tests {
         assert_eq!(trend[0].balance, 1300.0);
         assert_eq!(trend[1].balance, 1270.0);
         assert_eq!(trend[2].balance, 1410.0);
+    }
+
+    #[test]
+    fn balance_trend_excludes_credit_accounts_and_keeps_eligible_transfer_sides() {
+        let state = crate::tests::setup();
+        let mut c = crate::db::connect::establish_connection(&state.config.database_url);
+        sql_query("INSERT OR IGNORE INTO currencies (id,symbol,code) VALUES (4,'€','EUR')")
+            .execute(&mut c)
+            .unwrap();
+        let start =
+            Local.with_ymd_and_hms(2027, 8, 1, 0, 0, 0).single().unwrap().timestamp_millis();
+        let end = Local.with_ymd_and_hms(2027, 8, 4, 0, 0, 0).single().unwrap().timestamp_millis();
+        let day_one = start + 60 * 60 * 1000;
+        let day_two = start + 86_400_000 + 60 * 60 * 1000;
+        let day_three = start + 2 * 86_400_000 + 60 * 60 * 1000;
+        let future = end + 60 * 60 * 1000;
+
+        // Persisted balances include all movements below, including the future
+        // ones. Only the cash and debit accounts contribute to the trend.
+        sql_query("INSERT INTO accounts (id,type_id,currency_id,name,balance,is_active) VALUES (93,1,4,'Cash',95.0,1), (94,2,4,'Debit',230.0,1), (95,3,4,'Credit',1040.0,1)")
+            .execute(&mut c).unwrap();
+        sql_query("INSERT INTO accounts_credit_info (account_id,credit_limit,cutoff_day,days_to_pay) VALUES (95,2000.0,15,20)")
+            .execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (920,2,95,1,4,50.0,50.0,?,'credit expense')")
+            .bind::<BigInt, _>(day_one).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (921,1,93,1,4,20.0,20.0,?,'cash income')")
+            .bind::<BigInt, _>(day_one + 1).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,to_account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (922,3,93,95,88,4,30.0,30.0,?,'cash to credit')")
+            .bind::<BigInt, _>(day_two).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,to_account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (923,3,95,94,88,4,40.0,40.0,?,'credit to debit')")
+            .bind::<BigInt, _>(day_two + 1).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (924,2,94,1,4,10.0,10.0,?,'debit expense')")
+            .bind::<BigInt, _>(day_three).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (925,1,95,1,4,100.0,100.0,?,'future credit income')")
+            .bind::<BigInt, _>(future).execute(&mut c).unwrap();
+        sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (926,1,93,1,4,5.0,5.0,?,'future cash income')")
+            .bind::<BigInt, _>(future + 1).execute(&mut c).unwrap();
+
+        let trend = balance_trend(&mut c, start, end, 4, "day", 0).unwrap();
+
+        assert_eq!(trend.len(), 3);
+        assert_eq!(trend[0].balance, 320.0);
+        assert_eq!(trend[1].balance, 330.0);
+        assert_eq!(trend[2].balance, 320.0);
     }
 
     #[test]

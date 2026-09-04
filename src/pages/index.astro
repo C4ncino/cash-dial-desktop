@@ -15,7 +15,7 @@ logger.debug(TEST_MODE);
 
 <BaseLayout title="Home" description="">
   <div class="pb-24">
-    <header>
+    <header class="space-y-3">
       <h1 class="text-3xl font-bold">Resumen</h1>
       <p class="mt-1 text-zinc-700 dark:text-zinc-300">
         Una vista rápida de tus finanzas.
@@ -30,7 +30,5 @@ logger.debug(TEST_MODE);
   <CreateSpeedDial />
   <MovementModals />
 </BaseLayout>
-
-<style></style>
 
 {TEST_MODE && <script src="../lib/test.ts" />}

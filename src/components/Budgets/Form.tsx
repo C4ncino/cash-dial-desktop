@@ -151,7 +151,7 @@ const BudgetForm = ({ modalId }: Props) => {
   return (
     <>
       <form
-        className="mx-auto w-[calc(100vw-4rem)] max-w-lg space-y-4"
+        className="mx-auto w-full max-w-lg space-y-4"
         id="budget-form"
         onSubmit={onSubmit}
         onReset={() => {
@@ -239,7 +239,7 @@ const BudgetForm = ({ modalId }: Props) => {
         <Modal
           id={`update-budget-type-${budget.budget.id}`}
           title="Tipo de actualización"
-          className="glass-elevated w-[calc(100vw-2rem)]! max-w-lg! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-xl!"
+          className="glass-elevated w-[calc(100%-2rem)]! max-w-lg! max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain backdrop-blur-xl!"
         >
           <p className="mb-4 text-zinc-500 dark:text-zinc-400">
             Selecciona cómo deseas aplicar el nuevo límite.

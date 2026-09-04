@@ -5,6 +5,7 @@ import {
   formatInt,
   formatNumber,
   formatShortAmount,
+  formatStatMoney,
   hyphenateText,
   lang,
 } from "@/lib/formatters";
@@ -38,8 +39,17 @@ describe("formatters", () => {
       expect(formatInt(value)).toBe("—");
       expect(formatShortAmount(value)).toBe("—");
       expect(formatAmount(value, currency)).toBe("—");
+      expect(formatStatMoney(value, "$")).toBe("—");
     },
   );
+
+  it("formats stat money with symbol and handles sub-cent/signed zero residues", () => {
+    expect(formatStatMoney(1234.5, "$")).toMatch(/^\$1[,.]234[,.]50/);
+    expect(formatStatMoney(0, "$")).toMatch(/^\$0[,.]00/);
+    expect(formatStatMoney(-0, "$")).toMatch(/^\$0[,.]00/);
+    expect(formatStatMoney(-0.004, "$")).toMatch(/^\$0[,.]00/);
+    expect(formatStatMoney(50)).toMatch(/^50[,.]00/);
+  });
 
   it("formats compact amount thresholds, signs, decimals, and large values", () => {
     expect(formatShortAmount(999)).not.toMatch(/[KMB]/);

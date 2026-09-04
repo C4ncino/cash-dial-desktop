@@ -13,6 +13,10 @@ import useMovementCurrencyConversion from "@/hooks/useMovementCurrencyConversion
 import useSubmissionGuard from "@/hooks/useSubmissionGuard";
 import { createMovementFromData, validateMovement } from "@/lib/forms/movement";
 import { logger } from "@/lib/logger";
+import {
+  MOVEMENT_CREATE_REQUEST,
+  type MovementCreateRequestDetail,
+} from "@/lib/movementCreation";
 import { accountsStore } from "@/stores/accountsStore";
 import { budgetStore } from "@/stores/budgetStore";
 import { currencyStore } from "@/stores/currencyStore";
@@ -143,6 +147,24 @@ const MovementForm = ({ modalId, movementType }: Props) => {
   });
 
   useEffect(() => {
+    const handleCreateRequest = (event: Event) => {
+      const detail = (event as CustomEvent<MovementCreateRequestDetail>).detail;
+      if (modalId !== config.createModalId || detail.typeId !== movementType) return;
+
+      setSelectedAccountId(detail.accountId);
+      setSelectedToAccountId(undefined);
+      setCategoryId(undefined);
+      setSelectedPlanningId(undefined);
+      setSelectedPlanningOccurrenceId(undefined);
+      resetCurrencyConversion();
+      setErrors([]);
+    };
+
+    window.addEventListener(MOVEMENT_CREATE_REQUEST, handleCreateRequest);
+    return () => window.removeEventListener(MOVEMENT_CREATE_REQUEST, handleCreateRequest);
+  }, [config.createModalId, modalId, movementType, resetCurrencyConversion]);
+
+  useEffect(() => {
     if (!movement) return;
 
     setSelectedAccountId(movement.accountId);
@@ -201,9 +223,9 @@ const MovementForm = ({ modalId, movementType }: Props) => {
     if (!begin()) return;
 
     try {
-      const isEditing = Boolean(editState.id && editState.type === config.editType);
-      if (editState.id && editState.type === config.editType) {
-        await movementsStore.getState().update(editState.id, movementData);
+      const isEditing = Boolean(movement);
+      if (movement) {
+        await movementsStore.getState().update(movement.id, movementData);
         await budgetStore.getState().refreshAffected(movementData.categoryId);
       } else {
         const createdMovement = await movementsStore.getState().add(movementData);
@@ -220,7 +242,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
           );
         }
 
-        await budgetStore.getState().refreshAffected(movementData.categoryId, movement?.categoryId);
+        await budgetStore.getState().refreshAffected(movementData.categoryId);
       }
 
       await accountsStore
@@ -323,7 +345,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
       <SelectAccounts
         name="accountId"
         label={config.accountLabel}
-        accountId={selectedPlanning?.accountId ?? movement?.accountId}
+        accountId={selectedPlanning?.accountId ?? movement?.accountId ?? selectedAccountId}
         onChange={(id) => setSelectedAccountId(id)}
         excludeCredit={isTransfer}
       />
@@ -332,7 +354,7 @@ const MovementForm = ({ modalId, movementType }: Props) => {
         <SelectAccounts
           name="toAccountId"
           label="Cuenta Destino"
-          accountId={movement?.toAccountId}
+          accountId={movement?.toAccountId ?? selectedToAccountId}
           excludeId={selectedAccountId}
           onChange={(id) => setSelectedToAccountId(id)}
         />

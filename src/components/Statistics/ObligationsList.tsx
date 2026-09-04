@@ -6,6 +6,7 @@ import CategoryName from "@/components/General/CategoryName";
 import { StatisticsSectionSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import useDate from "@/hooks/useDate";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
+import { formatStatMoney } from "@/lib/formatters";
 
 type ObligationsListProps = {
   obligations?: StatisticsObligations;
@@ -27,14 +28,8 @@ type ObligationRangeBarProps = {
   symbol: string;
 };
 
-const formatMoney = (value: number, symbol: string) =>
-  `${symbol}${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-
 const ObligationMetricCard = ({ label, value, symbol, period }: MetricCardProps) => {
-  const formattedValue = formatMoney(value, symbol);
+  const formattedValue = formatStatMoney(value, symbol);
 
   return (
     <article data-testid={`obligation-metric-${period}`} className="glass-control rounded-md p-3">
@@ -106,7 +101,7 @@ const ObligationRangeBar = ({
             <li key={range.key} className="flex items-center gap-1.5">
               <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${range.color}`} />
               <span>
-                {range.label}: {formatMoney(range.amount, symbol)} ({percentage.toFixed(1)}%)
+                {range.label}: {formatStatMoney(range.amount, symbol)} ({percentage.toFixed(1)}%)
               </span>
             </li>
           );
@@ -206,7 +201,7 @@ const ObligationRow = ({ item, symbol }: { item: StatisticsObligation; symbol: s
       </p>
     </div>
     <strong className="shrink-0 text-right text-base">
-      <data value={item.amount}>{formatMoney(item.amount, symbol)}</data>
+      <data value={item.amount}>{formatStatMoney(item.amount, symbol)}</data>
     </strong>
   </li>
 );

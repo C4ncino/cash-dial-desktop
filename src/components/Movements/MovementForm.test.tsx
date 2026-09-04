@@ -6,6 +6,7 @@ import { useStore } from "zustand";
 import MovementForm from "@/components/Movements/MovementForm";
 import { createMovementFromData, validateMovement } from "@/lib/forms/movement";
 import { logger } from "@/lib/logger";
+import { MOVEMENT_CREATE_REQUEST } from "@/lib/movementCreation";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
 import { editStore } from "@/stores/editStore";
@@ -47,6 +48,7 @@ vi.mock("@/components/Forms/SelectAccounts", () => ({
     <fieldset>
       <label htmlFor={name}>{label}</label>
       <select
+        key={accountId}
         name={name}
         id={name}
         data-testid={`select-${name}`}
@@ -257,6 +259,57 @@ it("populates the amount when completing a planning occurrence", async () => {
   expect(screen.getByLabelText("Monto")).toHaveAttribute("value", "1200");
 });
 
+it("prefills and clears the account from matching creation requests", async () => {
+  mockUseStoreState();
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.CREATE}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
+
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.EXPENSE, accountId: 2 },
+    }),
+  );
+  await waitFor(() => expect(screen.getByTestId("select-accountId")).toHaveValue("2"));
+
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.EXPENSE },
+    }),
+  );
+  await waitFor(() => expect(screen.getByTestId("select-accountId")).toHaveValue(""));
+});
+
+it("ignores account prefill requests for another movement type or an edit form", () => {
+  mockUseStoreState({ editState: { id: 1, type: EDIT_TYPES.EXPENSE } });
+  render(
+    <MovementForm
+      modalId={MODAL_ID.MOVEMENT.EXPENSE.EDIT}
+      movementType={MOVEMENT_TYPES.EXPENSE}
+    />,
+  );
+
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.INCOME, accountId: 2 },
+    }),
+  );
+  fireEvent(
+    window,
+    new CustomEvent(MOVEMENT_CREATE_REQUEST, {
+      detail: { typeId: MOVEMENT_TYPES.EXPENSE, accountId: 2 },
+    }),
+  );
+
+  expect(screen.getByTestId("select-accountId")).toHaveValue("1");
+});
+
 it("shows backend planning compatibility errors in the form", async () => {
   vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
   vi.mocked(createMovementFromData).mockReturnValue({ planningId: 7 } as any);
@@ -398,6 +451,30 @@ describe("MovementForm", () => {
       expect(mockAdd).toHaveBeenCalledWith(createdMovement);
       await waitFor(() => expect(toast).toHaveBeenCalledWith("#income-created"));
       expect(closeModal).toHaveBeenCalledWith(`#${MODAL_ID.MOVEMENT.INCOME.CREATE}`);
+    });
+
+    it("creates from the create modal even when edit state is stale", async () => {
+      mockUseStoreState({ editState: { id: 1, type: EDIT_TYPES.INCOME } });
+      vi.mocked(validateMovement).mockReturnValue({ valid: true, errors: [] });
+      const createdMovement = {
+        accountId: 1,
+        categoryId: 1,
+        originalAmount: 50,
+        accountAmount: 50,
+      } as Movement;
+      vi.mocked(createMovementFromData).mockReturnValue(createdMovement);
+
+      render(
+        <MovementForm
+          modalId={MODAL_ID.MOVEMENT.INCOME.CREATE}
+          movementType={MOVEMENT_TYPES.INCOME}
+        />,
+      );
+      fireEvent.submit(getMovementForm("income-form"));
+
+      await waitFor(() => expect(mockAdd).toHaveBeenCalledWith(createdMovement));
+      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(toast).toHaveBeenCalledWith("#income-created");
     });
 
     it("should update income when editing", async () => {

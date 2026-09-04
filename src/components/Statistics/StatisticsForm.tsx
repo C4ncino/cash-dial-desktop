@@ -3,7 +3,14 @@ import { Icon } from "@iconify/react";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import useDate from "@/hooks/useDate";
 import { useCurrencies, useStatistics } from "@/hooks/useStores";
-import { isCurrentPeriod, periodRange, type StatisticsPeriod } from "@/lib/statisticsQuery";
+import {
+  currentPeriodStart,
+  formatPeriodInput,
+  isCurrentPeriod,
+  parsePeriodInput,
+  periodRange,
+  type StatisticsPeriod,
+} from "@/lib/statisticsQuery";
 import { statisticsStore } from "@/stores/statisticsStore";
 
 const StatisticsForm = () => {
@@ -14,6 +21,7 @@ const StatisticsForm = () => {
   const loading = useStatistics((state) => state.loading);
   const error = useStatistics((state) => state.error);
   const setPeriod = useStatistics((state) => state.setPeriod);
+  const setPeriodStart = useStatistics((state) => state.setPeriodStart);
   const previousPeriod = useStatistics((state) => state.previousPeriod);
   const nextPeriod = useStatistics((state) => state.nextPeriod);
 
@@ -21,6 +29,8 @@ const StatisticsForm = () => {
 
   const { dateObject: startObject, dateShort: startShort } = useDate(periodStartMs);
   const { dateObject: endObject, dateShort: endShort } = useDate(endMs - 1);
+  const periodInputType = period === "year" ? "number" : period;
+  const periodInputLabel = period === "week" ? "Semana" : period === "month" ? "Mes" : "Año";
 
   return (
     <section
@@ -63,7 +73,7 @@ const StatisticsForm = () => {
 
       <fieldset
         aria-label="Opciones de estadísticas"
-        className="grid grid-cols-1 gap-3 border-t border-zinc-300 pt-4 dark:border-zinc-700 sm:grid-cols-2"
+        className="grid grid-cols-1 gap-3 border-t border-zinc-300 pt-4 dark:border-zinc-700 sm:grid-cols-3"
       >
         <legend className="sr-only">Opciones de estadísticas</legend>
         <label className="flex min-w-0 flex-col gap-1" htmlFor="statisticsPeriod">
@@ -84,6 +94,23 @@ const StatisticsForm = () => {
               Año
             </option>
           </select>
+        </label>
+
+        <label className="flex min-w-0 flex-col gap-1" htmlFor="statisticsPeriodStart">
+          {periodInputLabel}
+          <input
+            id="statisticsPeriodStart"
+            type={periodInputType}
+            value={formatPeriodInput(periodStartMs, period)}
+            max={formatPeriodInput(currentPeriodStart(period), period)}
+            min={period === "year" ? 1 : undefined}
+            step={period === "year" ? 1 : undefined}
+            onChange={(event) => {
+              const startMs = parsePeriodInput(event.currentTarget.value, period);
+              if (startMs !== null) setPeriodStart(startMs);
+            }}
+            className="glass-control w-full rounded-lg px-3 py-2"
+          />
         </label>
 
         <label className="flex min-w-0 flex-col gap-1" htmlFor="currencyId">

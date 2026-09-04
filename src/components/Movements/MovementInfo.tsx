@@ -42,8 +42,8 @@ const MovementInfo = () => {
     account ? state.currencies.find((c) => c.id === account.currencyId) : undefined,
   );
 
-    const toAccountCurrency = useStore(currencyStore, (state) =>
-    account ? state.currencies.find((c) => c.id === toAccount?.currencyId) : undefined,
+  const toAccountCurrency = useStore(currencyStore, (state) =>
+    toAccount ? state.currencies.find((c) => c.id === toAccount.currencyId) : undefined,
   );
 
   if (
@@ -84,7 +84,7 @@ const MovementInfo = () => {
         toAccountId={toAccount?.id}
       />
 
-      {movementCurrency.id !== accountCurrency.id && (
+      {!toAccount && movementCurrency.id !== accountCurrency.id && (
         <CurrencyConversion
           movementCurrency={movementCurrency}
           accountCurrency={accountCurrency}
@@ -92,10 +92,10 @@ const MovementInfo = () => {
         />
       )}
 
-      {accountCurrency.id !== toAccount?.currencyId && toAccountCurrency && (
+      {toAccount && toAccountCurrency && accountCurrency.id !== toAccountCurrency.id && (
         <CurrencyConversion
-          movementCurrency={toAccountCurrency}
-          accountCurrency={accountCurrency}
+          movementCurrency={accountCurrency}
+          accountCurrency={toAccountCurrency}
           {...movement}
         />
       )}

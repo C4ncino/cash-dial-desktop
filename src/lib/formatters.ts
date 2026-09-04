@@ -58,6 +58,12 @@ export function formatShortAmount(value: number, needDecimals = false) {
   });
 }
 
+export function formatStatMoney(value: number, symbol = "") {
+  if (!Number.isFinite(value)) return INVALID_NUMBER;
+  const displayValue = Math.abs(value) < 0.005 ? 0 : value;
+  return `${symbol}${formatNumber(displayValue)}`;
+}
+
 function hyphenateSpanishWord(word: string) {
   const vowels = "aeiouáéíóúü";
   const strongVowels = "aeoáéó";

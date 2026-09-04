@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   DEFAULT_GRANULARITY,
+  formatPeriodInput,
   isCurrentPeriod,
+  parsePeriodInput,
   periodRange,
   shiftPeriod,
   startOfPeriod,
@@ -59,5 +61,24 @@ describe("statisticsQuery", () => {
 
   it("defines a supported default granularity for every period", () => {
     expect(DEFAULT_GRANULARITY).toEqual({ week: "day", month: "day", year: "month" });
+  });
+
+  it("formats and parses local month and year picker values", () => {
+    expect(formatPeriodInput(new Date(2026, 7, 1).getTime(), "month")).toBe("2026-08");
+    expect(parsePeriodInput("2026-08", "month")).toBe(new Date(2026, 7, 1).getTime());
+    expect(formatPeriodInput(new Date(2026, 0, 1).getTime(), "year")).toBe("2026");
+    expect(parsePeriodInput("2026", "year")).toBe(new Date(2026, 0, 1).getTime());
+  });
+
+  it("uses ISO week years across calendar-year boundaries", () => {
+    const monday = new Date(2025, 11, 29).getTime();
+    expect(formatPeriodInput(monday, "week")).toBe("2026-W01");
+    expect(parsePeriodInput("2026-W01", "week")).toBe(monday);
+  });
+
+  it("rejects malformed and nonexistent picker periods", () => {
+    expect(parsePeriodInput("2026-13", "month")).toBeNull();
+    expect(parsePeriodInput("2025-W53", "week")).toBeNull();
+    expect(parsePeriodInput("26", "year")).toBeNull();
   });
 });

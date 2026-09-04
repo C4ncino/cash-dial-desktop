@@ -111,6 +111,21 @@ describe("Movement E2E", () => {
     );
   }
 
+  it("opens the labeled creation menu on movement pages and prefills account context", async () => {
+    await findVisible(By.id("speed-dial-toggle"));
+    await navigateTo("/movements", By.id("create-movement-menu-button"));
+    await navigateTo("/", By.id("speed-dial-toggle"));
+    await navigateTo("/account?id=1", By.id("create-movement-menu-button"));
+
+    await clickWhenReady(By.id("create-movement-menu-button"));
+    await clickWhenReady(By.id("labeled-create-movement-2-button"));
+    await findVisible(By.id("expense-form"));
+
+    expect(
+      await driver.findElement(By.css('#expense-form select[name="accountId"]')).getAttribute("value"),
+    ).toBe("1");
+  });
+
   it("creates an income movement and verifies its rendering and details", async () => {
     // wait app UI
     await waitForHomeReady();
@@ -397,6 +412,19 @@ describe("Movement E2E", () => {
     expect(details).toMatch(/10[.,]00/);
     expect(details).toContain("USD Wallet");
     expect(details).toContain("Efectivo");
+
+    const originalAmountText = await driver
+      .findElement(By.xpath('//dt[normalize-space(.)="Monto original"]/following-sibling::dd'))
+      .getText();
+    const convertedAmountText = await driver
+      .findElement(By.xpath('//dt[normalize-space(.)="Monto convertido"]/following-sibling::dd'))
+      .getText();
+    const exchangeRateText = await driver
+      .findElement(By.xpath('//dt[normalize-space(.)="Tipo de cambio"]/following-sibling::dd'))
+      .getText();
+    expect(originalAmountText).toMatch(/10[.,]00/);
+    expect(convertedAmountText).toMatch(/180[.,]00/);
+    expect(exchangeRateText).toContain("1 USD = 18.0000 MXN");
 
     await driver.wait(
       until.elementLocated(By.xpath("//h2[contains(text(), 'Detalles del movimiento')]")),

@@ -22,7 +22,9 @@ export function validateAccountForm(data: AccountFormData) {
     )
       errors.push("El límite de crédito es requerido");
     if (Number(data.creditLimit) <= 0) errors.push("El límite de crédito debe ser mayor a 0");
-    if (Number(data.balance) < 0) errors.push("El saldo usado debe ser mayor o igual a 0");
+    if (Number(data.balance) < 0) errors.push("La deuda debe ser mayor o igual a 0");
+    if (Number(data.balance) > Number(data.creditLimit))
+      errors.push("La deuda no puede superar el límite de crédito");
     if (
       typeof data.cutoffDay !== "string" ||
       data.cutoffDay.trim() === "" ||
@@ -44,20 +46,22 @@ export function validateAccountForm(data: AccountFormData) {
 }
 
 export function createAccountFromData(data: AccountFormData, type: AccountType): Account {
+  const isCredit = type.id === ACCOUNT_TYPES.CREDIT;
+  const creditLimit = Number(data.creditLimit);
+
   return {
     id: 0,
     name: String(data.name),
-    balance: Number(data.balance),
+    balance: isCredit ? creditLimit - Number(data.balance) : Number(data.balance),
     type,
     currencyId: Number(data.currency),
-    creditInfo:
-      data.type === String(ACCOUNT_TYPES.CREDIT)
-        ? {
-            creditLimit: Number(data.creditLimit),
-            cutoffDay: Number(data.cutoffDay),
-            daysToPay: Number(data.daysToPay),
-          }
-        : undefined,
+    creditInfo: isCredit
+      ? {
+          creditLimit,
+          cutoffDay: Number(data.cutoffDay),
+          daysToPay: Number(data.daysToPay),
+        }
+      : undefined,
     isActive: true,
   };
 }

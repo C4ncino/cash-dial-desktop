@@ -1,0 +1,150 @@
+import { Icon } from "@iconify/react";
+import { useEffect, useRef, useState } from "react";
+import { useStore } from "zustand";
+
+import ActionButton from "@/components/General/ActionButton";
+import { isTransferIcon } from "@/lib/icons";
+import { requestMovementCreation } from "@/lib/movementCreation";
+import { accountsStore } from "@/stores/accountsStore";
+import { ACCOUNT_TYPES, MOVEMENT_TYPES } from "@/types/enums";
+
+interface Props {
+  accountContext?: boolean;
+  fullWidth?: boolean;
+}
+
+const ACTIONS = [
+  {
+    typeId: MOVEMENT_TYPES.INCOME,
+    label: "Añadir ingreso",
+    icon: "iconoir:receive-dollars",
+    color:
+      "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-zinc-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-zinc-950",
+  },
+  {
+    typeId: MOVEMENT_TYPES.EXPENSE,
+    label: "Añadir gasto",
+    icon: "iconoir:send-dollars",
+    color:
+      "border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-zinc-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-400 dark:hover:text-zinc-950",
+  },
+  {
+    typeId: MOVEMENT_TYPES.TRANSFER,
+    label: "Añadir transferencia",
+    icon: "iconoir:data-transfer-up",
+    color:
+      "border-lime-600 text-lime-600 hover:bg-lime-600 hover:text-zinc-50 dark:border-lime-400 dark:text-lime-400 dark:hover:bg-lime-400 dark:hover:text-zinc-950",
+  },
+];
+
+export default function CreateMovementMenu({ accountContext = false, fullWidth = false }: Props) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const accounts = useStore(accountsStore, (state) => state.accounts);
+
+  const accountId =
+    accountContext && typeof window !== "undefined"
+      ? Number(new URLSearchParams(window.location.search).get("id"))
+      : undefined;
+
+  const account = accountContext ? accounts.find((item) => item.id === accountId) : undefined;
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeFromOutside = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeFromKeyboard = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      rootRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    };
+
+    document.addEventListener("click", closeFromOutside);
+    document.addEventListener("keydown", closeFromKeyboard);
+    return () => {
+      document.removeEventListener("click", closeFromOutside);
+      document.removeEventListener("keydown", closeFromKeyboard);
+    };
+  }, [open]);
+
+  if (accountContext && !account) return null;
+
+  const disabledReason = (typeId: number) => {
+    if (!accountContext) return undefined;
+    if (!account) return "La cuenta no está disponible";
+    if (!account.isActive) return "Activa la cuenta para registrar movimientos";
+    if (typeId === MOVEMENT_TYPES.TRANSFER) {
+      if (account.type.id === ACCOUNT_TYPES.CREDIT) {
+        return "Las tarjetas de crédito no pueden ser cuenta origen de una transferencia";
+      }
+      if (!accounts.some((candidate) => candidate.isActive && candidate.id !== account.id)) {
+        return "Se necesita otra cuenta activa para crear una transferencia";
+      }
+    }
+    return undefined;
+  };
+
+  return (
+    <div className={`relative ${fullWidth ? "w-full" : "w-auto"}`} ref={rootRef}>
+      <ActionButton
+        id="create-movement-menu-button"
+        tone="primary"
+        fullWidth={fullWidth}
+        aria-haspopup="menu"
+        aria-controls="create-movement-menu"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <Icon icon="iconoir:plus" className="size-5" aria-hidden="true" />
+        Añadir
+        <Icon
+          icon="iconoir:nav-arrow-down"
+          className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </ActionButton>
+
+      {open && (
+        <ul
+          id="create-movement-menu"
+          aria-label="Crear movimiento"
+          className="glass-elevated absolute right-0 z-100 mt-2 flex min-w-56 flex-col gap-2 rounded-xl p-2 shadow-xl"
+        >
+          {ACTIONS.map((action) => {
+            const reason = disabledReason(action.typeId);
+
+            return (
+              <li key={action.typeId}>
+                <ActionButton
+                  id={`labeled-create-movement-${action.typeId}-button`}
+                  role="menuitem"
+                  fullWidth
+                  className={action.color}
+                  disabled={Boolean(reason)}
+                  title={reason}
+                  onClick={() => {
+                    requestMovementCreation({
+                      typeId: action.typeId,
+                      accountId: accountContext ? account?.id : undefined,
+                    });
+                    setOpen(false);
+                  }}
+                >
+                  <Icon
+                    icon={action.icon}
+                    className={`size-5 ${isTransferIcon(action.icon) ? "rotate-90" : ""}`}
+                    aria-hidden="true"
+                  />
+                  {action.label}
+                </ActionButton>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}

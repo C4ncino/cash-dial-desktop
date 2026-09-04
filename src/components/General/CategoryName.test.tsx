@@ -6,8 +6,8 @@ import CategoryName from "@/components/General/CategoryName";
 import { categoryStore } from "@/stores/categoryStore";
 
 vi.mock("@iconify/react", () => ({
-  Icon: ({ icon, style }: { icon: string; style?: React.CSSProperties }) => (
-    <span data-testid="category-icon" data-icon={icon} style={style} />
+  Icon: ({ icon, style, className }: React.ComponentProps<"span"> & { icon: string }) => (
+    <span data-testid="category-icon" data-icon={icon} style={style} className={className} />
   ),
 }));
 
@@ -58,5 +58,24 @@ describe("CategoryName", () => {
     render(<CategoryName id={-1} fallbackName="General" />);
 
     expect(screen.getByText("General")).toBeInTheDocument();
+  });
+
+  it("rotates the transfer category icon", () => {
+    vi.mocked(useStore).mockImplementation((store: any, selector: any) =>
+      store === categoryStore
+        ? selector({
+            getById: () => ({
+              id: 3,
+              name: "Transfer",
+              icon: "data-transfer-up",
+              color: "blue",
+            }),
+          })
+        : undefined,
+    );
+
+    render(<CategoryName id={3} />);
+
+    expect(screen.getByTestId("category-icon")).toHaveClass("rotate-90");
   });
 });

@@ -19,6 +19,7 @@ const stores = vi.hoisted(() => ({
       stores.statisticsState.period = period;
       stores.statisticsState.granularity = period === "year" ? "month" : "day";
     }),
+    setPeriodStart: vi.fn(),
     previousPeriod: vi.fn(),
     nextPeriod: vi.fn(),
     setGranularity: vi.fn(),
@@ -47,6 +48,12 @@ describe("StatisticsForm", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 7, 13));
+    stores.statisticsState.period = "month";
+    stores.statisticsState.periodStartMs = new Date(2026, 7, 1).getTime();
+    stores.statisticsState.periodEndMs = new Date(2026, 8, 1).getTime();
+    stores.statisticsState.granularity = "day";
+    stores.statisticsState.setPeriod.mockClear();
+    stores.statisticsState.setPeriodStart.mockClear();
     stores.statisticsState.fetchStatistics.mockClear();
   });
 
@@ -60,6 +67,30 @@ describe("StatisticsForm", () => {
     expect(screen.getByRole("combobox", { name: "Periodo" })).toHaveValue("month");
     expect(document.querySelector('time[datetime^="2026-08-01"]')).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next period" })).toBeDisabled();
+    expect(screen.getByLabelText("Mes")).toHaveAttribute("type", "month");
+    expect(screen.getByLabelText("Mes")).toHaveValue("2026-08");
+  });
+
+  it("selects a period directly with the picker for each period type", () => {
+    const { rerender } = render(<StatisticsForm />);
+    fireEvent.change(screen.getByLabelText("Mes"), { target: { value: "2025-03" } });
+    expect(stores.statisticsState.setPeriodStart).toHaveBeenCalledWith(
+      new Date(2025, 2, 1).getTime(),
+    );
+
+    stores.statisticsState.period = "week";
+    stores.statisticsState.periodStartMs = new Date(2025, 11, 29).getTime();
+    rerender(<StatisticsForm />);
+    const week = screen.getByLabelText("Semana");
+    expect(week).toHaveAttribute("type", "week");
+    expect(week).toHaveValue("2026-W01");
+
+    stores.statisticsState.period = "year";
+    stores.statisticsState.periodStartMs = new Date(2025, 0, 1).getTime();
+    rerender(<StatisticsForm />);
+    const year = screen.getByRole("spinbutton", { name: "Año" });
+    expect(year).toHaveValue(2025);
+    expect(year).toHaveAttribute("max", "2026");
   });
 
   it("changes period ranges and restricts chart granularity", () => {

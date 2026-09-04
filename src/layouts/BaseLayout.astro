@@ -45,6 +45,7 @@ const props = Astro.props;
 
 <script>
   import { initStores } from "@/lib/init";
+  import { editStore } from "@/stores/editStore";
   import { bodyFreeze } from "webcoreui";
 
   initStores();
@@ -63,5 +64,6 @@ const props = Astro.props;
 
   window.addEventListener("astro:before-swap", () => {
     window.removeEventListener("modal:open", handleClose as EventListener);
+    editStore.getState().clear();
   });
 </script>

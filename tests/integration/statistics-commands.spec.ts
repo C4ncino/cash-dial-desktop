@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 type StatisticsObligationResponse = {
   overview: { income: number; expenses: number; netCashFlow: number; savingsRate: number | null };
   timeseries: Array<{ bucketStartMs: number; income: number; expense: number; net: number }>;
+  balanceTrend: Array<{ bucketStartMs: number; balance: number }>;
   obligations: {
     totals: {
       next7Days: number;
@@ -101,6 +102,7 @@ describe("Statistics commands", () => {
       expect(result.timeseries.map((point) => point.bucketStartMs)).toEqual(
         [...result.timeseries.map((point) => point.bucketStartMs)].sort((a, b) => a - b),
       );
+      expect(result.balanceTrend.at(-1)?.balance).toBe(1700);
       expect(result.obligations).toEqual({
         totals: { next7Days: 0, next30Days: 0, next90Days: 0 },
         items: [],

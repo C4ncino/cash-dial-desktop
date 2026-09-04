@@ -2,6 +2,7 @@ import { createStore } from "zustand/vanilla";
 
 import { logger } from "@/lib/logger";
 import {
+  currentPeriodStart,
   DEFAULT_GRANULARITY,
   isCurrentPeriod,
   PERIOD_GRANULARITIES,
@@ -50,6 +51,23 @@ export const statisticsStore = createStore<StatisticsStore & StatisticsActions>(
       periodStartMs,
       periodEndMs: range.endMs,
       granularity: DEFAULT_GRANULARITY[period],
+      response: null,
+      error: null,
+    });
+    void get().fetchStatistics();
+  },
+
+  setPeriodStart: (requestedStartMs) => {
+    if (!Number.isFinite(requestedStartMs)) return;
+    const { period } = get();
+    const periodStartMs = Math.min(
+      startOfPeriod(new Date(requestedStartMs), period),
+      currentPeriodStart(period),
+    );
+    const range = periodRange(periodStartMs, period);
+    set({
+      periodStartMs,
+      periodEndMs: range.endMs,
       response: null,
       error: null,
     });

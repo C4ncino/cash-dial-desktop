@@ -6,25 +6,31 @@ import DetailLayout from "@/layouts/DetailLayout.astro";
 import AccountModals from "@/components/Accounts/Modals.astro";
 import ActionButton from "@/components/General/ActionButton.astro";
 import DetailShell from "@/components/General/DetailShell.astro";
+import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
+import CreateMovementMenu from "@/components/Movements/CreateMovementMenu";
+import MovementModals from "@/components/Movements/Modals.astro";
 ---
 
 <DetailLayout title="Detalles de Cuenta" description="">
   <DetailShell>
     <AccountInfo client:load />
     <AccountMovements client:load />
+
     <menu slot="actions" class="flex flex-wrap gap-2 sm:flex-col">
       <li>
-        <ActionButton
-          id="edit-account-button"
-          fullWidth
-        >Editar</ActionButton>
+        <ActionButton id="edit-account-button" fullWidth>Editar</ActionButton>
       </li>
       <ActionButtons client:load />
+      <li>
+        <CreateMovementMenu client:load accountContext fullWidth />
+      </li>
     </menu>
   </DetailShell>
 </DetailLayout>
 
+<CreateSpeedDial />
 <AccountModals />
+<MovementModals />
 
 <script>
   import { EDIT_TYPES } from "@/types/enums";

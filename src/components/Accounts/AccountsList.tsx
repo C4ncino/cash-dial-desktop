@@ -41,7 +41,7 @@ export default function AccountsList() {
     );
   return (
     <div className="space-y-4">
-      <search className="grid gap-3 sm:grid-cols-3">
+      <form className="grid gap-3 sm:grid-cols-3">
         <legend className="sr-only">Filtros de cuentas</legend>
         <div className="space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
           <label htmlFor="account-search">Buscar por nombre</label>
@@ -83,7 +83,7 @@ export default function AccountsList() {
             <option value="inactive">Inactivas</option>
           </select>
         </div>
-      </search>
+      </form>
 
       {pageAccounts.length ? (
         <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4">

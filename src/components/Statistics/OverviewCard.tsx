@@ -1,12 +1,11 @@
 import { OverviewSkeleton } from "@/components/Statistics/StatisticsSkeleton";
 import { useStatisticsSection } from "@/hooks/useStatisticsSection";
+import { formatStatMoney } from "@/lib/formatters";
 
 type OverviewCardProps = {
   overview?: StatisticsOverview;
   symbol?: string;
 };
-
-const money = (value: number, symbol = "") => `${symbol}${value.toFixed(2)}`;
 
 const OverviewCard = ({ overview: overviewProp, symbol: symbolProp }: OverviewCardProps = {}) => {
   const { response, loading, symbol: storeSymbol } = useStatisticsSection();
@@ -21,19 +20,19 @@ const OverviewCard = ({ overview: overviewProp, symbol: symbolProp }: OverviewCa
         <div className="glass-surface rounded-xl p-4 sm:p-5">
           <dt className="text-sm opacity-70">Ingresos</dt>
           <dd className="mt-1 break-words text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 lg:text-2xl">
-            <data value={overview.income}>{money(overview.income, symbol)}</data>
+            <data value={overview.income}>{formatStatMoney(overview.income, symbol)}</data>
           </dd>
         </div>
         <div className="glass-surface rounded-xl p-4 sm:p-5">
           <dt className="text-sm opacity-70">Gastos</dt>
           <dd className="mt-1 break-words text-xl font-semibold tabular-nums text-red-600 dark:text-red-400 lg:text-2xl">
-            <data value={overview.expenses}>{money(overview.expenses, symbol)}</data>
+            <data value={overview.expenses}>{formatStatMoney(overview.expenses, symbol)}</data>
           </dd>
         </div>
         <div className="glass-surface rounded-xl p-4 sm:p-5">
           <dt className="text-sm opacity-70">Flujo de efectivo neto</dt>
           <dd className="mt-1 break-words text-xl font-semibold tabular-nums lg:text-2xl">
-            <data value={overview.netCashFlow}>{money(overview.netCashFlow, symbol)}</data>
+            <data value={overview.netCashFlow}>{formatStatMoney(overview.netCashFlow, symbol)}</data>
           </dd>
         </div>
         <div className="glass-surface rounded-xl p-4 sm:p-5">
