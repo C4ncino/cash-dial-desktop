@@ -40,10 +40,14 @@ const ACTIONS = [
 export default function CreateMovementMenu({ accountContext = false, fullWidth = false }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
   const accounts = useStore(accountsStore, (state) => state.accounts);
-  const accountId = accountContext && typeof window !== "undefined"
-    ? Number(new URLSearchParams(window.location.search).get("id"))
-    : undefined;
+
+  const accountId =
+    accountContext && typeof window !== "undefined"
+      ? Number(new URLSearchParams(window.location.search).get("id"))
+      : undefined;
+
   const account = accountContext ? accounts.find((item) => item.id === accountId) : undefined;
 
   useEffect(() => {
@@ -65,6 +69,8 @@ export default function CreateMovementMenu({ accountContext = false, fullWidth =
       document.removeEventListener("keydown", closeFromKeyboard);
     };
   }, [open]);
+
+  if (accountContext && !account) return null;
 
   const disabledReason = (typeId: number) => {
     if (!accountContext) return undefined;
@@ -93,7 +99,7 @@ export default function CreateMovementMenu({ accountContext = false, fullWidth =
         onClick={() => setOpen((current) => !current)}
       >
         <Icon icon="iconoir:plus" className="size-5" aria-hidden="true" />
-        Añadir movimiento
+        Añadir
         <Icon
           icon="iconoir:nav-arrow-down"
           className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
@@ -102,41 +108,42 @@ export default function CreateMovementMenu({ accountContext = false, fullWidth =
       </ActionButton>
 
       {open && (
-        <div
+        <ul
           id="create-movement-menu"
-          role="menu"
           aria-label="Crear movimiento"
-          className="glass-elevated absolute right-0 z-30 mt-2 flex min-w-56 flex-col gap-2 rounded-xl p-2 shadow-xl"
+          className="glass-elevated absolute right-0 z-100 mt-2 flex min-w-56 flex-col gap-2 rounded-xl p-2 shadow-xl"
         >
           {ACTIONS.map((action) => {
             const reason = disabledReason(action.typeId);
+
             return (
-              <ActionButton
-                key={action.typeId}
-                id={`labeled-create-movement-${action.typeId}-button`}
-                role="menuitem"
-                fullWidth
-                className={action.color}
-                disabled={Boolean(reason)}
-                title={reason}
-                onClick={() => {
-                  requestMovementCreation({
-                    typeId: action.typeId,
-                    accountId: accountContext ? account?.id : undefined,
-                  });
-                  setOpen(false);
-                }}
-              >
-                <Icon
-                  icon={action.icon}
-                  className={`size-5 ${isTransferIcon(action.icon) ? "rotate-90" : ""}`}
-                  aria-hidden="true"
-                />
-                {action.label}
-              </ActionButton>
+              <li key={action.typeId}>
+                <ActionButton
+                  id={`labeled-create-movement-${action.typeId}-button`}
+                  role="menuitem"
+                  fullWidth
+                  className={action.color}
+                  disabled={Boolean(reason)}
+                  title={reason}
+                  onClick={() => {
+                    requestMovementCreation({
+                      typeId: action.typeId,
+                      accountId: accountContext ? account?.id : undefined,
+                    });
+                    setOpen(false);
+                  }}
+                >
+                  <Icon
+                    icon={action.icon}
+                    className={`size-5 ${isTransferIcon(action.icon) ? "rotate-90" : ""}`}
+                    aria-hidden="true"
+                  />
+                  {action.label}
+                </ActionButton>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );

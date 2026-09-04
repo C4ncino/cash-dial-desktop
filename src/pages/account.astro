@@ -15,17 +15,15 @@ import MovementModals from "@/components/Movements/Modals.astro";
   <DetailShell>
     <AccountInfo client:load />
     <AccountMovements client:load />
+
     <menu slot="actions" class="flex flex-wrap gap-2 sm:flex-col">
+      <li>
+        <ActionButton id="edit-account-button" fullWidth>Editar</ActionButton>
+      </li>
+      <ActionButtons client:load />
       <li>
         <CreateMovementMenu client:load accountContext fullWidth />
       </li>
-      <li>
-        <ActionButton
-          id="edit-account-button"
-          fullWidth
-        >Editar</ActionButton>
-      </li>
-      <ActionButtons client:load />
     </menu>
   </DetailShell>
 </DetailLayout>

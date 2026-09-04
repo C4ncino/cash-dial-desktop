@@ -41,7 +41,7 @@ describe("CreateMovementMenu", () => {
     window.addEventListener(MOVEMENT_CREATE_REQUEST, listener);
     render(<CreateMovementMenu />);
 
-    const trigger = screen.getByRole("button", { name: "Añadir movimiento" });
+    const trigger = screen.getByRole("button", { name: "Añadir" });
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     fireEvent.click(screen.getByRole("menuitem", { name: "Añadir gasto" }));
@@ -56,7 +56,7 @@ describe("CreateMovementMenu", () => {
 
   it("uses the movement type colors for outlined actions", () => {
     render(<CreateMovementMenu />);
-    fireEvent.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Añadir" }));
 
     expect(screen.getByRole("menuitem", { name: "Añadir ingreso" })).toHaveClass(
       "border-blue-600",
@@ -75,7 +75,7 @@ describe("CreateMovementMenu", () => {
 
   it("closes on Escape and restores focus to the trigger", () => {
     render(<CreateMovementMenu />);
-    const trigger = screen.getByRole("button", { name: "Añadir movimiento" });
+    const trigger = screen.getByRole("button", { name: "Añadir" });
     fireEvent.click(trigger);
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
@@ -86,7 +86,7 @@ describe("CreateMovementMenu", () => {
     window.history.replaceState({}, "", "/account?id=1");
     useAccounts([{ ...cashAccount, isActive: false }, otherAccount]);
     render(<CreateMovementMenu accountContext />);
-    fireEvent.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Añadir" }));
     expect(screen.getAllByRole("menuitem")).toHaveLength(3);
     for (const action of screen.getAllByRole("menuitem")) expect(action).toBeDisabled();
   });
@@ -103,7 +103,7 @@ describe("CreateMovementMenu", () => {
     const listener = vi.fn();
     window.addEventListener(MOVEMENT_CREATE_REQUEST, listener);
     render(<CreateMovementMenu accountContext />);
-    fireEvent.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Añadir" }));
 
     expect(screen.getByRole("menuitem", { name: "Añadir transferencia" })).toBeDisabled();
     fireEvent.click(screen.getByRole("menuitem", { name: "Añadir ingreso" }));
@@ -117,7 +117,7 @@ describe("CreateMovementMenu", () => {
     window.history.replaceState({}, "", "/account?id=1");
     useAccounts([cashAccount, { ...otherAccount, isActive: false }]);
     render(<CreateMovementMenu accountContext />);
-    fireEvent.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Añadir" }));
     expect(screen.getByRole("menuitem", { name: "Añadir transferencia" })).toBeDisabled();
   });
 });

@@ -50,6 +50,10 @@ describe("ActionButtons", () => {
   );
 
   it("should call accountsStore.remove when delete is confirmed", async () => {
+    vi.mocked(useStore).mockImplementation((_store: any, selector: any) =>
+      selector({ accounts: [{ id: mockAccountId }] }),
+    );
+
     const removeSpy = vi.spyOn(accountsStore.getState(), "remove").mockResolvedValue(undefined);
 
     window.history.back = vi.fn();
@@ -64,6 +68,10 @@ describe("ActionButtons", () => {
   });
 
   it("should navigate back after account deletion", async () => {
+    vi.mocked(useStore).mockImplementation((_store: any, selector: any) =>
+      selector({ accounts: [{ id: mockAccountId }] }),
+    );
+
     const backSpy = vi.spyOn(window.history, "back");
 
     vi.spyOn(accountsStore.getState(), "remove").mockResolvedValue(undefined);

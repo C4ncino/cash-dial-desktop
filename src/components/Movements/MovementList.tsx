@@ -37,7 +37,7 @@ const MovementList = ({ movementIds, needCompact }: Props) => {
     <section className={needCompact ? "space-y-1" : "space-y-6"}>
       {groups.map((group) => (
         <div key={group.dayTimestamp} className="space-y-2">
-          <h3 className="sticky top-16 z-10 rounded-lg py-1 text-sm font-semibold text-zinc-500 backdrop-blur-md dark:text-zinc-300 md:top-0">
+          <h3 className="sticky top-16 rounded-lg py-1 text-sm font-semibold text-zinc-500 backdrop-blur-md dark:text-zinc-300 md:top-0">
             {formatDateHeader(group.dayTimestamp)}
           </h3>
           <ul className="flex flex-col gap-2 rounded-md overflow-hidden p-1">

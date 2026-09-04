@@ -10,10 +10,12 @@ const ActionButtons = () => {
     typeof window !== "undefined"
       ? Number(new URLSearchParams(window.location.search).get("id"))
       : null;
-  const account = useStore(accountsStore, (state) => state.accounts.find((item) => item.id === id));
-  if (id === null) return null;
 
-  const isActive = account?.isActive ?? true;
+  const account = useStore(accountsStore, (state) => state.accounts.find((item) => item.id === id));
+
+  if (!account || id === null) return null;
+
+  const isActive = account.isActive ?? true;
 
   return (
     <>
