@@ -8,11 +8,11 @@ This document maps every executable test currently collected by Vitest and Cargo
 
 | Layer                         | Command                                          |   Cases | Main responsibility                                                       |
 | ----------------------------- | ------------------------------------------------ | ------: | ------------------------------------------------------------------------- |
-| Frontend unit/component/store | `pnpm test`                                      |     383 | UI behavior, form state, store indexes/caches, frontend helpers           |
+| Frontend unit/component/store | `pnpm test`                                      |     384 | UI behavior, form state, store indexes/caches, frontend helpers           |
 | Tauri command integration     | `pnpm test:integration`                          |      60 | Command serialization, persistence, representative failures               |
 | E2E                           | `pnpm test:e2e`                                  |      19 | Critical full-stack user journeys                                         |
 | Rust unit/database            | `cd src-tauri && cargo test -- --test-threads=1` |     162 | Validation, calculations, transactions, balances, recurrence, persistence |
-| **Total**                     |                                                  | **624** |                                                                           |
+| **Total**                     |                                                  | **625** |                                                                           |
 
 `vitest list` and `cargo test -- --list` were used for the inventory. A listed test is not necessarily a passing test; use the commands above for the current result.
 
@@ -20,7 +20,7 @@ This document maps every executable test currently collected by Vitest and Cargo
 
 Last full local verification on 2026-09-04:
 
-- Frontend: 59 files and 383 tests passed.
+- Frontend: 59 files and 384 tests passed.
 - Rust: 162 tests passed.
 - Tauri integration: 7 files and 60 tests passed.
 - E2E: 6 files and 19 independent tests passed without fixed sleeps or shared scenario databases.
@@ -28,7 +28,7 @@ Last full local verification on 2026-09-04:
 - Static analysis: `pnpm check` passed with 0 errors, 0 warnings, and 0 hints.
 - Biome lint completed successfully with 208 non-blocking warnings; the release helper's 9 tests passed.
 
-## Frontend unit, component, hook, and store tests (383)
+## Frontend unit, component, hook, and store tests (384)
 
 Each entry below maps all cases collected from that file. Numbers in parentheses are executable case counts.
 
@@ -56,7 +56,7 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 ### Movements
 
 - `src/components/Movements/ActionButtons.test.tsx` (7): no movement renders nothing; correct edit modal for income, expense, and transfer; deletion for income, expense, and transfer.
-- `src/components/Movements/CreateMovementMenu.test.tsx` (5): labeled action expansion and request dispatch; Escape focus restoration; inactive-account disabling; credit-card transfer disabling with valid prefill; transfer disabling without another active account.
+- `src/components/Movements/CreateMovementMenu.test.tsx` (6): labeled action expansion and request dispatch; movement-type outline/text colors; Escape focus restoration; inactive-account disabling; credit-card transfer disabling with valid prefill; transfer disabling without another active account.
 - `src/components/Movements/MovementCard.test.tsx` (3): category/account; detail link; transfer destination account.
 - `src/components/Movements/MovementForm.test.tsx` (27): planning context/failures; contextual account prefill and clearing; create requests ignored by unrelated/edit forms; stale edit-state isolation; currency conversion; income/expense/transfer create/edit; installments; balance refresh; duplicate-submit retry; unmount safety.
 - `src/components/Movements/MovementInfo.test.tsx` (9): missing movement; base rendering; expense properties; income properties; transfer properties/accounts; optional description; source/destination-aware conversion details; installment section present/absent.

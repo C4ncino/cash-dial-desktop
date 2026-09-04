@@ -48,6 +48,24 @@ describe("CreateMovementMenu", () => {
     window.removeEventListener(MOVEMENT_CREATE_REQUEST, listener);
   });
 
+  it("uses the movement type colors for outlined actions", () => {
+    render(<CreateMovementMenu />);
+    fireEvent.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+
+    expect(screen.getByRole("menuitem", { name: "Añadir ingreso" })).toHaveClass(
+      "border-blue-600",
+      "text-blue-600",
+    );
+    expect(screen.getByRole("menuitem", { name: "Añadir gasto" })).toHaveClass(
+      "border-amber-600",
+      "text-amber-600",
+    );
+    expect(screen.getByRole("menuitem", { name: "Añadir transferencia" })).toHaveClass(
+      "border-lime-600",
+      "text-lime-600",
+    );
+  });
+
   it("closes on Escape and restores focus to the trigger", () => {
     render(<CreateMovementMenu />);
     const trigger = screen.getByRole("button", { name: "Añadir movimiento" });

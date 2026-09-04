@@ -13,12 +13,26 @@ interface Props {
 }
 
 const ACTIONS = [
-  { typeId: MOVEMENT_TYPES.INCOME, label: "Añadir ingreso", icon: "iconoir:receive-dollars" },
-  { typeId: MOVEMENT_TYPES.EXPENSE, label: "Añadir gasto", icon: "iconoir:send-dollars" },
+  {
+    typeId: MOVEMENT_TYPES.INCOME,
+    label: "Añadir ingreso",
+    icon: "iconoir:receive-dollars",
+    color:
+      "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-zinc-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-400 dark:hover:text-zinc-950",
+  },
+  {
+    typeId: MOVEMENT_TYPES.EXPENSE,
+    label: "Añadir gasto",
+    icon: "iconoir:send-dollars",
+    color:
+      "border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-zinc-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-400 dark:hover:text-zinc-950",
+  },
   {
     typeId: MOVEMENT_TYPES.TRANSFER,
     label: "Añadir transferencia",
     icon: "iconoir:data-transfer-up",
+    color:
+      "border-lime-600 text-lime-600 hover:bg-lime-600 hover:text-zinc-50 dark:border-lime-400 dark:text-lime-400 dark:hover:bg-lime-400 dark:hover:text-zinc-950",
   },
 ];
 
@@ -101,6 +115,7 @@ export default function CreateMovementMenu({ accountContext = false, fullWidth =
                 id={`labeled-create-movement-${action.typeId}-button`}
                 role="menuitem"
                 fullWidth
+                className={action.color}
                 disabled={Boolean(reason)}
                 title={reason}
                 onClick={() => {
