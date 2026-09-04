@@ -111,10 +111,10 @@ describe("Movement E2E", () => {
     );
   }
 
-  it("opens the labeled creation menu on every dial page and prefills account context", async () => {
-    await findVisible(By.id("create-movement-menu-button"));
+  it("opens the labeled creation menu on movement pages and prefills account context", async () => {
+    await findVisible(By.id("speed-dial-toggle"));
     await navigateTo("/movements", By.id("create-movement-menu-button"));
-    await navigateTo("/", By.id("create-movement-menu-button"));
+    await navigateTo("/", By.id("speed-dial-toggle"));
     await navigateTo("/account?id=1", By.id("create-movement-menu-button"));
 
     await clickWhenReady(By.id("create-movement-menu-button"));

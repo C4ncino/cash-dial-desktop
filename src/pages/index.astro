@@ -1,7 +1,6 @@
 ---
 import Accounts from "@/components/Accounts/Accounts.astro";
 import CreateSpeedDial from "@/components/Movements/CreateSpeedDial.astro";
-import CreateMovementMenu from "@/components/Movements/CreateMovementMenu";
 import MovementModals from "@/components/Movements/Modals.astro";
 import MovementsLanding from "@/components/Movements/MovementsLanding";
 import UrgentOccurrences from "@/components/Plannings/UrgentOccurrences";
@@ -16,14 +15,11 @@ logger.debug(TEST_MODE);
 
 <BaseLayout title="Home" description="">
   <div class="pb-24">
-    <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h1 class="text-3xl font-bold">Resumen</h1>
-        <p class="mt-1 text-zinc-700 dark:text-zinc-300">
-          Una vista rápida de tus finanzas.
-        </p>
-      </div>
-      <CreateMovementMenu client:load />
+    <header class="space-y-3">
+      <h1 class="text-3xl font-bold">Resumen</h1>
+      <p class="mt-1 text-zinc-700 dark:text-zinc-300">
+        Una vista rápida de tus finanzas.
+      </p>
     </header>
     <Accounts />
     <MovementsLanding client:load />

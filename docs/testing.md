@@ -127,7 +127,7 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 
 - `tests/e2e/account-creation.spec.ts` (2): create a cash account; create a new account after navigating away from a stale edit form.
 - `tests/e2e/budget-creation.spec.ts` (1): create a monthly budget and verify the joined amount/currency control at mobile and desktop widths in light and dark themes.
-- `tests/e2e/movement-creation.spec.ts` (5): labeled movement menus on Home, Movements, and Account details with account prefill; create/render/open income, expense, transfer, and cross-currency transfer with distinct charged/received amounts.
+- `tests/e2e/movement-creation.spec.ts` (5): Home speed-dial availability; labeled movement menus on Movements and Account details with account prefill; create/render/open income, expense, transfer, and cross-currency transfer with distinct charged/received amounts.
 - `tests/e2e/planning-flow.spec.ts` (1): create planning, link compatible movement, reload, cancel next occurrence.
 - `tests/e2e/statistics-flow.spec.ts` (1): load the dashboard, switch period type, jump directly to a historical year, navigate with arrows, and reject invalid numeric output including negative zero.
 - `tests/e2e/financial-lifecycle.spec.ts` (9): account edit reload; credit-card creation from debt input with persisted available balance and debt presentation; income create/update/delete with balance restoration; installment purchase persistence; atomic split card payment; child-category budget lifecycle; statistics mutation refresh; future budget scheduling; planning deactivate/reactivate.
