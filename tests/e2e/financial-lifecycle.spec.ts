@@ -7,7 +7,7 @@ import {
   waitForBodyText,
   waitForHomeReady,
 } from "@test/driver";
-import { By } from "selenium-webdriver";
+import { By, until } from "selenium-webdriver";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
@@ -66,19 +66,55 @@ describe("Financial lifecycle E2E", () => {
   });
 
   it("creates a credit card and renders its persisted credit details", async () => {
-    const card = await invokeCommand<Account>(ACCOUNT_FUNCTIONS.add, {
-      name: "E2E Platinum",
-      balance: 0,
-      typeId: 3,
-      currencyId: 1,
-      creditInfo: { creditLimit: 4321, cutoffDay: 17, daysToPay: 23 },
-    });
+    const openForm = await driver.wait(
+      until.elementLocated(By.id("create-account-button")),
+      15_000,
+    );
+    await openForm.click();
 
-    await driver.navigate().refresh();
+    const name = await driver.findElement(By.css('#account-form input[name="name"]'));
+    await name.sendKeys("E2E Platinum");
+
+    const creditType = await driver.findElement(
+      By.xpath('//form[@id="account-form"]//input[@name="type" and @value="3"]/parent::label'),
+    );
+    await creditType.click();
+
+    const fillNumber = async (field: string, value: string) => {
+      const input = await driver.wait(
+        until.elementLocated(By.css(`#account-form input[name="${field}"]`)),
+        5_000,
+      );
+      await input.clear();
+      await input.sendKeys(value);
+    };
+
+    await fillNumber("balance", "321");
+    await fillNumber("creditLimit", "4321");
+    await fillNumber("cutoffDay", "17");
+    await fillNumber("daysToPay", "23");
+    await driver.findElement(By.css('#account-form button[type="submit"]')).click();
+
+    const accountCard = await driver.wait(
+      until.elementLocated(
+        By.xpath('//a[starts-with(@href, "/account?id=") and .//h3[contains(., "E2E Platinum")]]'),
+      ),
+      10_000,
+    );
+    expect(await accountCard.getText()).toMatch(/321(?:[.,]00)?/);
+
+    const card = (await invokeCommand<Account[]>(ACCOUNT_FUNCTIONS.get)).find(
+      (account) => account.name === "E2E Platinum",
+    );
+    if (!card) throw new Error("Created credit card was not persisted");
+    expect(card.balance).toBe(4_000);
+    expect(card.creditInfo?.creditLimit).toBe(4_321);
+
     await navigateTo(`/account?id=${card.id}`, By.css("main"));
     const text = await waitForBodyText("E2E Platinum");
     expect(text).toContain("E2E Platinum");
-    expect(text).toMatch(/4[,.]?321/);
+    expect(text).toMatch(/321(?:[.,]00)?/);
+    expect(text).toMatch(/4[,.]?000/);
     expect(text).toMatch(/dito disponible/);
   });
 

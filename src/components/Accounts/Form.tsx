@@ -8,6 +8,7 @@ import FormErrors from "@/components/Forms/FormErrors";
 import SegmentedControl from "@/components/Forms/SegmentedControl";
 import SelectCurrency from "@/components/Forms/SelectCurrency";
 import useSubmissionGuard from "@/hooks/useSubmissionGuard";
+import { getAccountDisplayBalance } from "@/lib/accountBalance";
 import { createAccountFromData, validateAccountForm as validate } from "@/lib/forms/account";
 import { logger } from "@/lib/logger";
 import { accountsStore } from "@/stores/accountsStore";
@@ -110,7 +111,7 @@ const AccountForm = ({ modalId }: Props) => {
         />
 
         <label htmlFor="balance" className="text-zinc-700 dark:text-zinc-300">
-          Saldo {typeId === ACCOUNT_TYPES.CREDIT ? "Disponible" : ""}
+          {typeId === ACCOUNT_TYPES.CREDIT ? "Saldo usado" : "Saldo"}
         </label>
         <div className="flex">
           <Input
@@ -118,7 +119,8 @@ const AccountForm = ({ modalId }: Props) => {
             name="balance"
             id="balance"
             required
-            value={account ? account.balance : "0.00"}
+            value={account ? getAccountDisplayBalance(account) : "0.00"}
+            min={typeId === ACCOUNT_TYPES.CREDIT ? 0 : undefined}
             step={0.01}
           />
           <SelectCurrency currencyId={account ? account.currencyId : undefined} />

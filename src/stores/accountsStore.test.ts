@@ -288,7 +288,8 @@ describe("validate", () => {
     ["daysToPay", "0", "El día de pago debe ser un número entre 1 y 30"],
     ["daysToPay", "31", "El día de pago debe ser un número entre 1 y 30"],
     ["daysToPay", "1.5", "El día de pago es requerido"],
-    ["balance", "-1", "El saldo usado debe ser mayor o igual a 0"],
+    ["balance", "-1", "La deuda debe ser mayor o igual a 0"],
+    ["balance", "1000.01", "La deuda no puede superar el límite de crédito"],
   ])("rejects invalid credit field %s=%s", (field, value, message) => {
     const result = validate({ ...validCreditAccount, [field]: value });
 
@@ -321,5 +322,27 @@ describe("createAccountFromData", () => {
     expect(account.name).toBe("Wallet");
     expect(account.balance).toBe(100);
     expect(account.creditInfo).toBeUndefined();
+  });
+
+  it.each([
+    ["0", 1000],
+    ["250.25", 749.75],
+    ["1000", 0],
+  ])("converts credit debt %s to available balance %s", (debt, availableBalance) => {
+    const account = createAccountFromData(
+      {
+        name: "Visa",
+        balance: debt,
+        currency: "1",
+        type: "3",
+        creditLimit: "1000",
+        cutoffDay: "15",
+        daysToPay: "20",
+      },
+      { id: 3, name: "Credit", icon: "credit-card", color: "#ef4444" },
+    );
+
+    expect(account.balance).toBe(availableBalance);
+    expect(account.creditInfo?.creditLimit).toBe(1000);
   });
 });

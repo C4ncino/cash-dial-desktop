@@ -54,6 +54,19 @@ describe("AccountCard", () => {
     expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
   });
 
+  it("displays credit-card debt instead of the persisted available balance", () => {
+    render(
+      <AccountCard
+        {...mockAccount}
+        balance={1200.75}
+        creditInfo={{ creditLimit: 5000, cutoffDay: 15, daysToPay: 20 }}
+      />,
+    );
+
+    expect(screen.getByText(/3,799.25/)).toBeInTheDocument();
+    expect(screen.queryByText(/1,200.75/)).not.toBeInTheDocument();
+  });
+
   it("marks inactive accounts visibly", () => {
     render(<AccountCard {...mockAccount} isActive={false} />);
 

@@ -3,9 +3,11 @@ import EntityIcon from "@/components/General/EntityIcon";
 import InteractiveCard from "@/components/General/InteractiveCard";
 import StatusBadge from "@/components/General/StatusBadge";
 import { selectCurrencyById, useCurrencies } from "@/hooks/useStores";
+import { getAccountDisplayBalance } from "@/lib/accountBalance";
 
 export default function AccountCard(account: Account) {
   const currency = useCurrencies(selectCurrencyById(account.currencyId));
+  const displayBalance = getAccountDisplayBalance(account);
 
   return (
     <InteractiveCard
@@ -22,9 +24,9 @@ export default function AccountCard(account: Account) {
       </hgroup>
 
       <AmountText
-        amount={account.balance}
+        amount={displayBalance}
         maximum={99999999}
-        tone={account.balance < 0 ? "expense" : "neutral"}
+        tone={!account.creditInfo && displayBalance < 0 ? "expense" : "neutral"}
         className="flex w-full justify-end text-xl"
         amountClassName="truncate font-medium"
       />

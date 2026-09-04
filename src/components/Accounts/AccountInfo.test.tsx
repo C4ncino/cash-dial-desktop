@@ -71,15 +71,17 @@ describe("AccountInfo", () => {
     expect(screen.getByText(/crédito disponible/i)).toBeInTheDocument();
   });
 
-  it("should calculate available credit correctly", () => {
+  it("displays debt as the primary amount and keeps the credit breakdown consistent", () => {
     (useStore as any).mockImplementation(() => mockAccount);
 
     render(<AccountInfo />);
 
-    // Available credit = 5000 - 1200.75 = 3799.25
-    const availableCredit = 5000 - 1200.75;
+    const debt = 5000 - 1200.75;
+    const headerAmount = document.querySelector("header strong");
 
-    expect(screen.getByText(formatNumber(availableCredit, 99999999))).toBeInTheDocument();
+    expect(headerAmount?.textContent).toMatch(/3[,.]799[,.]25/);
+    expect(screen.getByText(formatNumber(debt, 999_999))).toBeInTheDocument();
+    expect(screen.getByText(formatNumber(1200.75, 999_999))).toBeInTheDocument();
   });
 
   it("should render progress bar with correct percentage", () => {

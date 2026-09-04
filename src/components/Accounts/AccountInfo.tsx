@@ -6,6 +6,7 @@ import AccountNextPayment from "@/components/Accounts/AccountNextPayment";
 import AmountText from "@/components/General/AmountText";
 import EntityIcon from "@/components/General/EntityIcon";
 import StatusBadge from "@/components/General/StatusBadge";
+import { getAccountDisplayBalance } from "@/lib/accountBalance";
 import { formatNumber } from "@/lib/formatters";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
@@ -23,6 +24,7 @@ const AccountInfo = () => {
   if (!account) return;
 
   const currency = currencyStore.getState().getById(account.currencyId) as Currency;
+  const displayBalance = getAccountDisplayBalance(account);
 
   return (
     <>
@@ -36,7 +38,7 @@ const AccountInfo = () => {
             </StatusBadge>
           </div>
           <AmountText
-            amount={account.balance}
+            amount={displayBalance}
             currency={currency}
             format="currency"
             inline
@@ -59,17 +61,13 @@ const AccountInfo = () => {
             </thead>
             <tbody>
               <tr>
-                <td>{formatNumber(account.creditInfo.creditLimit - account.balance, 999_999)}</td>
+                <td>{formatNumber(displayBalance, 999_999)}</td>
                 <td className="text-right">{formatNumber(account.balance, 999_999)}</td>
               </tr>
             </tbody>
           </table>
           <Progress
-            value={
-              ((account.creditInfo.creditLimit - account.balance) /
-                account.creditInfo.creditLimit) *
-              100
-            }
+            value={(displayBalance / account.creditInfo.creditLimit) * 100}
             color={colors.red[500]}
             background={colors.green[600]}
             className="mt-2"
