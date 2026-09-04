@@ -1,6 +1,6 @@
 # Test suite map and remaining improvements
 
-Last inventoried: 2026-09-02
+Last inventoried: 2026-09-04
 
 This document maps every executable test currently collected by Vitest and Cargo. Parameterized tests are counted after expansion. The coverage assessment follows [`testing-guidelines.md`](./testing-guidelines.md): financial and database invariants belong primarily in Rust, command contracts in integration tests, UI behavior in component/store tests, and only critical full-stack journeys in E2E.
 
@@ -8,39 +8,40 @@ This document maps every executable test currently collected by Vitest and Cargo
 
 | Layer                         | Command                                          |   Cases | Main responsibility                                                       |
 | ----------------------------- | ------------------------------------------------ | ------: | ------------------------------------------------------------------------- |
-| Frontend unit/component/store | `pnpm test`                                      |     358 | UI behavior, form state, store indexes/caches, frontend helpers           |
+| Frontend unit/component/store | `pnpm test`                                      |     383 | UI behavior, form state, store indexes/caches, frontend helpers           |
 | Tauri command integration     | `pnpm test:integration`                          |      60 | Command serialization, persistence, representative failures               |
-| E2E                           | `pnpm test:e2e`                                  |      17 | Critical full-stack user journeys                                         |
-| Rust unit/database            | `cd src-tauri && cargo test -- --test-threads=1` |     161 | Validation, calculations, transactions, balances, recurrence, persistence |
-| **Total**                     |                                                  | **596** |                                                                           |
+| E2E                           | `pnpm test:e2e`                                  |      19 | Critical full-stack user journeys                                         |
+| Rust unit/database            | `cd src-tauri && cargo test -- --test-threads=1` |     162 | Validation, calculations, transactions, balances, recurrence, persistence |
+| **Total**                     |                                                  | **624** |                                                                           |
 
 `vitest list` and `cargo test -- --list` were used for the inventory. A listed test is not necessarily a passing test; use the commands above for the current result.
 
 ## Verification status
 
-Last full local verification on 2026-09-02:
+Last full local verification on 2026-09-04:
 
-- Frontend: 57 files and 358 tests passed.
-- Rust: 161 tests passed.
+- Frontend: 59 files and 383 tests passed.
+- Rust: 162 tests passed.
 - Tauri integration: 7 files and 60 tests passed.
-- E2E: 6 files and 17 independent tests passed without fixed sleeps or shared scenario databases.
+- E2E: 6 files and 19 independent tests passed without fixed sleeps or shared scenario databases.
 - The Tauri debug test build passed as part of the integration and E2E commands.
 - Static analysis: `pnpm check` passed with 0 errors, 0 warnings, and 0 hints.
+- Biome lint completed successfully with 208 non-blocking warnings; the release helper's 9 tests passed.
 
-## Frontend unit, component, hook, and store tests (358)
+## Frontend unit, component, hook, and store tests (383)
 
 Each entry below maps all cases collected from that file. Numbers in parentheses are executable case counts.
 
 ### Accounts
 
 - `src/components/Accounts/ActionButtons.test.tsx` (4): activates and deactivates accounts with the matching command/modal/toast; calls store removal after delete confirmation; navigates back after deletion.
-- `src/components/Accounts/AccountCard.test.tsx` (4): renders summary/detail link; styles a negative balance as an expense; renders zero without expense styling; marks inactive accounts visibly.
-- `src/components/Accounts/AccountInfo.test.tsx` (9): missing-account state; header/name/icon; active/inactive status; credit details; available-credit calculation; progress percentage; no credit section for regular accounts; next-payment component for credit cards; no next-payment component for non-credit accounts.
+- `src/components/Accounts/AccountCard.test.tsx` (5): renders summary/detail links and account status; styles regular negative/zero balances correctly; displays credit-card debt instead of available credit.
+- `src/components/Accounts/AccountInfo.test.tsx` (9): missing-account state; header/name/icon; active/inactive status; credit details with debt and available-credit calculations; progress percentage; regular-account and next-payment branches.
 - `src/components/Accounts/AccountNextPayment.test.tsx` (9): initial loading; fetch error; no-payment state; payment total/date; expanded movements/installments; switches between details and payment form; collapses and refreshes after payment success; stale account response; unmount safety.
 - `src/components/Accounts/AccountsList.test.tsx` (9): distinct empty and no-match states; rendering and reactive updates; type/status filters; case-insensitive trimmed search with filter-reset rules; eight-item pagination and page reset behavior.
 - `src/components/Accounts/CreditCardPaymentForm.test.tsx` (11): basic fields; add/remove payment sources; live remaining amount and validity; recalculation and duplicate detection after edits; missing/duplicate source errors; atomic payment and callback; converted source amount; submission error; duplicate-submit lock and retry; cancel callback.
-- `src/components/Accounts/Form.test.tsx` (12): fields/types; validation; create/edit; edit population; stale credit-field removal; duplicate-submit retry; default checked reset; unmount safety.
-- `src/stores/accountsStore.test.ts` (32): populate/mutations/lookups/balance refresh; activation/deactivation replacement and failure safety; next-payment and atomic-payment contracts; mutation failure safety; regular and credit-account validation including credit limit, cutoff, payment-day, and non-finite/boundary values; account payload creation.
+- `src/components/Accounts/Form.test.tsx` (14): fields/types; validation; create/edit; credit debt-to-available conversion; edit population; stale credit-field removal and stale edit-state isolation; duplicate-submit retry; default checked reset; unmount safety.
+- `src/stores/accountsStore.test.ts` (36): populate/mutations/lookups/balance refresh; activation/deactivation replacement and failure safety; next-payment and atomic-payment contracts; mutation failure safety; regular and credit-account validation including debt/credit-limit conversion, cutoff, payment-day, and non-finite/boundary values; account payload creation.
 
 ### Budgets
 
@@ -55,9 +56,10 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 ### Movements
 
 - `src/components/Movements/ActionButtons.test.tsx` (7): no movement renders nothing; correct edit modal for income, expense, and transfer; deletion for income, expense, and transfer.
+- `src/components/Movements/CreateMovementMenu.test.tsx` (5): labeled action expansion and request dispatch; Escape focus restoration; inactive-account disabling; credit-card transfer disabling with valid prefill; transfer disabling without another active account.
 - `src/components/Movements/MovementCard.test.tsx` (3): category/account; detail link; transfer destination account.
-- `src/components/Movements/MovementForm.test.tsx` (24): planning context/failures; currency conversion; income/expense/transfer create/edit; installments; balance refresh; duplicate-submit retry; unmount safety.
-- `src/components/Movements/MovementInfo.test.tsx` (8): missing movement; base rendering; expense properties; income properties; transfer properties/accounts; optional description and conversion details; installment section present; installment section absent.
+- `src/components/Movements/MovementForm.test.tsx` (27): planning context/failures; contextual account prefill and clearing; create requests ignored by unrelated/edit forms; stale edit-state isolation; currency conversion; income/expense/transfer create/edit; installments; balance refresh; duplicate-submit retry; unmount safety.
+- `src/components/Movements/MovementInfo.test.tsx` (9): missing movement; base rendering; expense properties; income properties; transfer properties/accounts; optional description; source/destination-aware conversion details; installment section present/absent.
 - `src/components/Movements/MovementList.test.tsx` (5): empty IDs; Spanish date headings; cards grouped under dates; all-movement index; account-specific index.
 - `src/components/Movements/MovementViews.test.tsx` (2): global IDs and landing order/link; compact financial semantics/navigation and missing relations.
 - `src/components/Movements/SelectPlanning.test.tsx` (2): filters to active pending compatible plans; selection and clearing.
@@ -78,10 +80,10 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 
 ### Statistics
 
-- `src/components/Statistics/StatisticsComponents.test.tsx` (6): overview/savings rate; trends/category percentages; cumulative balance chart; obligations/secondary metrics; earliest obligation urgency; zero-total safety and empty state.
-- `src/components/Statistics/StatisticsForm.test.tsx` (2): current month with next disabled; period changes and allowed granularities.
-- `src/stores/statisticsStore.test.ts` (8): currency required; fetch/cache/error/loading; currency isolation; out-of-order success/error protection; mutation invalidation of cache and in-flight responses.
-- `src/lib/statisticsQuery.test.ts` (6): Monday week starts; month/year local midnight; leap/month/year shifting; half-open ranges; current/future navigation; default granularities.
+- `src/components/Statistics/StatisticsComponents.test.tsx` (7): overview/savings rate; trends/category percentages; cumulative balance chart; obligations/secondary metrics; earliest obligation urgency; rounded negative-zero normalization; zero-total safety and empty state.
+- `src/components/Statistics/StatisticsForm.test.tsx` (3): current month with next disabled; period changes and allowed granularities; direct week/month/year picker values and limits.
+- `src/stores/statisticsStore.test.ts` (10): currency required; fetch/cache/error/loading; currency isolation; out-of-order success/error protection; mutation invalidation; normalized direct period selection and future-period clamping.
+- `src/lib/statisticsQuery.test.ts` (9): Monday/ISO week handling; month/year local midnight; picker formatting/parsing and malformed values; leap/month/year shifting; half-open ranges; current/future navigation; default granularities.
 - `src/hooks/useStatisticsSection.test.ts` (3): idle fetch; loading/cached suppression; currency symbol and missing fallback.
 
 ### Shared forms and display helpers
@@ -96,10 +98,11 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 - `src/components/General/AmountText.test.tsx` (4): neutral default; tone/icon; short/currency formatting; inline currency.
 - `src/components/General/CategoryName.test.tsx` (4): resolved category; custom color; virtual category using parent icon/custom name; missing fallback.
 - `src/lib/currencyConversion.test.ts` (3): EUR-reference conversion; same-currency identity; effective rate from persisted amounts.
+- `src/lib/accountBalance.test.ts` (1): regular balances remain unchanged while credit-card available balances are converted to debt.
 - `src/hooks/useDate.test.ts` (2): stable localized dates and configured 12-hour output.
 - `src/hooks/usePagination.test.ts` (3): clamped navigation; non-finite/fractional normalization; shrinking bounds.
 - `src/hooks/useTheme.test.ts` (2): reads the current theme and reacts to theme-change events.
-- `src/lib/formatters.test.ts` (9): locale fallback; numeric/currency/compact boundaries; invalid values/currencies; Spanish hyphenation.
+- `src/lib/formatters.test.ts` (10): locale fallback; numeric/currency/compact boundaries; invalid values/currencies; rounded negative-zero normalization; Spanish hyphenation.
 - `src/lib/init.test.ts` (4): initialization/population; fresh/stale rates; refresh fallback; failure propagation.
 - `src/lib/menu.test.ts` (2): navbar toggling and missing-element safety.
 
@@ -117,16 +120,16 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 - `tests/integration/currency-commands.spec.ts` (3): typed currency list; seeded values; persisted refresh-rate shape.
 - `tests/integration/movement-commands.spec.ts` (24): typed/seeded movement types; initially empty movements; create income, expense, installment expense, transfer, and description-less movement; reject invalid type, zero amount, transfer without destination, same-account transfer, and destination on non-transfer; retrieve inserted movements in descending timestamp order; get one movement; get installment list/shape/order; empty installments for ordinary movement; mark installments paid; update amount/description; reject type change; remove and confirm absence.
 - `tests/integration/plannings-commands.spec.ts` (8): typed recurrence/status/planning/occurrence results; create/read daily, weekly, monthly, and yearly plans; invalid type/interval/range/recurrence-day matrix; update/deactivate/activate/cancel/delete lifecycle; linked movement completion and restoration on removal.
-- `tests/integration/statistics-commands.spec.ts` (2): obligation response includes account and description data; options and all supported granularities.
+- `tests/integration/statistics-commands.spec.ts` (2): obligation response includes account and description data; options and all supported granularities; seeded balance trends exclude credit-card balances.
 
-## E2E tests (17)
+## E2E tests (19)
 
-- `tests/e2e/account-creation.spec.ts` (1): create a cash account.
+- `tests/e2e/account-creation.spec.ts` (2): create a cash account; create a new account after navigating away from a stale edit form.
 - `tests/e2e/budget-creation.spec.ts` (1): create a monthly budget and verify the joined amount/currency control at mobile and desktop widths in light and dark themes.
-- `tests/e2e/movement-creation.spec.ts` (4): create/render/open income; expense; transfer; cross-currency transfer with distinct charged/received amounts.
+- `tests/e2e/movement-creation.spec.ts` (5): labeled movement menus on Home, Movements, and Account details with account prefill; create/render/open income, expense, transfer, and cross-currency transfer with distinct charged/received amounts.
 - `tests/e2e/planning-flow.spec.ts` (1): create planning, link compatible movement, reload, cancel next occurrence.
-- `tests/e2e/statistics-flow.spec.ts` (1): load dashboard and change period controls.
-- `tests/e2e/financial-lifecycle.spec.ts` (9): account edit reload; credit-card creation/details; income create/update/delete with balance restoration; installment purchase persistence; atomic split card payment; child-category budget lifecycle; statistics mutation refresh; future budget scheduling; planning deactivate/reactivate.
+- `tests/e2e/statistics-flow.spec.ts` (1): load the dashboard, switch period type, jump directly to a historical year, navigate with arrows, and reject invalid numeric output including negative zero.
+- `tests/e2e/financial-lifecycle.spec.ts` (9): account edit reload; credit-card creation from debt input with persisted available balance and debt presentation; income create/update/delete with balance restoration; installment purchase persistence; atomic split card payment; child-category budget lifecycle; statistics mutation refresh; future budget scheduling; planning deactivate/reactivate.
 
 ## Test infrastructure and automation
 
@@ -135,7 +138,7 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 - `.github/workflows/tests.yml`: Windows and Ubuntu matrix with pinned tooling, caches, native dependencies, zero-diagnostic static analysis, ordered executable gates, and failure-only artifacts.
 - Every E2E spec uses per-test setup and teardown without fixed sleeps or shared scenario state.
 
-## Rust tests (161)
+## Rust tests (162)
 
 The names below are the Cargo test names with their common module prefix removed.
 
@@ -150,11 +153,12 @@ The names below are the Cargo test names with their common module prefix removed
 - English and Spanish movement types.
 - Empty account types, budget period types, categories, currencies, and movement types when the language is absent.
 
-### Statistics database queries (6)
+### Statistics database queries (7)
 
 `src-tauri/src/db/statistics_query.rs`:
 
 - `balance_trend_is_cumulative_and_includes_opening_balance`
+- `balance_trend_excludes_credit_accounts_and_keeps_eligible_transfer_sides`
 - `balance_trend_respects_currency_and_empty_periods`
 - `categories_roll_up_children_without_double_counting`
 - `currency_and_date_filters_are_isolated_and_half_open`
