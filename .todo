@@ -1,26 +1,76 @@
 General:
-    ✔ Add CI file @done(26-08-20 07:26)
-        ✔ Run tests @done(26-08-20 07:26)
-        ☐ Add SonarQube for coverage and bugs
-        ☐ Add checkmarx for vulnerabilities
-        ☐ Add build for release when merge to main
+    ☐ Add SonarQube for coverage and bugs
+    ☐ Add checkmarx for vulnerabilities
 Optimization:
     ☐ Create a single command on get
     ☐ Optimize movements loading how to load them in chucks, start with three months and bring more info id needed
-Tests:
-    Component:
-    Integration:
 Features:
+    ☐ Update the future occurrences movement name and the payments movement card name in the credit account page to be from the same component
+    ☐ Display accountAmount in movement card always in the account single view
+    ☐ Add also the currency of the movement in the movement card, use the original amount and use the movement currency in transactions use the origin currency in the card
+    ☐ Add a way to organize your accounts, like a drag and drop or a way to set the order of the accounts, if needed add a new table to store the order of the accounts
+    ☐ Add a Multi Select Category Component
+    ☐ Add Category Pie Chart for income like the one that already exists for expenses
+    
+    Movements List:
+        ☐ Add a way to filter the movements by category with multiselect, account, and type (income, expense, transfer)
+        ☐ Add a date range with a start and end date to filter the movements, a period monthly with arrows, weekly, yearly, and custom range
+        ☐ Add a way to sort the movements by date, amount, and category
+        ☐ Add a way to search the movements by description
+        ☐ Add a way to export the movements to CSV
+
+    Multiselect Budgets:
+        ☐ Add a new table and update the current budget to have a many to many relationship with the new table to have multi-category budgets
+        ☐ Update the budgets to support more than one category
+        ☐ Update the budget form to support multi-category budgets
+
+    Invoices:
+        ☐ Add a boolean in the movement to indicate if the movement needs an invoice or not 
+        ☐ add a file upload form that should be trigger by an action button in the single page
+        ☐ Add a new table to store the invoices with a name, description, file path, and movement id
+        ☐ Add a way to see the invoices in the movement single view, with a list of the invoices and a way to download them
+        ☐ Add an indicator in the movement card to indicate if the movement has an invoice or not
+
+    Configurations:
+        ☐ Add a way to configure the app, like a settings page, with options like:
+            ☐ Add a table to store the configurations
+            ☐ Change the default currency
+            ☐ Change the default language
+            ☐ Change the default background color or select from different themes
+        ☐ Explore other configurations that can be added to the app
+    
+    Savings Targets:
+        ☐ Add new table for savings targets, with a name, description, target amount, current amount
+        Methods in the backend:
+            ☐ Create a new target
+            ☐ Edit a target
+            ☐ Delete a target
+        ☐ add form to add funds to the target
+        ☐ add way to edit and delete the target 
+        ☐ add way to see the progress of the target
+    
     ☐ i8n verify the state of i8n in all repo and make a strategy to add at least english and Spanish
-    ☐ Display both source/original and account/card amounts for converted credit-card payments
-    ✔ Update stats to have a input for the week, month or year, for example when month is selected additional to the arrows to go month by month I can select a month and year to go directly to that month, same for week and year and when year is selected only yeah and that will affect the start and end date @done(26-09-04 12:15)
-    ✔ Add another speed dial button for movements creation but with all the text, like "Añadir Movimiento" --> "Añadir Ingreso", "Añadir Gasto", "Añadir Transferencia" @done(26-09-04 12:35)
-        ✔ Add it to the accounts page to be able to create a movement from there @done(26-09-04 12:35)
-        ✔ Check how plannings are pre-filling the movement and see if you can send the account to pre-fill that data when selected from the account single view page @done(26-09-04 12:35)
+
 Fix:
-    ✔ Only debit and cash for stats of balance @done(26-09-03 23:17)
-    ✔ Change Balance in Credit to be debt Balance in input, convert it to available balance when sent to the backend, and display debt (creditLimit - balance) on account cards and account detail views @done(26-09-03 23:28)
-    ✔ Budget form has an overflow in the view @done(26-09-03 23:46)
-    ✔ Check why the next payments in stats have -0.00 @done(26-09-03 23:53)
-    ✔ When a transfer is created from an account with a different currency than the destination account, the single view is not showing the currency conversion correctly it shows the same amount in amount and in the original amount @done(26-09-04 00:00)
-    ✔ Make every amount text in the stats page have a formatting, like the one in the other amount texts in the app, and check if other amount texts are not using the formatting @done(26-09-04 00:56)
+    ☐ When deleting a movement the credit account balances are not being updated correctly
+    ☐ When a movement change is made the next payments are not being updated
+    ☐ The accounts cards when the name is too long and it adds a new line the height of the card becomes bigger than the other cards and it looks bad, make all the cards have the same height
+    ☐ In the landing movement remove the upper border of the first card
+    ☐ In the Movements List make the date separators with a bigger height
+    ☐ Investigate how to make the app build correctly for MacOS with intel chip it is not loading the JS
+    ☐ Update the icons to be embedded in the app and not from a CDN, to avoid issues with the icons not loading when the app is offline
+
+Archive:
+  ✔ Add build for release when merge to main @done(26-09-24 20:01) @project(General)
+  ✔ Add CI file @done(26-08-20 07:26) @project(General)
+  ✔ Run tests @done(26-08-20 07:26) @project(General)
+  ✔ Update stats to have a input for the week, month or year, for example when month is selected additional to the arrows to go month by month I can select a month and year to go directly to that month, same for week and year and when year is selected only yeah and that will affect the start and end date @done(26-09-04 12:15) @project(Features)
+  ✔ Add another speed dial button for movements creation but with all the text, like "Añadir Movimiento" --> "Añadir Ingreso", "Añadir Gasto", "Añadir Transferencia" @done(26-09-04 12:35) @project(Features)
+  ✔ Add it to the accounts page to be able to create a movement from there @done(26-09-04 12:35) @project(Features)
+  ✔ Check how plannings are pre-filling the movement and see if you can send the account to pre-fill that data when selected from the account single view page @done(26-09-04 12:35) @project(Features)
+  ✔ Only debit and cash for stats of balance @done(26-09-03 23:17) @project(Fix)
+  ✔ Change Balance in Credit to be debt Balance in input, convert it to available balance when sent to the backend, and display debt (creditLimit - balance) on account cards and account detail views @done(26-09-03 23:28) @project(Fix)
+  ✔ Budget form has an overflow in the view @done(26-09-03 23:46) @project(Fix)
+  ✔ Check why the next payments in stats have -0.00 @done(26-09-03 23:53) @project(Fix)
+  ✔ When a transfer is created from an account with a different currency than the destination account, the single view is not showing the currency conversion correctly it shows the same amount in amount and in the original amount @done(26-09-04 00:00) @project(Fix)
+  ✔ Make every amount text in the stats page have a formatting, like the one in the other amount texts in the app, and check if other amount texts are not using the formatting @done(26-09-04 00:56) @project(Fix)

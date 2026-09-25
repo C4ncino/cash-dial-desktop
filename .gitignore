@@ -38,3 +38,5 @@ playwright/.auth/
 # vitest cache
 .vitest/
 *logs/
+
+.agents/planning
