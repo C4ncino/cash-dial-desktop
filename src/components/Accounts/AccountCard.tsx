@@ -11,7 +11,7 @@ export default function AccountCard(account: Account) {
 
   return (
     <InteractiveCard
-      className={`min-h-32 cursor-pointer ${account.isActive ? "" : "opacity-70 grayscale-35"}`}
+      className={`h-full min-h-32 cursor-pointer ${account.isActive ? "" : "opacity-70 grayscale-35"}`}
       href={`/account?id=${account.id}`}
     >
       <hgroup className="mb-3 flex min-w-0 flex-row gap-3">

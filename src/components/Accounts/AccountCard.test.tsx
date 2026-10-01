@@ -34,7 +34,16 @@ describe("AccountCard", () => {
     expect(icon).toHaveAttribute("data-icon", "check");
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/account?id=1");
-    expect(link).toHaveAttribute("href", "/account?id=1");
+    expect(link).toHaveClass("h-full");
+  });
+
+  it("keeps long account names constrained to two lines", () => {
+    const longName = "A Checking Account Name That Is Much Longer Than The Available Card Space";
+    render(<AccountCard {...mockAccount} name={longName} />);
+
+    const heading = screen.getByRole("heading", { level: 3 });
+    expect(heading).toHaveTextContent(longName);
+    expect(heading).toHaveClass("line-clamp-2");
   });
 
   it("should apply red text color when balance is negative", () => {
