@@ -49,6 +49,7 @@ function setSearchParams(search: string) {
 describe("Movement ActionButtons", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    toastMock.mockClear();
     setSearchParams("?id=1");
   });
 
@@ -134,5 +135,59 @@ describe("Movement ActionButtons", () => {
     expect(updateBalanceSpy).toHaveBeenCalledWith(1, 30);
     expect(toastMock).toHaveBeenCalledWith(toastId);
     expect(backSpy).toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      label: "a credit-card expense",
+      movement: { ...baseMovement, typeId: MOVEMENT_TYPES.EXPENSE, accountId: 30 },
+      accountIds: [30, undefined] as [number, number?],
+      modalId: MODAL_ID.MOVEMENT.EXPENSE.DELETE,
+    },
+    {
+      label: "a credit-card payment transfer",
+      movement: { ...baseMovement, typeId: MOVEMENT_TYPES.TRANSFER, toAccountId: 30 },
+      accountIds: [1, 30] as [number, number?],
+      modalId: MODAL_ID.MOVEMENT.TRANSFER.DELETE,
+    },
+  ])("waits for the account balance refresh when deleting $label", async (testCase) => {
+    setupStoresMock(testCase.movement);
+
+    let resolveRefresh: (value: [number, number]) => void = () => undefined;
+    const refreshPromise = new Promise<[number, number]>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    const removeSpy = vi.spyOn(movementsStore.getState(), "remove").mockResolvedValueOnce();
+    const updateBalanceSpy = vi
+      .spyOn(accountsStore.getState(), "updateBalance")
+      .mockReturnValueOnce(refreshPromise);
+    const backSpy = vi.spyOn(window.history, "back");
+
+    render(<ActionButtons />);
+    fireEvent.click(screen.getByTestId(`confirm-${testCase.modalId}`));
+
+    await waitFor(() => expect(removeSpy).toHaveBeenCalledWith(1));
+    await waitFor(() => expect(updateBalanceSpy).toHaveBeenCalledWith(...testCase.accountIds));
+    expect(backSpy).not.toHaveBeenCalled();
+
+    resolveRefresh([100, 200]);
+    await waitFor(() => expect(backSpy).toHaveBeenCalled());
+  });
+
+  it("stays on the page and reports an error when the balance refresh fails", async () => {
+    setupStoresMock({ ...baseMovement, typeId: MOVEMENT_TYPES.EXPENSE, accountId: 30 });
+
+    vi.spyOn(movementsStore.getState(), "remove").mockResolvedValueOnce();
+    vi.spyOn(accountsStore.getState(), "updateBalance").mockRejectedValueOnce(
+      new Error("Balance refresh failed"),
+    );
+    const backSpy = vi.spyOn(window.history, "back");
+
+    render(<ActionButtons />);
+    fireEvent.click(screen.getByTestId(`confirm-${MODAL_ID.MOVEMENT.EXPENSE.DELETE}`));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo actualizar el saldo");
+    expect(backSpy).not.toHaveBeenCalled();
+    expect(toastMock).not.toHaveBeenCalledWith("#expense-deleted");
   });
 });

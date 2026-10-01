@@ -80,10 +80,8 @@ export const accountsStore = createStore<AccountsStore & Actions<Account>>((set,
   },
   updateBalance: async (accountId: number, toAccountId?: number) => {
     const balance1 = await accountsCommands.getBalance(accountId);
-    let balance2: number | undefined;
-    if (toAccountId !== undefined) {
-      balance2 = await accountsCommands.getBalance(toAccountId);
-    }
+
+    const balance2 = toAccountId ? await accountsCommands.getBalance(toAccountId) : undefined;
 
     set((state) => {
       const updatedAccounts = state.accounts.map((acc) => {

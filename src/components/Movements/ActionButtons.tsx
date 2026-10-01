@@ -61,12 +61,10 @@ const ActionButtons = () => {
     await movementsStore.getState().remove(movement.id);
 
     budgetStore.getState().refreshAffected(movement.categoryId);
-    // Also update account balance(s)
+
     accountsStore.getState().updateBalance(movement.accountId, movement.toAccountId);
 
-    if (deleteConfig.toastId) {
-      toast(deleteConfig.toastId);
-    }
+    if (deleteConfig.toastId) toast(deleteConfig.toastId);
 
     window.history.back();
   };
