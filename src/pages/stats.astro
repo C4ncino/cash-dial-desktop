@@ -20,6 +20,12 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
         <OverviewCard client:load />
         <TrendsChart client:load />
         <CategoriesList client:load />
+        <CategoriesList
+            client:load
+            kind="income"
+            title="Ingresos por categoría"
+            emptyMessage="No hay ingresos categorizados."
+        />
         <BalanceTrend client:load />
         <SecondaryMetrics client:load />
         <ObligationsList client:load />

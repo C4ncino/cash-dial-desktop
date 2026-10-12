@@ -99,12 +99,28 @@ pub fn get_statistics(
             start_ms,
             end_ms,
             currency_id,
+            statistics_query::EXPENSE,
             category_id,
             include_descendants,
         )
         .map_err(|error| error.to_string())?;
 
     let categories = Categories { total_expenses, by_category_hierarchy, by_category_flat };
+
+    let (by_category_hierarchy, by_category_flat, total_income) =
+        statistics_query::categories_aggregation(
+            connection,
+            &lang,
+            start_ms,
+            end_ms,
+            currency_id,
+            statistics_query::INCOME,
+            category_id,
+            include_descendants,
+        )
+        .map_err(|error| error.to_string())?;
+    let income_categories =
+        IncomeCategories { total_income, by_category_hierarchy, by_category_flat };
 
     // Fetch obligations
     let obligations = if include_obligations {
@@ -129,6 +145,7 @@ pub fn get_statistics(
         timeseries,
         balance_trend,
         categories,
+        income_categories,
         obligations,
         secondary,
     })

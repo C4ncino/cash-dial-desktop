@@ -18,6 +18,9 @@ type DisplayedCategory = {
 type CategoriesListProps = {
   categories?: StatisticsCategoryNode[];
   symbol?: string;
+  title?: string;
+  emptyMessage?: string;
+  kind?: "expense" | "income";
 };
 
 const COLORS = [
@@ -85,11 +88,18 @@ const visibleCategories = (
 const CategoriesList = ({
   categories: categoriesProp,
   symbol: symbolProp,
+  title = "Gastos por categoría",
+  emptyMessage = "No hay gastos categorizados.",
+  kind = "expense",
 }: CategoriesListProps = {}) => {
   const { response, loading, symbol: storeSymbol } = useStatisticsSection();
   const [expandedPath, setExpandedPath] = useState<number[]>([]);
 
-  const categories = categoriesProp ?? response?.categories.byCategoryHierarchy;
+  const categories =
+    categoriesProp ??
+    (kind === "income"
+      ? response?.incomeCategories.byCategoryHierarchy
+      : response?.categories.byCategoryHierarchy);
   const availableCategories = categories ?? [];
   const symbol = symbolProp ?? storeSymbol ?? "";
 
@@ -141,12 +151,12 @@ const CategoriesList = ({
     [colorsByPath, displayedCategories, expandedPath],
   );
 
-  if (loading) return <StatisticsSectionSkeleton ariaLabel="Categorías" className="h-56" />;
+  if (loading) return <StatisticsSectionSkeleton ariaLabel={title} className="h-56" />;
 
   return (
-    <section aria-label="Categorías" className="glass-surface rounded-xl p-4 sm:p-5">
+    <section aria-label={title} className="glass-surface rounded-xl p-4 sm:p-5">
       <header className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Gastos por categoría</h2>
+        <h2 className="text-lg font-semibold">{title}</h2>
         {expandedPath.length > 0 && (
           <button
             type="button"
@@ -262,7 +272,7 @@ const CategoriesList = ({
           </ul>
         </div>
       ) : (
-        <p className="opacity-70">No hay gastos categorizados.</p>
+        <p className="opacity-70">{emptyMessage}</p>
       )}
     </section>
   );

@@ -80,6 +80,11 @@ type StatisticsResponse = {
     byCategoryHierarchy: StatisticsCategoryNode[];
     byCategoryFlat: StatisticsCategoryEntry[];
   };
+  incomeCategories: {
+    totalIncome: number;
+    byCategoryHierarchy: StatisticsCategoryNode[];
+    byCategoryFlat: StatisticsCategoryEntry[];
+  };
   obligations: StatisticsObligations;
   secondary: StatisticsSecondaryMetrics;
 };

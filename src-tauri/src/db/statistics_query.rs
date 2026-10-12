@@ -11,8 +11,8 @@ use crate::domain::statistics::StatisticsError;
 
 type StatisticsResult<T> = Result<T, StatisticsError>;
 
-const INCOME: i32 = 1;
-const EXPENSE: i32 = 2;
+pub const INCOME: i32 = 1;
+pub const EXPENSE: i32 = 2;
 
 #[derive(QueryableByName)]
 struct AmountRow {
@@ -330,13 +330,19 @@ pub fn categories_aggregation(
     start: i64,
     end: i64,
     currency: i32,
+    movement_type_id: i32,
     root: Option<i32>,
     include_descendants: bool,
 ) -> StatisticsResult<(Vec<HierarchicalCategory>, Vec<CategoryEntry>, f64)> {
     let cats: Vec<CategoryRow> = sql_query("SELECT c.id, COALESCE(t.name,c.key) AS name, c.father_id AS parent_id FROM categories c LEFT JOIN categories_translations t ON t.category_id=c.id AND t.lang=?")
         .bind::<Text, _>(lang)
         .load(c)?;
-    let amounts: Vec<CategoryAmountRow> = sql_query("SELECT category_id, SUM(original_amount) AS amount FROM movements WHERE type_id=2 AND currency_id=? AND timestamp>=? AND timestamp<? GROUP BY category_id").bind::<Integer,_>(currency).bind::<BigInt,_>(start).bind::<BigInt,_>(end).load(c)?;
+    let amounts: Vec<CategoryAmountRow> = sql_query("SELECT category_id, SUM(original_amount) AS amount FROM movements WHERE type_id=? AND currency_id=? AND timestamp>=? AND timestamp<? GROUP BY category_id")
+        .bind::<Integer, _>(movement_type_id)
+        .bind::<Integer, _>(currency)
+        .bind::<BigInt, _>(start)
+        .bind::<BigInt, _>(end)
+        .load(c)?;
     let mut direct: HashMap<i32, f64> =
         amounts.into_iter().map(|r| (r.category_id, r.amount.unwrap_or(0.0))).collect();
     let by_id: HashMap<i32, CategoryRow> = cats
@@ -721,7 +727,7 @@ mod tests {
             .execute(&mut c).unwrap();
 
         let (hierarchy, flat, total) =
-            categories_aggregation(&mut c, "es", start, end, 1, None, true).unwrap();
+            categories_aggregation(&mut c, "es", start, end, 1, EXPENSE, None, true).unwrap();
         assert!((total - 3210.17).abs() < 0.0001);
         assert_eq!(flat.iter().find(|x| x.category_id == 1).unwrap().amount, 40.0);
         assert_eq!(flat.iter().find(|x| x.category_id == 1).unwrap().name, "Comida y Bebida");
@@ -738,6 +744,60 @@ mod tests {
                 .amount,
             15.0
         );
+    }
+
+    #[test]
+    fn income_categories_filter_type_currency_and_roll_up_hierarchy() {
+        let state = crate::tests::setup();
+        let mut c = crate::db::connect::establish_connection(&state.config.database_url);
+        let start =
+            Local.with_ymd_and_hms(2050, 2, 1, 0, 0, 0).single().unwrap().timestamp_millis();
+        let end = start + 86_400_000;
+        sql_query("INSERT OR IGNORE INTO currencies (id,symbol,code) VALUES (3,'€','EUR')")
+            .execute(&mut c)
+            .unwrap();
+        for (id, type_id, category_id, currency_id, amount, timestamp) in [
+            (950, INCOME, 13, 1, 25.0, start + 1_000),
+            (951, INCOME, 1, 1, 10.0, start + 2_000),
+            (952, EXPENSE, 13, 1, 100.0, start + 3_000),
+            (953, 3, 13, 1, 200.0, start + 4_000),
+            (954, INCOME, 13, 3, 500.0, start + 5_000),
+            (955, INCOME, 13, 1, 700.0, end),
+        ] {
+            sql_query("INSERT INTO movements (id,type_id,account_id,category_id,currency_id,original_amount,account_amount,timestamp,description) VALUES (?,?,1,?,?,?, ?,?,'income category test')")
+                .bind::<Integer, _>(id)
+                .bind::<Integer, _>(type_id)
+                .bind::<Integer, _>(category_id)
+                .bind::<Integer, _>(currency_id)
+                .bind::<Double, _>(amount)
+                .bind::<Double, _>(amount)
+                .bind::<BigInt, _>(timestamp)
+                .execute(&mut c)
+                .unwrap();
+        }
+
+        let (hierarchy, flat, total) =
+            categories_aggregation(&mut c, "es", start, end, 1, INCOME, None, true).unwrap();
+        assert_eq!(total, 35.0);
+        assert_eq!(flat.iter().find(|entry| entry.category_id == 1).unwrap().amount, 35.0);
+        assert_eq!(flat.iter().find(|entry| entry.category_id == 13).unwrap().amount, 25.0);
+        assert_eq!(flat.iter().find(|entry| entry.category_id == -1).unwrap().amount, 10.0);
+        assert_eq!(hierarchy.len(), 1);
+        assert_eq!(hierarchy[0].category_id, 1);
+
+        let (_, empty_flat, empty_total) = categories_aggregation(
+            &mut c,
+            "es",
+            end + 86_400_000,
+            end + 2 * 86_400_000,
+            1,
+            INCOME,
+            None,
+            true,
+        )
+        .unwrap();
+        assert_eq!(empty_total, 0.0);
+        assert!(empty_flat.is_empty());
     }
 
     #[test]

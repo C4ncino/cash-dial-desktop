@@ -62,6 +62,15 @@ pub struct Categories {
     pub by_category_flat: Vec<CategoryEntry>,
 }
 
+/// Income category aggregation response
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct IncomeCategories {
+    pub total_income: f64,
+    pub by_category_hierarchy: Vec<HierarchicalCategory>,
+    pub by_category_flat: Vec<CategoryEntry>,
+}
+
 /// Single installment obligation
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -133,6 +142,7 @@ pub struct StatisticsResponse {
     pub timeseries: Vec<TimeSeriesPoint>,
     pub balance_trend: Vec<BalanceTrendPoint>,
     pub categories: Categories,
+    pub income_categories: IncomeCategories,
     pub obligations: Obligations,
     pub secondary: SecondaryMetrics,
 }

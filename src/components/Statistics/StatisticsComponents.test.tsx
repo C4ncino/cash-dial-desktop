@@ -165,6 +165,59 @@ describe("statistics components", () => {
     expect(screen.getByText("Transport")).toBeInTheDocument();
   });
 
+  it("renders income category totals and supports independent drill-down", () => {
+    render(
+      <CategoriesList
+        kind="income"
+        title="Ingresos por categoría"
+        emptyMessage="No hay ingresos categorizados."
+        categories={[
+          {
+            categoryId: 1,
+            name: "Food",
+            parentId: null,
+            amount: 80,
+            percentOfTotal: 100,
+            isVirtual: false,
+            children: [
+              {
+                categoryId: 4,
+                name: "Restaurants",
+                parentId: 1,
+                amount: 80,
+                percentOfTotal: 100,
+                isVirtual: false,
+                children: [],
+              },
+            ],
+          },
+        ]}
+        symbol="$"
+      />,
+    );
+
+    expect(screen.getByRole("region", { name: "Ingresos por categoría" })).toBeInTheDocument();
+    expect(screen.getByText("$80.00")).toBeInTheDocument();
+    expect(screen.getByText("100.0%")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Food.*Detalles/ }));
+    expect(screen.getByText("Restaurants")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Restablecer selección de categoría" }));
+    expect(screen.getByText("Food")).toBeInTheDocument();
+  });
+
+  it("shows the income empty state when there are no categorized incomes", () => {
+    render(
+      <CategoriesList
+        kind="income"
+        title="Ingresos por categoría"
+        emptyMessage="No hay ingresos categorizados."
+        categories={[]}
+      />,
+    );
+
+    expect(screen.getByText("No hay ingresos categorizados.")).toBeInTheDocument();
+  });
+
   it("renders the cumulative balance trend", () => {
     render(
       <BalanceTrend
