@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useStore } from "zustand";
 
 import MovementCard from "@/components/Movements/MovementCard";
+import { formatAmount } from "@/lib/formatters";
 
 vi.mock("@iconify/react", () => ({
   Icon: ({ icon, className }: any) => (
@@ -20,7 +21,7 @@ vi.mock("@/stores/accountsStore", () => ({
           return { id: 1, name: "Source Account", currencyId: 1, type: { icon: "wallet" } };
         }
         if (id === 2) {
-          return { id: 2, name: "Dest Account", currencyId: 1, type: { icon: "card" } };
+          return { id: 2, name: "Dest Account", currencyId: 2, type: { icon: "card" } };
         }
         return undefined;
       },
@@ -43,6 +44,18 @@ vi.mock("@/stores/categoryStore", () => ({
         }
         return undefined;
       },
+    }),
+  },
+}));
+
+vi.mock("@/stores/currencyStore", () => ({
+  currencyStore: {
+    getState: () => ({
+      getById: (id: number) =>
+        ({
+          1: { id: 1, name: "Peso mexicano", code: "MXN", symbol: "$" },
+          2: { id: 2, name: "US Dollar", code: "USD", symbol: "$" },
+        })[id],
     }),
   },
 }));
@@ -80,16 +93,47 @@ describe("MovementCard", () => {
     expect(link).toHaveAttribute("href", "/movement?id=10");
   });
 
+  it("formats the original amount with the movement currency", () => {
+    render(<MovementCard movement={{ ...mockMovement, currencyId: 2 }} />);
+
+    expect(screen.getByText(formatAmount(mockMovement.originalAmount, {
+      id: 2,
+      name: "US Dollar",
+      code: "USD",
+      symbol: "$",
+    } as Currency))).toBeInTheDocument();
+  });
+
+  it("shows a currency code beside abbreviated amounts in compact cards", () => {
+    render(<MovementCard movement={{ ...mockMovement, originalAmount: 1250 }} variant="compact" />);
+
+    expect(screen.getByText("1K")).toBeInTheDocument();
+    expect(screen.getByText("MXN")).toBeInTheDocument();
+  });
+
+  it("falls back to a number when the movement currency is unavailable", () => {
+    render(<MovementCard movement={{ ...mockMovement, currencyId: 99 }} />);
+
+    expect(screen.getByText("150.75")).toBeInTheDocument();
+  });
+
   it("should show transfer destination account when applicable", () => {
     const transferMovement: Movement = {
       ...mockMovement,
       typeId: 3, // Transfer
       toAccountId: 2,
+      currencyId: 2,
     };
 
     render(<MovementCard movement={transferMovement} />);
 
     expect(screen.getByText("Source Account")).toBeInTheDocument();
     expect(screen.getByText("Dest Account")).toBeInTheDocument();
+    expect(screen.getByText(formatAmount(mockMovement.originalAmount, {
+      id: 1,
+      name: "Peso mexicano",
+      code: "MXN",
+      symbol: "$",
+    } as Currency))).toBeInTheDocument();
   });
 });

@@ -7,8 +7,10 @@ import useDate from "@/hooks/useDate";
 import {
   selectAccountById,
   selectCategoryById,
+  selectCurrencyById,
   useAccounts,
   useCategories,
+  useCurrencies,
 } from "@/hooks/useStores";
 import { MOVEMENT_TYPES } from "@/types/enums";
 
@@ -24,6 +26,13 @@ export default function MovementCard({ movement, showTime, variant = "default" }
   const account = useAccounts(selectAccountById(movement.accountId));
   const toAccount = useAccounts(selectAccountById(movement.toAccountId ?? 0));
   const category = useCategories(selectCategoryById(movement.categoryId));
+  const currency = useCurrencies(
+    selectCurrencyById(
+      movement.typeId === MOVEMENT_TYPES.TRANSFER
+        ? (account?.currencyId ?? movement.currencyId)
+        : movement.currencyId,
+    ),
+  );
 
   if (!category || !account) return null;
 
@@ -40,6 +49,7 @@ export default function MovementCard({ movement, showTime, variant = "default" }
         ? "minus"
         : "none";
   const textLength = category.name.length + movement.originalAmount.toString().length;
+  const amountFormat = compact || textLength > 28 ? "short" : "currency";
 
   return (
     <a
@@ -70,13 +80,19 @@ export default function MovementCard({ movement, showTime, variant = "default" }
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end">
-        <AmountText
-          amount={movement.originalAmount}
-          tone={tone}
-          icon={amountIcon}
-          format={compact || textLength > 28 ? "short" : "number"}
-          className={compact ? "text-lg" : undefined}
-        />
+        <div className="flex items-baseline gap-1">
+          <AmountText
+            amount={movement.originalAmount}
+            tone={tone}
+            icon={amountIcon}
+            format={amountFormat}
+            currency={currency}
+            className={compact ? "text-lg" : undefined}
+          />
+          {amountFormat === "short" && currency && (
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">{currency.code}</span>
+          )}
+        </div>
         <time
           dateTime={new Date(movement.timestamp).toISOString()}
           className="text-right text-xs text-zinc-500 dark:text-zinc-400"

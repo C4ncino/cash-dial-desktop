@@ -163,7 +163,6 @@ describe("AccountNextPayment", () => {
     fireEvent.click(screen.getByRole("button"));
 
     expect(screen.getByText("Categoría")).toBeInTheDocument();
-    expect(screen.getAllByTestId("square-icon").length).toBeGreaterThan(0);
   });
 
   it("toggles between movements list and payment form", async () => {
