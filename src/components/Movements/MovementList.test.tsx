@@ -113,6 +113,18 @@ describe("MovementList", () => {
     expect(screen.getByText(/1 de julio/i)).toBeInTheDocument();
   });
 
+  it.each([false, true])("gives date headings extra space in %s layout", (needCompact) => {
+    (useStore as any).mockImplementation((_store: any, selector: any) =>
+      selector({ byId: mockById, accounts: mockAccounts }),
+    );
+
+    render(<MovementList movementIds={[1, 3]} needCompact={needCompact} />);
+
+    for (const heading of screen.getAllByRole("heading")) {
+      expect(heading).toHaveClass("py-2", "sticky");
+    }
+  });
+
   it("should render movement cards under correct dates", () => {
     (useStore as any).mockImplementation((_store: any, selector: any) =>
       selector({ byId: mockById, accounts: mockAccounts }),
