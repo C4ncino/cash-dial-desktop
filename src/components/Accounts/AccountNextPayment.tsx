@@ -15,6 +15,7 @@ interface Props {
 }
 
 const AccountNextPayment = ({ accountId }: Props) => {
+  const movementsById = useStore(movementsStore, (state) => state.byId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [nextPayment, setNextPayment] = useState<CreditCardNextPayment | null>(null);
@@ -46,7 +47,7 @@ const AccountNextPayment = ({ accountId }: Props) => {
     return () => {
       latestRequestId.current += 1;
     };
-  }, [fetchNextPayment]);
+  }, [fetchNextPayment, movementsById]);
 
   const { dateShort } = useDate(nextPayment?.paymentDate || 0);
 

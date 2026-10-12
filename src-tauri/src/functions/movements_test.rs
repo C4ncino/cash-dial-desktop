@@ -802,6 +802,8 @@ pub mod integration {
         let connection = &mut establish_connection(&state.config.database_url);
         let account_id = insert_account(connection, "Credit Card Account", 1000.0);
         insert_credit_info(connection, account_id, 10000.0, 20, 20);
+        let destination_account_id = insert_account(connection, "Second Credit Card", 1000.0);
+        insert_credit_info(connection, destination_account_id, 10000.0, 20, 20);
 
         let tx_time = Utc.with_ymd_and_hms(2026, 6, 25, 12, 0, 0).unwrap().timestamp_millis();
 
@@ -821,19 +823,28 @@ pub mod integration {
         )
         .unwrap();
 
-        // Update to 2 installments of 200 total amount
+        let original_payment = crate::functions::accounts::get_credit_card_next_payment_internal(
+            connection,
+            account_id,
+        )
+        .unwrap();
+        assert_eq!(original_payment.total_amount, 100.0);
+
+        let updated_time = Utc.with_ymd_and_hms(2026, 8, 26, 12, 0, 0).unwrap().timestamp_millis();
+
+        // Move to another credit card and regenerate a new 2-installment schedule.
         update_movement_internal(
             connection,
             movement.id,
             2,
-            account_id,
+            destination_account_id,
             None,
             1,
             1,
             200.0,
             200.0,
             Some(2),
-            tx_time,
+            updated_time,
             Some("Cheaper computer"),
         )
         .unwrap();
@@ -842,6 +853,22 @@ pub mod integration {
         assert_eq!(installments.len(), 2);
         assert_eq!(installments[0].amount, 100.0);
         assert_eq!(installments[0].total_installments, 2);
+
+        let old_account_payment =
+            crate::functions::accounts::get_credit_card_next_payment_internal(connection, account_id)
+                .unwrap();
+        assert!(old_account_payment.movements.is_empty());
+
+        let updated_payment = crate::functions::accounts::get_credit_card_next_payment_internal(
+            connection,
+            destination_account_id,
+        )
+        .unwrap();
+        assert_eq!(updated_payment.total_amount, 100.0);
+        assert_eq!(updated_payment.movements.len(), 1);
+        assert_eq!(updated_payment.movements[0].movement_id, movement.id);
+        assert_eq!(updated_payment.payment_date, installments[0].due_timestamp);
+        assert_ne!(updated_payment.payment_date, original_payment.payment_date);
     }
 
     #[test]

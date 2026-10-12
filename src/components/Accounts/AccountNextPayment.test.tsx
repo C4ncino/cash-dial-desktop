@@ -82,11 +82,15 @@ describe("AccountNextPayment", () => {
   };
 
   let getNextPaymentMock: any;
+  let movementsById = mockMovementsStoreState.byId;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    movementsById = mockMovementsStoreState.byId;
     getNextPaymentMock = vi.fn();
-    (useStore as any).mockImplementation(() => mockAccount);
+    (useStore as any).mockImplementation((store: unknown, selector: (state: any) => unknown) =>
+      store === movementsStore ? selector({ byId: movementsById }) : mockAccount,
+    );
     (accountsStore.getState as any).mockReturnValue({
       accounts: [mockAccount],
       getNextPayment: getNextPaymentMock,
@@ -200,6 +204,17 @@ describe("AccountNextPayment", () => {
     expect(screen.queryByText("Netflix")).not.toBeInTheDocument();
 
     // Next payment should be refetched (fetchNextPayment is called on mount and on success)
+    expect(getNextPaymentMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes next payment when movement data changes", async () => {
+    getNextPaymentMock.mockResolvedValue(mockNextPayment);
+    const { rerender } = render(<AccountNextPayment accountId={1} />);
+    await screen.findByRole("heading", { name: /pr.ximo pago/i });
+
+    movementsById = { ...movementsById, 101: { ...movementsById[101], description: "Updated" } };
+    rerender(<AccountNextPayment accountId={1} />);
+
     expect(getNextPaymentMock).toHaveBeenCalledTimes(2);
   });
 
