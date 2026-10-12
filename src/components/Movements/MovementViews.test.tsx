@@ -71,5 +71,8 @@ describe("movement views", () => {
       "Older",
     ]);
     expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/movements");
+    const movementRows = screen.getAllByRole("listitem");
+    expect(movementRows[0]).toHaveClass("[&>a]:border-t-0");
+    expect(movementRows[1]).not.toHaveClass("[&>a]:border-t-0");
   });
 });

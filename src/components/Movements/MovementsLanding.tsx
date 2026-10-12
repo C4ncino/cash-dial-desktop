@@ -30,8 +30,8 @@ const MovementsLanding = () => {
       </header>
       {movements.length ? (
         <ul className="glass-surface flex flex-col gap-1 overflow-hidden rounded-xl p-2">
-          {movements.map((movement) => (
-            <li key={movement.id}>
+          {movements.map((movement, index) => (
+            <li key={movement.id} className={index === 0 ? "[&>a]:border-t-0" : undefined}>
               <MovementCard movement={movement} />
             </li>
           ))}
