@@ -7,6 +7,7 @@ import { isTransferIcon } from "@/lib/icons";
 import { categoryStore, getCategoriesTree, isCategoryInSubtree } from "@/stores/categoryStore";
 
 import CategoryItem from "./CategoryItem";
+import { categorySelectMenuClassName, categorySelectTriggerClassName } from "./categorySelectStyles";
 
 interface Props {
   categoryId?: number;
@@ -129,14 +130,15 @@ const SelectCategories = ({ categoryId, rootCategoryId, onChange }: Props) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="glass-control flex w-full cursor-pointer items-center justify-between rounded px-3 py-2 text-left transition-colors duration-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
+        aria-expanded={isOpen}
+        className={categorySelectTriggerClassName}
       >
         {selectedCategory ? (
           <span className="flex items-center gap-2 flex-no-wrap overflow-hidden">
             <Icon
               icon={`iconoir:${selectedCategory.icon}`}
               style={{ color: selectedCategory.color }}
-              className={`w-5 h-5 ${isTransferIcon(selectedCategory.icon) ? "rotate-90" : ""}`}
+              className={`size-5 shrink-0 ${isTransferIcon(selectedCategory.icon) ? "rotate-90" : ""}`}
             />
 
             <Breadcrumb
@@ -149,14 +151,14 @@ const SelectCategories = ({ categoryId, rootCategoryId, onChange }: Props) => {
         )}
         <Icon
           icon="iconoir:nav-arrow-down"
-          className={`h-5 w-5 text-zinc-500 transition-transform duration-200 dark:text-zinc-400 ${
+          className={`size-5 shrink-0 text-zinc-500 transition-transform duration-200 dark:text-zinc-400 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {isOpen && (
-        <ul className="absolute z-50 max-h-72 w-full overflow-y-auto rounded shadow-xl bg-zinc-100 dark:bg-zinc-800">
+        <ul className={categorySelectMenuClassName}>
           {categoryTree.map((node) => (
             <CategoryItem
               key={node.id}

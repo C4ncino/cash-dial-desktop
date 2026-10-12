@@ -91,6 +91,7 @@ Each entry below maps all cases collected from that file. Numbers in parentheses
 - `src/components/Forms/ConfirmModal.test.tsx` (8): confirmation contract; open; confirm and close; cancel and close; initial modal ID; prop-driven ID update; custom button class; shared semantic styles for the opener and footer actions.
 - `src/components/Forms/SelectAccounts.test.tsx` (5): active accounts only; excluded ID; exclude credit accounts; change callback; controlled selected value.
 - `src/components/Forms/SelectCategories.test.tsx` (9): placeholder; selected name and transfer-icon rotation; dropdown toggle; root/child expansion; child selection and close; form submission value; subtree restriction; reset selection after incompatible root change.
+- `src/components/Forms/SelectMultipleCategories.test.tsx` (9): leaf selection/deselection and controlled values; reset to empty; selection stays open; repeated/empty form values; subtree filtering; parent expansion; empty category state; outside-click and Escape dismissal.
 - `src/components/Forms/SharedControls.test.tsx` (3): currency selection/forwarding; controlled segmented defaults; errors and disabled/busy actions.
 - `src/components/General/AccountName.test.tsx` (2): resolved account; missing fallback.
 - `src/components/General/ActionButton.test.tsx` (9): all semantic tones; common sizing and shape; native defaults and attribute forwarding; contextual full width; caller class merging.
