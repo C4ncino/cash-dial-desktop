@@ -64,7 +64,7 @@ describe("UrgentOccurrences", () => {
             plannings: [planning(1, "Rent"), planning(2, "Food")],
             occurrencesByPlanning: {
               1: [occurrence(1, "2026-08-20", true)],
-              2: [occurrence(2, "2026-09-20")],
+              2: [occurrence(2, "2027-01-20")],
             },
           })
         : undefined,
@@ -75,7 +75,7 @@ describe("UrgentOccurrences", () => {
     expect(
       getUrgentPlannings([planning(2, "Food"), planning(1, "Rent")], {
         1: [occurrence(1, "2026-08-20", true)],
-        2: [occurrence(2, "2026-09-20")],
+        2: [occurrence(2, "2027-01-20")],
       }).map((item) => item.planning.id),
     ).toEqual([1, 2]);
     render(<UrgentOccurrences />);

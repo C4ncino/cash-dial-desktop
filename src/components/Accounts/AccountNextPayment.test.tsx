@@ -75,6 +75,7 @@ describe("AccountNextPayment", () => {
       },
       102: {
         id: 102,
+        categoryId: 1,
         description: "Spotify",
         installmentsData: [],
       },
@@ -86,6 +87,7 @@ describe("AccountNextPayment", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockMovementsStoreState.byId[102].description = "Spotify";
     movementsById = mockMovementsStoreState.byId;
     getNextPaymentMock = vi.fn();
     (useStore as any).mockImplementation((store: unknown, selector: (state: any) => unknown) =>
@@ -150,6 +152,18 @@ describe("AccountNextPayment", () => {
     expect(screen.getByText("Cuota 1 de 12, Cuota 2 de 12")).toBeInTheDocument();
     expect(screen.getByText("Spotify")).toBeInTheDocument();
     expect(screen.getByText("Pago")).toBeInTheDocument(); // No installments text
+  });
+
+  it("uses the category fallback and icon when a payment movement has no description", async () => {
+    mockMovementsStoreState.byId[102].description = "";
+    getNextPaymentMock.mockResolvedValue(mockNextPayment);
+    render(<AccountNextPayment accountId={1} />);
+
+    await screen.findByRole("heading", { name: /pr.ximo pago/i });
+    fireEvent.click(screen.getByRole("button"));
+
+    expect(screen.getByText("Categoría")).toBeInTheDocument();
+    expect(screen.getAllByTestId("square-icon").length).toBeGreaterThan(0);
   });
 
   it("toggles between movements list and payment form", async () => {

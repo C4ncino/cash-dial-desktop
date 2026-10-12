@@ -5,6 +5,7 @@ import { useStore } from "zustand";
 import CreditCardPaymentForm from "@/components/Accounts/CreditCardPaymentForm";
 import ActionButton from "@/components/General/ActionButton";
 import AmountText from "@/components/General/AmountText";
+import MovementLabel from "@/components/General/MovementLabel";
 import useDate from "@/hooks/useDate";
 import { accountsStore } from "@/stores/accountsStore";
 import { currencyStore } from "@/stores/currencyStore";
@@ -122,8 +123,6 @@ const AccountNextPayment = ({ accountId }: Props) => {
           <ul className="divide-y divide-zinc-200 border-t border-zinc-200 bg-zinc-100/60 backdrop-blur-md dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/60">
             {nextPayment.movements.map((movementInfo) => {
               const movement = movementsStore.getState().byId[movementInfo.movementId];
-              const description = movement?.description || "Movimiento";
-
               const installmentTexts = movementInfo.installmentIds
                 .map((id) => {
                   const installment = movement?.installmentsData?.find((i) => i.id === id);
@@ -140,7 +139,11 @@ const AccountNextPayment = ({ accountId }: Props) => {
               return (
                 <li key={movementInfo.movementId} className="p-3 flex justify-between items-center">
                   <div className="flex flex-col">
-                    <span className="text-zinc-700 dark:text-zinc-300">{description}</span>
+                    <MovementLabel
+                      categoryId={movement?.categoryId}
+                      description={movement?.description}
+                      className="text-zinc-700 dark:text-zinc-300"
+                    />
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">
                       {installmentText}
                     </span>
